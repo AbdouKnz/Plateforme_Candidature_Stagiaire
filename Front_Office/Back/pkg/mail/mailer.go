@@ -155,7 +155,7 @@ func buildHTML(body string) string {
 </tr>
 <tr>
 <td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9CA3AF;line-height:1.5;">
-&copy; 2025 Asteroidea. All rights reserved.
+&copy; 2026 Asteroidea. All rights reserved.
 </td>
 </tr>
 </table>

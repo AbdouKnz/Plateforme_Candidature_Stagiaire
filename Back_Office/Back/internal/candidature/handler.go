@@ -39,6 +39,7 @@ func (h *CandidatureHandler) CreateHandler(c *gin.Context) {
 		StartDate:   c.PostForm("start_date"),
 		SubjectName: c.PostForm("subject_name"),
 		University:  c.PostForm("university"),
+		University2: c.PostForm("university2"),
 		Status:      c.PostForm("status"),
 	}
 
@@ -114,6 +115,7 @@ func (h *CandidatureHandler) UpdateHandler(c *gin.Context) {
 		StartDate:   c.PostForm("start_date"),
 		SubjectName: c.PostForm("subject_name"),
 		University:  c.PostForm("university"),
+		University2: c.PostForm("university2"),
 		Status:      c.PostForm("status"),
 	}
 
