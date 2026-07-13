@@ -22,11 +22,8 @@ import {
   fetchSubjects,
   fetchTypes,
   submitCandidature,
-  type Degree,
-  type Duration,
-  type Subject,
-  type Type_,
-} from "@/lib/api"
+} from "@/service/front-office"
+import type { Degree, Duration, Subject, Type_ } from "@/models/api"
 import { useTranslation } from "@/context/language-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

@@ -2,7 +2,7 @@ import { z } from "zod"
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024
 
-const phoneRegex = /^\d{8}$/
+const phoneRegex = /^(?:\+216)?\d{8}$/
 const emailCheck = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 
 export function createApplicationSchema(t: (key: string) => string) {

@@ -43,7 +43,7 @@ func AuthMiddleware() gin.HandlerFunc {
 func AdminMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
-		if !exists || role != "admin" {
+		if !exists || role != "Super Admin" {
 			log.Warn().Msg("Access denied for non-admin user")
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin access required"})
 			return
@@ -80,7 +80,12 @@ func PermissionMiddleware(permissionTypes ...string) gin.HandlerFunc {
 			return
 		}
 
-		claimsStruct := claims.(*domain.Claims)
+		claimsStruct, ok := claims.(*domain.Claims)
+		if !ok {
+			log.Warn().Msg("Failed to cast claims")
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
+			return
+		}
 		for _, permType := range permissionTypes {
 			permissions, exists := claimsStruct.Permissions[permType]
 			if exists && string(permissions[permissionIndex]) != "0" {

@@ -26,6 +26,7 @@ func RouterManager(db *bun.DB) {
 	r.Use(
 		middleware.CORSMiddleware(),
 		middleware.LoggingMiddleware(),
+		middleware.LanguageMiddleware(),
 	)
 
 	r.NoRoute(func(c *gin.Context) { pkg.HttpError(c, 404, "Route not found") })

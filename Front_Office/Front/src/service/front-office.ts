@@ -1,6 +1,6 @@
 const API_BASE = "/api/public"
 
-import type { Degree, Type_, Duration, Subject, CandidaturePayload } from "@/models/api"
+import type { Degree, Type_, Duration, Subject } from "@/models/api"
 
 export async function fetchDegrees(): Promise<Degree[]> {
   const res = await fetch(`${API_BASE}/degrees`)

@@ -4,6 +4,7 @@ import { AboutPage } from "@/pages/about-page"
 import { FormPage } from "@/pages/form-page"
 import { ClosedPage } from "@/pages/closed-page"
 import { useFrontOfficeStatus } from "@/hooks/use-front-office-status"
+import { ErrorBoundary } from "@/components/error-boundary"
 
 function AppLayout() {
   const { status, loading } = useFrontOfficeStatus()
@@ -29,5 +30,9 @@ function AppLayout() {
 }
 
 export default function App() {
-  return <AppLayout />
+  return (
+    <ErrorBoundary>
+      <AppLayout />
+    </ErrorBoundary>
+  )
 }

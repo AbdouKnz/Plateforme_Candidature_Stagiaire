@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+
 	"git.asteroidea.co/go-packages/astrogo/pkg/astroenv"
 	"github.com/rs/zerolog/log"
 )
@@ -56,11 +58,11 @@ type ConfigMode struct {
 	SMTP struct {
 		Host     string `env:"SMTP_HOST,localhost"`
 		Port     int    `env:"SMTP_PORT,587"`
-		Username string `env:"SMTP_USERNAME"`
-		Password string `env:"SMTP_PASSWORD"`
-		From     string `env:"SMTP_FROM"`
+		Username string `env:"SMTP_USERNAME,"`
+		Password string `env:"SMTP_PASSWORD,"`
+		From     string `env:"SMTP_FROM,"`
 		FromName string `env:"SMTP_FROM_NAME,no-reply"`
-		ImageDir string `env:"SMTP_IMAGE_DIR"`
+		ImageDir string `env:"SMTP_IMAGE_DIR,"`
 	}
 
 	// ───────────── FRONT OFFICE BACKEND ─────────────
@@ -74,6 +76,6 @@ func LoadConfig() {
 	err := astroenv.LoadEnvVarible(&Configvar)
 	if err != nil {
 		log.Error().Msgf("Error loading config: %v", err)
-		return
+		os.Exit(1)
 	}
 }
