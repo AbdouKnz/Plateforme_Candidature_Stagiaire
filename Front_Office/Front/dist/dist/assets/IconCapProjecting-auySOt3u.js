@@ -1,0 +1,1 @@
+import{c as a}from"./createReactComponent-CcM_-R7x.js";const o=[["path",{d:"M20 6h-13a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h13",key:"svg-0"}],["path",{d:"M13 12a2 2 0 1 1 -4 0a2 2 0 0 1 4 0",key:"svg-1"}],["path",{d:"M13 12h7",key:"svg-2"}]],e=a("outline","cap-projecting","CapProjecting",o);export{e as I};

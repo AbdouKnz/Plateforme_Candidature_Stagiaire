@@ -1,0 +1,1 @@
+import{Y as o,r as c,a2 as n,a3 as i}from"./index-Cxk1ZsWh.js";function f(e){const r=o(),t=c.useRef(void 0);return n(r.stores.location,s=>{const u=e?.select?e.select(s):s;if(e?.structuralSharing??r.options.defaultStructuralSharing){const a=i(t.current,u);return t.current=a,a}return u})}export{f as u};

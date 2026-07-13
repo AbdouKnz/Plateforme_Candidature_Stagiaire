@@ -1,0 +1,58 @@
+[90m2026-06-17 09:14:33.594[0m [32mINF[0m [34mBack/main:27[0m [1m   
+				  ..                                                                                                                  
+   				 *///.                 
+                ((((((((*               
+               /(((((((#/               
+                /((#####*               
+    .((*     (%%  /#######/.    /((/    
+  (%%%%%%%%%%%%#     .*/(/,  ##%%%%%%%. 
+  %%%%%%%%%%%%/            (%%%%%%%%%%( 
+  .%%%%%%%%%              *%%%%%%%%%%%  		ASTEROIDEA © 2026 ALL RIGHTS RESERVED
+          .               *%%%*         		  
+           ....            (%*          
+           ..,,,       ,*/*.            
+         .,,,,,,,  .//((((((((((*       
+       ,,,,,,,,,,       ((((######      
+       .,,,,,,,,.        #########      
+         .,,,,.           /#####,                                     
+	[0m
+[90m2026-06-17 09:14:33.646[0m [32mINF[0m [34mBack/main:46[0m [1m
+		╔═════════════════════════════════════════════════════════╗
+		        	Astro - Backend SERVICE 	     	  	  
+		            	   PROJECT INITIALIZATION         		             
+		╚═════════════════════════════════════════════════════════╝
+	[0m
+[90m2026-06-17 09:14:33.647[0m [32mINF[0m [34mBack/main:53[0m [1m----------------------- # STARTING Astro BACKEND SERVER - DEV # -----------------------[0m
+[90m2026-06-17 09:14:33.666[0m [32mINF[0m [34mastrodb/db_manager:133[0m [1mdbmanager: connected to postgres[0m [36mdb=[0mastro-intern [36mhost=[0m127.0.0.1:5432
+[90m2026-06-17 09:14:33.666[0m [32mINF[0m [34mastrodb/db_migration:33[0m [1mdbmanager: starting migrations[0m
+[90m2026-06-17 09:14:33.752[0m [32mINF[0m [34mastrodb/db_migration:50[0m [1mdbmanager: migrations completed[0m
+[90m2026-06-17 09:14:33.752[0m [32mINF[0m [34mdb/manager:49[0m [1m--------- Adding Default Data --------[0m
+[90m2026-06-17 09:14:33.752[0m [32mINF[0m [34mdb/seed:555[0m [1mChecking for default modules...[0m
+[90m2026-06-17 09:14:33.765[0m [32mINF[0m [34mdb/seed:385[0m [1mChecking for default admin role...[0m
+[90m2026-06-17 09:14:33.767[0m [32mINF[0m [34mdb/seed:507[0m [1mChecking for default admin ...[0m
+[90m2026-06-17 09:14:33.769[0m [32mINF[0m [34mdb/seed:19[0m [1mChecking technology table schema...[0m
+[90m2026-06-17 09:14:33.770[0m [32mINF[0m [34mdb/seed:43[0m [1mTechnology table exists, ensuring schema is up to date...[0m
+[90m2026-06-17 09:14:33.775[0m [32mINF[0m [34mdb/seed:53[0m [1mTechnology table schema is up to date[0m
+[90m2026-06-17 09:14:33.775[0m [32mINF[0m [34mdb/seed:284[0m [1mChecking profile table schema...[0m
+[90m2026-06-17 09:14:33.777[0m [32mINF[0m [34mdb/seed:308[0m [1mProfile table exists, ensuring schema is up to date...[0m
+[90m2026-06-17 09:14:33.780[0m [32mINF[0m [34mdb/seed:318[0m [1mProfile table schema is up to date[0m
+[90m2026-06-17 09:14:33.781[0m [32mINF[0m [34mdb/seed:59[0m [1mChecking duration table schema...[0m
+[90m2026-06-17 09:14:33.782[0m [32mINF[0m [34mdb/seed:83[0m [1mDuration table exists, ensuring schema is up to date...[0m
+[90m2026-06-17 09:14:33.784[0m [32mINF[0m [34mdb/seed:93[0m [1mDuration table schema is up to date[0m
+[90m2026-06-17 09:14:33.784[0m [32mINF[0m [34mdb/seed:244[0m [1mChecking type table schema...[0m
+[90m2026-06-17 09:14:33.786[0m [32mINF[0m [34mdb/seed:268[0m [1mType table exists, ensuring schema is up to date...[0m
+[90m2026-06-17 09:14:33.788[0m [32mINF[0m [34mdb/seed:278[0m [1mType table schema is up to date[0m
+[90m2026-06-17 09:14:33.789[0m [32mINF[0m [34mdb/seed:99[0m [1mChecking subject table schema...[0m
+[90m2026-06-17 09:14:33.792[0m [32mINF[0m [34mdb/seed:126[0m [1mSubject table exists, ensuring schema is up to date...[0m
+[90m2026-06-17 09:14:33.795[0m [32mINF[0m [34mdb/seed:141[0m [1mSubject table schema is up to date[0m
+[90m2026-06-17 09:14:33.795[0m [32mINF[0m [34mdb/seed:145[0m [1mChecking subject_technologies table...[0m
+[90m2026-06-17 09:14:33.797[0m [32mINF[0m [34mdb/seed:158[0m [1mChecking subject_profiles table...[0m
+[90m2026-06-17 09:14:33.798[0m [32mINF[0m [34mdb/seed:175[0m [1mChecking candidature table schema...[0m
+[90m2026-06-17 09:14:33.799[0m [32mINF[0m [34mdb/seed:183[0m [1mCandidature table does not exist, creating it...[0m
+[90m2026-06-17 09:14:33.800[0m [32mINF[0m [34mdb/seed:211[0m [1mCandidature table created successfully[0m
+[90m2026-06-17 09:14:33.800[0m [32mINF[0m [34mdb/manager:61[0m [1m ==== Connected to  ====[0m [36mDatabase=[0mastro-intern [36mUrl=[0m127.0.0.1:5432
+[90m2026-06-17 09:14:33.801[0m [32mINF[0m [34mmiddleware/cors:10[0m [1mCORS middleware initialized[0m
+[90m2026-06-17 09:14:33.801[0m [32mINF[0m [34mrouter/manager:45[0m [1mSwagger documentation is enabled[0m [36mswagger_url=[0mhttp://localhost:8300/api/docs/index.html
+[90m2026-06-17 09:14:33.813[0m [32mINF[0m [34mrouter/manager:58[0m [1m-------------------------------- # Server running on 0.0.0.0:8300 # ------------------------------[0m
+[90m2026-06-17 09:14:58.355[0m [32mINF[0m [34mmiddleware/http:29[0m [1m════ REQUEST DETAILS  ════  [0m [36mmethod=[0mGET [36mpath=[0m/api/candidatures/
+[90m2026-06-17 09:14:58.355[0m [33mWRN[0m [34mmiddleware/auth:16[0m [1mAuthorization header is missing[0m

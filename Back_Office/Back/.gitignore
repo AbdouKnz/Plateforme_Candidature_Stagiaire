@@ -1,0 +1,11 @@
+# Editor
+.vscode/
+
+# Logs
+logs/
+
+# Temp
+/tmp/
+
+# Notes
+notes.txt

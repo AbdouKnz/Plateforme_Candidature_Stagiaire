@@ -1,0 +1,1 @@
+import{c as a}from"./createReactComponent-CcM_-R7x.js";const e=[["path",{d:"M5 6a3 3 0 0 1 3 -3h8a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-8a3 3 0 0 1 -3 -3l0 -12",key:"svg-0"}],["path",{d:"M10 13a2 2 0 1 0 4 0a2 2 0 1 0 -4 0",key:"svg-1"}],["path",{d:"M10 6h4",key:"svg-2"}],["path",{d:"M9 18h6",key:"svg-3"}]],d=a("outline","id-badge","IdBadge",e);export{d as I};

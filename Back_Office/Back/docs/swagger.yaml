@@ -1,0 +1,1240 @@
+basePath: /
+definitions:
+  audit.AuditFilterOptions:
+    properties:
+      actions:
+        items:
+          type: string
+        type: array
+      modules:
+        items:
+          type: string
+        type: array
+    type: object
+  audit.AuditLogResponse:
+    properties:
+      action:
+        type: string
+      actor_id:
+        type: integer
+      actor_name:
+        type: string
+      audit_id:
+        type: integer
+      change:
+        $ref: '#/definitions/domain.ChangeDetail'
+      date:
+        type: string
+      icon:
+        type: string
+      module:
+        type: string
+    type: object
+  audit.PaginatedAuditResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/audit.AuditLogResponse'
+        type: array
+      filters:
+        $ref: '#/definitions/audit.AuditFilterOptions'
+      pagination:
+        $ref: '#/definitions/audit.PaginationMetadata'
+    type: object
+  audit.PaginationMetadata:
+    properties:
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalPages:
+        type: integer
+      totalRows:
+        type: integer
+    type: object
+  auth.LoginRequest:
+    properties:
+      email:
+        example: superadmin@asteroidea.co
+        type: string
+      password:
+        example: admin123
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  auth.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  domain.AuditLog:
+    properties:
+      action:
+        type: string
+      actor_id:
+        type: integer
+      actor_name:
+        type: string
+      audit_id:
+        type: integer
+      change:
+        $ref: '#/definitions/domain.ChangeDetail'
+      date:
+        type: string
+      icon:
+        type: string
+      module:
+        type: string
+    type: object
+  domain.ChangeDetail:
+    properties:
+      fields:
+        additionalProperties:
+          $ref: '#/definitions/domain.FieldChange'
+        type: object
+      type:
+        type: string
+    type: object
+  domain.FieldChange:
+    properties:
+      changed:
+        type: boolean
+      created_values: {}
+      deleted_values: {}
+      logged_in_values: {}
+      logged_out_values: {}
+      new_values: {}
+      old_values: {}
+    type: object
+  domain.Role:
+    properties:
+      created_at:
+        type: string
+      role_id:
+        type: integer
+      role_name:
+        type: string
+      role_permissions:
+        additionalProperties:
+          type: string
+        type: object
+      updated_at:
+        type: string
+      user_count:
+        type: integer
+    type: object
+  domain.Setting:
+    properties:
+      description:
+        type: string
+      group:
+        type: string
+      group_order:
+        type: integer
+      icon:
+        type: string
+      key:
+        type: string
+      possible_values:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  domain.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        maxLength: 20
+        minLength: 3
+        type: string
+      id:
+        type: integer
+      last_name:
+        maxLength: 20
+        minLength: 3
+        type: string
+      password:
+        minLength: 4
+        type: string
+      role:
+        $ref: '#/definitions/domain.Role'
+      role_id:
+        type: integer
+      status:
+        type: boolean
+      updated_at:
+        type: string
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    type: object
+  module.ModulePermissionsResponse:
+    properties:
+      add:
+        type: integer
+      delete:
+        type: integer
+      edit:
+        type: integer
+      enabled_permissions:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      module_icon:
+        type: string
+      module_icon_color:
+        type: string
+      module_name:
+        type: string
+      read:
+        type: integer
+    type: object
+  pkg.Response:
+    description: API response wrapper
+    properties:
+      data: {}
+      error:
+        type: string
+      filters: {}
+      message:
+        type: string
+      pagination: {}
+      status:
+        type: integer
+    type: object
+  role.CreateRoleRequest:
+    properties:
+      role_name:
+        type: string
+      role_permissions:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  role.ReassignRoleRequest:
+    properties:
+      new_role_id:
+        type: integer
+    type: object
+  role.UpdateRoleRequest:
+    properties:
+      role_name:
+        type: string
+      role_permissions:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  setting.CreateSettingRequest:
+    properties:
+      description:
+        type: string
+      group:
+        type: string
+      group_order:
+        type: integer
+      icon:
+        type: string
+      key:
+        type: string
+      possible_values:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+      value:
+        type: string
+    required:
+    - group
+    - group_order
+    - key
+    type: object
+  setting.UpdateSettingRequest:
+    properties:
+      description:
+        type: string
+      group_order:
+        type: integer
+      icon:
+        type: string
+      possible_values:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+      value:
+        type: string
+    type: object
+  user.CreateUserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        minLength: 3
+        type: string
+      last_name:
+        minLength: 3
+        type: string
+      password:
+        minLength: 4
+        type: string
+      role_id:
+        type: integer
+    required:
+    - email
+    - first_name
+    - last_name
+    - password
+    - role_id
+    type: object
+  user.UpdateUserPasswordRequest:
+    properties:
+      new_password:
+        minLength: 4
+        type: string
+      old_password:
+        minLength: 4
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  user.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      role_id:
+        type: integer
+      status:
+        type: boolean
+    type: object
+  user.UsersResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      permissions:
+        additionalProperties:
+          type: string
+        type: object
+      role_id:
+        type: integer
+      role_name:
+        type: string
+      status:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+info:
+  contact: {}
+  title: Astro - Backend
+  version: 1.0.0
+paths:
+  /api/audits:
+    get:
+      consumes:
+      - application/json
+      description: 'Fetch all audit logs with optional filters: action, module, date
+        range, and search, with pagination'
+      parameters:
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by module
+        in: query
+        name: module
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Number of items per page (default 10, max 100)
+        in: query
+        name: pageSize
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/audit.PaginatedAuditResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get all audit logs
+      tags:
+      - Audit
+  /api/audits/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch a single audit log by its ID
+      parameters:
+      - description: Audit log ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AuditLog'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get audit log by ID
+      tags:
+      - Audit
+  /api/audits/export:
+    post:
+      consumes:
+      - application/json
+      description: Export audit logs filtered by action, module, date range, or search
+        term to PDF or Excel
+      parameters:
+      - default: pdf
+        description: File type (pdf/excel)
+        in: query
+        name: file_type
+        type: string
+      - description: Filter by action
+        in: query
+        name: action
+        type: string
+      - description: Filter by module
+        in: query
+        name: module
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/pdf
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses: {}
+      security:
+      - Bearer: []
+      summary: Export audit logs
+      tags:
+      - Audit
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT token along with user details
+      parameters:
+      - description: User credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  additionalProperties: true
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      summary: User login
+      tags:
+      - Auth
+  /api/auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Log out the user and return user details with cleared session info
+      produces:
+      - application/json
+      responses: {}
+      security:
+      - Bearer: []
+      summary: User logout
+      tags:
+      - Auth
+  /api/auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new access token and refresh token using a valid refresh
+        token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  additionalProperties:
+                    type: string
+                  type: object
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Refresh access token
+      tags:
+      - Auth
+  /api/modules:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all modules with their enabled permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/module.ModulePermissionsResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get all modules
+      tags:
+      - Modules
+  /api/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all roles with optional search filtering
+      parameters:
+      - description: Search roles by name (case-insensitive)
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Role'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get all roles
+      tags:
+      - Roles
+    post:
+      consumes:
+      - application/json
+      description: Create a new role with the provided information
+      parameters:
+      - description: Role data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/role.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Role'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Create a new role
+      tags:
+      - Roles
+  /api/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role by ID. If the role has users (UserCount > 0), a new_role_id
+        must be provided in the JSON body to reassign them.
+      parameters:
+      - description: New Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Reassignment Details (Required if assigned users exist)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/role.ReassignRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Delete role
+      tags:
+      - Roles
+    get:
+      consumes:
+      - application/json
+      description: Get a single role by their ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Role'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get role by ID
+      tags:
+      - Roles
+    put:
+      consumes:
+      - application/json
+      description: Update an existing role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Role data
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/role.UpdateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Role'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Update role
+      tags:
+      - Roles
+  /api/settings:
+    get:
+      consumes:
+      - application/json
+      description: Fetch all settings filtered by group or key
+      parameters:
+      - description: Filter by group name
+        in: query
+        name: group
+        type: string
+      - description: Search by key name
+        in: query
+        name: key
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.Setting'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get all settings
+      tags:
+      - Settings
+    post:
+      consumes:
+      - application/json
+      description: Create a setting with group_order, group, key, value, description,
+        type, possible_values, and icon
+      parameters:
+      - description: Setting data
+        in: body
+        name: setting
+        required: true
+        schema:
+          $ref: '#/definitions/setting.CreateSettingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Setting'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Create a new setting
+      tags:
+      - Settings
+  /api/settings/{group}/{key}:
+    put:
+      consumes:
+      - application/json
+      description: Update setting fields by group and key
+      parameters:
+      - description: Group name
+        in: path
+        name: group
+        required: true
+        type: string
+      - description: Setting key
+        in: path
+        name: key
+        required: true
+        type: string
+      - description: Updated setting data
+        in: body
+        name: setting
+        required: true
+        schema:
+          $ref: '#/definitions/setting.UpdateSettingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.Setting'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Update an existing setting
+      tags:
+      - Settings
+  /api/users:
+    get:
+      consumes:
+      - application/json
+      description: Get all users filtered by status, role, and search term
+      parameters:
+      - description: Filter by status (active/inactive)
+        in: query
+        name: status
+        type: string
+      - description: Filter by role name
+        in: query
+        name: role_name
+        type: string
+      - description: Search by name or email
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/user.UsersResponse'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get all users
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with assigned role
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Create user
+      tags:
+      - Users
+  /api/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Delete user
+      tags:
+      - Users
+    get:
+      consumes:
+      - application/json
+      description: Get a single user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/user.UsersResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Get user by ID
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update an existing user
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Update user
+      tags:
+      - Users
+  /api/users/{id}/password:
+    put:
+      consumes:
+      - application/json
+      description: Update user password using old and new password
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Password update
+        in: body
+        name: password
+        required: true
+        schema:
+          $ref: '#/definitions/user.UpdateUserPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/pkg.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.User'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/pkg.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Update user password
+      tags:
+      - Users
+  /api/users/export:
+    post:
+      consumes:
+      - application/json
+      description: Export users list to PDF or Excel format with optional filters
+      parameters:
+      - default: pdf
+        description: File type (pdf/excel)
+        in: query
+        name: file_type
+        type: string
+      - description: Filter by active status (true/false)
+        in: query
+        name: status
+        type: boolean
+      - description: Search by keyword
+        in: query
+        name: search
+        type: string
+      produces:
+      - application/pdf
+      - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/pkg.Response'
+      security:
+      - Bearer: []
+      summary: Export users
+      tags:
+      - Users
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
