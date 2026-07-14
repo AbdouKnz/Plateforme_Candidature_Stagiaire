@@ -66,7 +66,7 @@ const advantages = [
 const techStack = [
   "React", "TypeScript", "Node.js", "Python", "AWS",
   "Docker", "PostgreSQL", "GraphQL", "Next.js", "Tailwind CSS",
-  "React Native", "Figma",
+  "React Native", "Go",
 ]
 
 export function AboutPage() {
@@ -116,10 +116,37 @@ export function AboutPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="mx-auto mt-10 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg"
+              className="mx-auto mt-10 max-w-2xl text-base leading-relaxed text-foreground sm:text-lg"
             >
               {t("about.expertiseDesc")}
             </motion.p>
+          </div>
+        </section>
+
+        {/* ── Our Mission ── */}
+        <section className="relative px-6 pb-24 sm:px-8 sm:pb-32">
+          <div className="mx-auto max-w-6xl">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-12 text-center"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
+                <TargetIcon className="size-3.5" />
+                Our Mission
+              </div>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                Enhancing User Experiences
+              </h2>
+              <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-foreground sm:text-lg">
+                Our mission is to enable our clients to deliver the best possible user experience for their customers.
+                We achieve this by offering tailored advice and innovative solutions that meet the unique needs of each
+                project. At Asteroidea, we believe that every parking challenge is an opportunity to create a seamless
+                and efficient experience for users.
+              </p>
+            </motion.div>
           </div>
         </section>
 
@@ -162,7 +189,7 @@ export function AboutPage() {
                   <h3 className="text-base font-semibold text-foreground mb-2">
                     {t(`about.value${v.key}`)}
                   </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
+                  <p className="text-sm leading-relaxed text-foreground">
                     {t(`about.value${v.key}Desc`)}
                   </p>
                 </motion.div>
@@ -188,7 +215,7 @@ export function AboutPage() {
               <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
                 Our Tech Stack
               </h2>
-              <p className="mt-3 text-muted-foreground">
+              <p className="mt-3 text-foreground">
                 Modern tools and technologies we work with
               </p>
             </motion.div>
@@ -246,7 +273,7 @@ export function AboutPage() {
                       <h3 className="text-base font-semibold text-foreground mb-2">
                         {t(`about.advantage${a.key}`)}
                       </h3>
-                      <p className="text-sm leading-relaxed text-muted-foreground">
+                      <p className="text-sm leading-relaxed text-foreground">
                         {t(`about.advantage${a.key}Desc`)}
                       </p>
                     </div>
