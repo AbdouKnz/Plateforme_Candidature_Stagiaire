@@ -134,16 +134,16 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 		return
 	}
 
-	if cvPath, err := fileupload.SaveUploadedFile(c, "cv", "uploads/cvs"); err == nil {
+	if cvPath, err := fileupload.SaveUploadedFile(c, "cv", "uploads/cvs", "cv"); err == nil {
 		candidature.PathCV = cvPath
 	}
-	if lettrePath, err := fileupload.SaveUploadedFile(c, "motivation_letter", "uploads/lettres"); err == nil {
+	if lettrePath, err := fileupload.SaveUploadedFile(c, "motivation_letter", "uploads/lettres", "lm"); err == nil {
 		candidature.PathLettreMotivation = lettrePath
 	}
-	if cvPath2, err := fileupload.SaveUploadedFile(c, "cv2", "uploads/cvs"); err == nil {
+	if cvPath2, err := fileupload.SaveUploadedFile(c, "cv2", "uploads/cvs", "cv"); err == nil {
 		candidature.PathCV2 = cvPath2
 	}
-	if lettrePath2, err := fileupload.SaveUploadedFile(c, "motivation_letter2", "uploads/lettres"); err == nil {
+	if lettrePath2, err := fileupload.SaveUploadedFile(c, "motivation_letter2", "uploads/lettres", "lm"); err == nil {
 		candidature.PathLettreMotivation2 = lettrePath2
 	}
 

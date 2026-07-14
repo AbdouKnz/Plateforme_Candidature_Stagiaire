@@ -47,7 +47,7 @@ func RouterManager(db *bun.DB) {
 		r.GET("/api/docs/*.any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	// Static files for uploads
+	// Serve uploaded files (shared filesystem with Front_Office)
 	r.Static("/uploads", "./uploads")
 
 	// Routes

@@ -117,9 +117,6 @@ export function SuccessScreen({ fullName, email, onReset }: SuccessScreenProps) 
           </div>
 
           <div className="flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground">
-              {t("success.responseTime")}
-            </p>
             <Button
               type="button"
               variant="outline"

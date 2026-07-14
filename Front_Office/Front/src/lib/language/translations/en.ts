@@ -40,8 +40,7 @@ export const en = {
   "form.feature2": "Guaranteed confidentiality",
   "form.feature2Desc": "Your information is handled with the strictest confidentiality.",
   "form.feature3": "Fast Response",
-  "form.feature3Desc": "We get back to you within 5 business days.",
-  "form.leftFooter": "We review every application personally and aim to respond within 5 business days.",
+
   "form.whyApply": "Why apply to us?",
   "form.stepsTitle": "The steps of apply",
   "form.statStudents": "Active students",
@@ -147,7 +146,7 @@ export const en = {
   "success.thanks": "Thanks, {name}!",
   "success.submitted": "Your application has been submitted successfully. We'll review it and get back to you soon.",
   "success.confirmationSentTo": "Acknowledgment sent to",
-  "success.responseTime": "Our recruiting team typically responds within 5 business days.",
+
   "success.submitAnother": "Submit another application",
   "toast.submitted": "Application submitted",
   "toast.submittedDesc": "A confirmation email is on its way.",

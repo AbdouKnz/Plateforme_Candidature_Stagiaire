@@ -4,7 +4,6 @@ import (
 	"astro-backend/domain"
 	"astro-backend/pkg"
 	"astro-backend/pkg/export"
-	"astro-backend/pkg/fileupload"
 	"regexp"
 	"strings"
 
@@ -69,19 +68,6 @@ func (h *CandidatureHandler) CreateHandler(c *gin.Context) {
 		return
 	}
 
-	if cvPath, err := fileupload.SaveUploadedFile(c, "path_cv", "uploads/cvs"); err == nil {
-		candidature.PathCV = cvPath
-	}
-	if lettrePath, err := fileupload.SaveUploadedFile(c, "path_lettre_motivation", "uploads/lettres"); err == nil {
-		candidature.PathLettreMotivation = lettrePath
-	}
-	if cvPath2, err := fileupload.SaveUploadedFile(c, "path_cv2", "uploads/cvs"); err == nil {
-		candidature.PathCV2 = cvPath2
-	}
-	if lettrePath2, err := fileupload.SaveUploadedFile(c, "path_lettre_motivation2", "uploads/lettres"); err == nil {
-		candidature.PathLettreMotivation2 = lettrePath2
-	}
-
 	created, err := h.Service.Create(c.Request.Context(), candidature)
 	if err != nil {
 		pkg.InternalError(c, err.Error())
@@ -117,19 +103,6 @@ func (h *CandidatureHandler) UpdateHandler(c *gin.Context) {
 		University:  c.PostForm("university"),
 		University2: c.PostForm("university2"),
 		Status:      c.PostForm("status"),
-	}
-
-	if cvPath, err := fileupload.SaveUploadedFile(c, "path_cv", "uploads/cvs"); err == nil {
-		request.PathCV = cvPath
-	}
-	if lettrePath, err := fileupload.SaveUploadedFile(c, "path_lettre_motivation", "uploads/lettres"); err == nil {
-		request.PathLettreMotivation = lettrePath
-	}
-	if cvPath2, err := fileupload.SaveUploadedFile(c, "path_cv2", "uploads/cvs"); err == nil {
-		request.PathCV2 = cvPath2
-	}
-	if lettrePath2, err := fileupload.SaveUploadedFile(c, "path_lettre_motivation2", "uploads/lettres"); err == nil {
-		request.PathLettreMotivation2 = lettrePath2
 	}
 
 	updated, err := h.Service.Update(c.Request.Context(), id, request)

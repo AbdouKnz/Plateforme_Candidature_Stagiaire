@@ -40,8 +40,7 @@ export const fr = {
   "form.feature2": "Confidentialité garantie",
   "form.feature2Desc": "Vos informations sont traitées avec la plus stricte confidentialité.",
   "form.feature3": "Réponse rapide",
-  "form.feature3Desc": "Nous vous apportons un retour sous 5 jours ouvrables.",
-  "form.leftFooter": "Nous examinons chaque candidature personnellement et répondons sous 5 jours ouvrables.",
+
   "form.whyApply": "Pourquoi postuler ?",
   "form.stepsTitle": "Les étapes de candidature",
   "form.statStudents": "Étudiants actifs",
@@ -147,7 +146,7 @@ export const fr = {
   "success.thanks": "Merci, {name} !",
   "success.submitted": "Votre candidature a été soumise avec succès. Nous l'examinerons et reviendrons vers vous rapidement.",
   "success.confirmationSentTo": "Confirmation envoyée à",
-  "success.responseTime": "Notre équipe de recrutement répond généralement sous 5 jours ouvrables.",
+
   "success.submitAnother": "Soumettre une autre candidature",
   "toast.submitted": "Candidature soumise",
   "toast.submittedDesc": "Un email de confirmation est en route.",
