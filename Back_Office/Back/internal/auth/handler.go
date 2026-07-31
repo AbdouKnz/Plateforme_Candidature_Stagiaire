@@ -123,7 +123,7 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 		return
 	}
 
-	user, err := h.Service.Logout(c.Request.Context(), claims.UserID)
+	_, err = h.Service.Logout(c.Request.Context(), claims.UserID)
 	if err != nil {
 		pkg.InternalError(c, err.Error())
 		return
@@ -133,8 +133,8 @@ func (h *AuthHandler) LogoutHandler(c *gin.Context) {
 		"user_id":     claims.UserID,
 		"first_name":  claims.FirstName,
 		"last_name":   claims.LastName,
-		"role_name":   user.Role.Name,
-		"permissions": user.Role.Permissions,
+		"role_name":   claims.Role,
+		"permissions": claims.Permissions,
 	}
 
 	pkg.OK(c, response, nil)

@@ -39,16 +39,17 @@ func RouterManager(db *bun.DB) {
 	)
 
 	// Swagger
-	swaggerURL := fmt.Sprintf("http://localhost:%d/api/docs/index.html", config.Configvar.Server.Port)
 
 	if config.Configvar.Server.SwaggerEnabled {
+		swaggerURL := fmt.Sprintf("http://HOST:%d/api/docs/index.html", config.Configvar.Server.Port)
+
 		log.Info().Str("swagger_url", swaggerURL).Msg("Swagger documentation is enabled")
 		r.GET("/api/docs", func(c *gin.Context) { c.Redirect(302, "/api/docs/index.html") })
 		r.GET("/api/docs/*.any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
 	// Serve uploaded files (shared filesystem with Front_Office)
-	r.Static("/uploads", "./uploads")
+	r.Static("/api/uploads", "./uploads")
 
 	// Routes
 	r.GET("/api", func(c *gin.Context) { pkg.OK(c, nil, nil) })            // OK Route

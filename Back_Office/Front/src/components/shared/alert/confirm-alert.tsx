@@ -5,6 +5,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -74,6 +75,9 @@ export function ConfirmAlert() {
             </div>
             {message}
           </AlertDialogTitle>
+          <AlertDialogDescription className="sr-only">
+            {message}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-2 sm:justify-center">
           <AlertDialogAction

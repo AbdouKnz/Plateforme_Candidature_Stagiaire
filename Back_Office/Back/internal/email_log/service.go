@@ -33,6 +33,22 @@ func (s *EmailLogService) GetAll(ctx context.Context, params EmailLogParams) (*P
 		})
 	}
 
+	if params.TemplateType != "" {
+		query = query.Where("el.template_type = ?", params.TemplateType)
+	}
+
+	if params.Status != "" {
+		query = query.Where("el.status = ?", params.Status)
+	}
+
+	if params.StartDate != "" {
+		query = query.Where("el.sent_at >= ?", params.StartDate)
+	}
+
+	if params.EndDate != "" {
+		query = query.Where("el.sent_at <= ?", params.EndDate)
+	}
+
 	if params.Page <= 0 {
 		params.Page = 1
 	}
@@ -128,6 +144,22 @@ func (s *EmailLogService) Export(ctx context.Context, params EmailLogParams) (*e
 				WhereOr("el.subject_name ILIKE ?", searchPattern).
 				WhereOr("el.template_type ILIKE ?", searchPattern)
 		})
+	}
+
+	if params.TemplateType != "" {
+		query = query.Where("el.template_type = ?", params.TemplateType)
+	}
+
+	if params.Status != "" {
+		query = query.Where("el.status = ?", params.Status)
+	}
+
+	if params.StartDate != "" {
+		query = query.Where("el.sent_at >= ?", params.StartDate)
+	}
+
+	if params.EndDate != "" {
+		query = query.Where("el.sent_at <= ?", params.EndDate)
 	}
 
 	err := query.OrderExpr("el.sent_at DESC").Scan(ctx)

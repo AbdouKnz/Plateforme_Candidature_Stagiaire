@@ -161,7 +161,7 @@ export function EmailTemplates() {
             </h2>
             <span className="text-xs text-muted-foreground ml-1">({data.length})</span>
           </div>
-          {canCreate && (
+          {canCreate && data.length < 4 && (
             <Button size="sm" onClick={() => setOpenEmailTemplate(DialogEnum.ADD)}>
               <IconPlus className="size-3.5 mr-1" />
               {t("add_email_template")}

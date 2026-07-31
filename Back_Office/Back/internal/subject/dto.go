@@ -8,7 +8,6 @@ type CreateSubjectRequest struct {
 	TechnologyIDs []int  `json:"technology_ids"`
 	ProfileIDs    []int  `json:"profile_ids"`
 	Description   string `json:"description"`
-	PriorityRank  string `json:"priority_rank"`
 }
 
 type SubjectResponse struct {
@@ -20,7 +19,6 @@ type SubjectResponse struct {
 	ProfileIDs      []int    `json:"profile_ids"`
 	ProfileNames    []string `json:"profile_names"`
 	Description     string   `json:"description"`
-	PriorityRank    string   `json:"priority_rank"`
 	Status          bool     `json:"status"`
 	CreatedAt       string   `json:"created_at"`
 	UpdatedAt       string   `json:"updated_at"`
@@ -32,7 +30,6 @@ type UpdateSubjectRequest struct {
 	TechnologyIDs []int  `json:"technology_ids,omitempty"`
 	ProfileIDs    []int  `json:"profile_ids,omitempty"`
 	Description   string `json:"description,omitempty"`
-	PriorityRank  string `json:"priority_rank,omitempty"`
 	Status        *bool  `json:"status,omitempty"`
 }
 
@@ -65,7 +62,6 @@ func ToResponse(s *domain.Subject) SubjectResponse {
 		ProfileIDs:      profIDs,
 		ProfileNames:    profNames,
 		Description:     s.Description,
-		PriorityRank:    s.PriorityRank,
 		Status:          s.Status,
 		CreatedAt:       s.CreatedAt,
 		UpdatedAt:       s.UpdatedAt,

@@ -1,6 +1,7 @@
 package candidature
 
 import (
+	"astro-backend/config"
 	"astro-backend/domain"
 	"astro-backend/internal/audit"
 	"astro-backend/internal/mail_config"
@@ -34,18 +35,71 @@ func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templat
 	return &template, nil
 }
 
+func (s *CandidatureService) GetRecent(ctx context.Context) ([]*domain.Candidature, error) {
+	log.Info().Msg("Fetching recent 10 candidatures...")
+	var candidatures []*domain.Candidature
+	err := s.db.NewSelect().Model(&candidatures).
+		Order("cnd.id DESC").
+		Limit(10).
+		Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return []*domain.Candidature{}, nil
+		}
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+	return candidatures, nil
+}
+
 func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParams) ([]*domain.Candidature, error) {
 	log.Info().Msg("Fetching all candidatures...")
 	var candidatures []*domain.Candidature
 
 	query := s.db.NewSelect().Model(&candidatures)
-
 	if params.Search != "" {
 		searchPattern := "%" + params.Search + "%"
-		query = query.Where("cnd.full_name ILIKE ? OR cnd.email1 ILIKE ? OR cnd.subject_name ILIKE ?", searchPattern, searchPattern, searchPattern)
+		searchLower := strings.ToLower(params.Search)
+		conds := []string{
+			"cnd.full_name ILIKE ?",
+			"cnd.full_name2 ILIKE ?",
+			"cnd.email1 ILIKE ?",
+			"cnd.subject_name ILIKE ?",
+			"cnd.status ILIKE ?",
+		}
+		args := []interface{}{searchPattern, searchPattern, searchPattern, searchPattern, searchPattern}
+		if searchLower == "solo" {
+			conds = append(conds, "(cnd.full_name2 IS NULL OR cnd.full_name2 = '')")
+		} else if searchLower == "pair" || searchLower == "binôme" {
+			conds = append(conds, "(cnd.full_name2 IS NOT NULL AND cnd.full_name2 != '')")
+		}
+		query = query.Where("("+strings.Join(conds, " OR ")+")", args...)
 	}
 
-	err := query.Order("cnd.id ASC").Scan(ctx)
+	if params.FullName != "" {
+		searchName := "%" + params.FullName + "%"
+		query = query.Where("(cnd.full_name ILIKE ? OR cnd.full_name2 ILIKE ?)", searchName, searchName)
+	}
+
+	if params.CandidatureType == "solo" {
+		query = query.Where("cnd.full_name2 = '' OR cnd.full_name2 IS NULL")
+	} else if params.CandidatureType == "pair" {
+		query = query.Where("cnd.full_name2 != '' AND cnd.full_name2 IS NOT NULL")
+	}
+
+	if params.Gender != "" {
+		query = query.Where("(cnd.gender1 = ? OR cnd.gender2 = ?)", params.Gender, params.Gender)
+	}
+
+	if params.SubjectName != "" {
+		query = query.Where("cnd.subject_name ILIKE ?", "%"+params.SubjectName+"%")
+	}
+
+	if params.Status != "" {
+		query = query.Where("cnd.status = ?", params.Status)
+	}
+
+	err := query.Order("cnd.id DESC").Scan(ctx)
+
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return []*domain.Candidature{}, nil
@@ -60,6 +114,7 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 
 func (s *CandidatureService) GetByID(ctx context.Context, id int) (*domain.Candidature, error) {
 	log.Info().Int("id", id).Msg("Fetching candidature by ID...")
+	backendUrl := config.Configvar.Server.BackendUrl
 
 	candidature := &domain.Candidature{}
 	err := s.db.NewSelect().Model(candidature).
@@ -73,6 +128,18 @@ func (s *CandidatureService) GetByID(ctx context.Context, id int) (*domain.Candi
 		log.Error().Err(err).Int("id", id).Msg("Database error while fetching candidature")
 		return nil, fmt.Errorf("could not fetch candidature: %w", err)
 	}
+
+	addBackendURL := func(path string) string {
+		if path == "" {
+			return path
+		}
+		return backendUrl + path
+	}
+
+	candidature.PathCV = addBackendURL(candidature.PathCV)
+	candidature.PathLettreMotivation = addBackendURL(candidature.PathLettreMotivation)
+	candidature.PathCV2 = addBackendURL(candidature.PathCV2)
+	candidature.PathLettreMotivation2 = addBackendURL(candidature.PathLettreMotivation2)
 
 	log.Info().Int("id", id).Msg("Successfully retrieved candidature")
 	return candidature, nil
@@ -365,10 +432,47 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 
 	if params.Search != "" {
 		searchPattern := "%" + params.Search + "%"
-		query = query.Where("cnd.full_name ILIKE ? OR cnd.email1 ILIKE ? OR cnd.subject_name ILIKE ?", searchPattern, searchPattern, searchPattern)
+		searchLower := strings.ToLower(params.Search)
+		conds := []string{
+			"cnd.full_name ILIKE ?",
+			"cnd.full_name2 ILIKE ?",
+			"cnd.email1 ILIKE ?",
+			"cnd.subject_name ILIKE ?",
+			"cnd.status ILIKE ?",
+		}
+		args := []interface{}{searchPattern, searchPattern, searchPattern, searchPattern, searchPattern}
+		if searchLower == "solo" {
+			conds = append(conds, "(cnd.full_name2 IS NULL OR cnd.full_name2 = '')")
+		} else if searchLower == "pair" || searchLower == "binôme" {
+			conds = append(conds, "(cnd.full_name2 IS NOT NULL AND cnd.full_name2 != '')")
+		}
+		query = query.Where("("+strings.Join(conds, " OR ")+")", args...)
 	}
 
-	err := query.Order("cnd.id ASC").Scan(ctx)
+	if params.FullName != "" {
+		searchName := "%" + params.FullName + "%"
+		query = query.Where("(cnd.full_name ILIKE ? OR cnd.full_name2 ILIKE ?)", searchName, searchName)
+	}
+
+	if params.CandidatureType == "solo" {
+		query = query.Where("cnd.full_name2 = '' OR cnd.full_name2 IS NULL")
+	} else if params.CandidatureType == "pair" {
+		query = query.Where("cnd.full_name2 != '' AND cnd.full_name2 IS NOT NULL")
+	}
+
+	if params.Gender != "" {
+		query = query.Where("(cnd.gender1 = ? OR cnd.gender2 = ?)", params.Gender, params.Gender)
+	}
+
+	if params.SubjectName != "" {
+		query = query.Where("cnd.subject_name ILIKE ?", "%"+params.SubjectName+"%")
+	}
+
+	if params.Status != "" {
+		query = query.Where("cnd.status = ?", params.Status)
+	}
+
+	err := query.Order("cnd.id DESC").Scan(ctx)
 
 	headers := []string{"Status", "Type", "Full Name 1", "Full Name 2", "Project", "Start Date"}
 	pdfWidths := []float64{40, 30, 60, 60, 60, 40}

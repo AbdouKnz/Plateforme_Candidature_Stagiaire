@@ -135,16 +135,13 @@ export function AboutPage() {
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
                 <TargetIcon className="size-3.5" />
-                Our Mission
+                {t("about.missionBadge")}
               </div>
               <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Enhancing User Experiences
+                {t("about.missionTitle")}
               </h2>
               <p className="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-foreground sm:text-lg">
-                Our mission is to enable our clients to deliver the best possible user experience for their customers.
-                We achieve this by offering tailored advice and innovative solutions that meet the unique needs of each
-                project. At Asteroidea, we believe that every parking challenge is an opportunity to create a seamless
-                and efficient experience for users.
+                {t("about.missionDesc")}
               </p>
             </motion.div>
           </div>
@@ -210,13 +207,13 @@ export function AboutPage() {
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
                 <ZapIcon className="size-3.5" />
-                Technologies
+                {t("about.techBadge")}
               </div>
               <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Our Tech Stack
+                {t("about.techTitle")}
               </h2>
               <p className="mt-3 text-foreground">
-                Modern tools and technologies we work with
+                {t("about.techDesc")}
               </p>
             </motion.div>
 

@@ -29,10 +29,9 @@ func (h *SubjectHandler) CreateSubjectHandler(c *gin.Context) {
 	}
 
 	subject := &domain.Subject{
-		Code:         request.Code,
-		Name:         request.Name,
-		Description:  request.Description,
-		PriorityRank: request.PriorityRank,
+		Code:        request.Code,
+		Name:        request.Name,
+		Description: request.Description,
 	}
 
 	createdSubject, err := h.Service.CreateSubject(c.Request.Context(), subject, request.TechnologyIDs, request.ProfileIDs)

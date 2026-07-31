@@ -3,6 +3,7 @@
 import { CandidatureActionModal } from "./candidatures-action-modal";
 import { SendEmailModal } from "./send-email-modal";
 import { useDeleteCandidature } from "@/hooks/use-candidatures";
+// eslint-disable-next-line no-duplicate-imports
 import { useCandidature } from "@/hooks/use-candidatures";
 import { DialogEnum } from "@/models/alert-model";
 import { useCandidaturesStore } from "@/stores/candidatures-store";

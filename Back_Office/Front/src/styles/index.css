@@ -28,6 +28,16 @@
     cursor: pointer;
   }
 
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    transition: background-color 9999999s ease-in-out 0s !important;
+  }
+
   @media screen and (max-width: 767px) {
     input, select, textarea {
       font-size: 16px !important;

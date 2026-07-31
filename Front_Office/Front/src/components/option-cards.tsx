@@ -40,6 +40,7 @@ export function OptionCards({
       onBlur={onBlur}
       className={cn(
         "grid gap-3",
+        columns === 1 && "grid-cols-1",
         columns === 2 && "sm:grid-cols-2",
         columns === 3 && "sm:grid-cols-3",
       )}

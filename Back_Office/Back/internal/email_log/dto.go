@@ -16,10 +16,14 @@ type EmailLogResponse struct {
 }
 
 type EmailLogParams struct {
-	Search   string `form:"search"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
-	FileType string `form:"file_type"`
+	Search       string `form:"search"`
+	Page         int    `form:"page"`
+	PageSize     int    `form:"pageSize"`
+	FileType     string `form:"file_type"`
+	TemplateType string `form:"template_type"`
+	Status       string `form:"status"`
+	StartDate    string `form:"start_date"`
+	EndDate      string `form:"end_date"`
 }
 
 type PaginationMetadata struct {

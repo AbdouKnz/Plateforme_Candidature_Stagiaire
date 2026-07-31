@@ -1,6 +1,7 @@
 import { Main } from "@/components/layout/main";
 import { KpiCards } from "./components/kpi-cards";
 import { DashboardChartsCard } from "./components/dashboard-charts-card";
+import { RecentApplicationsCard } from "./components/recent-applications-card";
 import { IconLayoutDashboard } from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 
@@ -18,6 +19,7 @@ export function Dashboard() {
       <div className="mt-6 space-y-6">
         <KpiCards />
         <DashboardChartsCard />
+        <RecentApplicationsCard />
       </div>
     </Main>
   );

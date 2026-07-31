@@ -1,22 +1,21 @@
 package config
 
 import (
-	"os"
-	"time"
-
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	"git.asteroidea.co/go-packages/astrogo/pkg/astrolog"
 )
 
 func InitLogger() {
-	zerolog.TimeFieldFormat = time.RFC3339
-	log.Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}).
-		With().
-		Timestamp().
-		Caller().
-		Logger()
 
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	// load logger config
+	cfg := astrolog.CofigLogger{
+		LogLevel:    Configvar.Log.LogLevel,
+		LogToFile:   Configvar.Log.LogToFile,
+		LogFileName: Configvar.Log.LogFileName,
+		Formatted:   Configvar.Log.Formatted, // true = JSON everywhere // false = pretty
+		MaxFileSize: Configvar.Log.MaxFileSize,
+		MaxLogFiles: Configvar.Log.MaxLogFiles,
+	}
 
-	log.Info().Msg("Logger initialized")
+	// init logger
+	astrolog.InitLogger(cfg)
 }

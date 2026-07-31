@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useCandidatures } from "@/hooks/use-candidatures";
 import { useMemo, useState } from "react";
@@ -79,7 +79,7 @@ export function ApplicationsTrend() {
       </CardHeader>
       <CardContent className="p-6">
         <ResponsiveContainer width="100%" height={340}>
-          <LineChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 4 }}>
+          <BarChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" vertical={false} />
             <XAxis
               dataKey="date"
@@ -105,18 +105,15 @@ export function ApplicationsTrend() {
                   </div>
                 );
               }}
-              cursor={{ stroke: "var(--muted)", strokeWidth: 1, strokeDasharray: "4 4" }}
+              cursor={{ fill: "var(--muted)" }}
             />
-            <Line
-              type="monotone"
+            <Bar
               dataKey="applications"
-              stroke="currentColor"
-              strokeWidth={2.5}
-              dot={{ r: 3, fill: "currentColor", className: "fill-violet-500 dark:fill-violet-400" }}
-              activeDot={{ r: 5, className: "fill-violet-500 dark:fill-violet-400 stroke-background stroke-2" }}
-              className="stroke-violet-500 dark:stroke-violet-400"
+              fill="currentColor"
+              radius={[6, 6, 0, 0]}
+              className="fill-violet-500 dark:fill-violet-400"
             />
-          </LineChart>
+          </BarChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>

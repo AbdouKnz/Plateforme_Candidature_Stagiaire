@@ -176,9 +176,23 @@ func (h *CandidatureHandler) GetByIDHandler(c *gin.Context) {
 
 func (h *CandidatureHandler) ParseCandidatureParams(c *gin.Context) CandidatureParams {
 	return CandidatureParams{
-		Search:   c.DefaultQuery("search", ""),
-		FileType: c.DefaultQuery("file_type", "pdf"),
+		Search:          c.DefaultQuery("search", ""),
+		FileType:        c.DefaultQuery("file_type", "pdf"),
+		FullName:        c.DefaultQuery("full_name", ""),
+		CandidatureType: c.DefaultQuery("candidature_type", ""),
+		Gender:          c.DefaultQuery("gender", ""),
+		SubjectName:     c.DefaultQuery("subject_name", ""),
+		Status:          c.DefaultQuery("status", ""),
 	}
+}
+
+func (h *CandidatureHandler) GetRecentHandler(c *gin.Context) {
+	candidatures, err := h.Service.GetRecent(c.Request.Context())
+	if err != nil {
+		pkg.InternalError(c, err.Error())
+		return
+	}
+	pkg.OK(c, ToResponseList(candidatures), nil)
 }
 
 func (h *CandidatureHandler) GetAllHandler(c *gin.Context) {

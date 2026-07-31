@@ -9,7 +9,6 @@ type Subject struct {
 	Code         string  `bun:"code,notnull" json:"code"`
 	Name         string  `bun:"name,notnull" json:"name"`
 	Description  string  `bun:"description,notnull" json:"description"`
-	PriorityRank string  `bun:"priority_rank,notnull" json:"priority_rank"`
 	Status       bool    `bun:"status,notnull,default:true" json:"status"`
 	CreatedAt    string  `bun:"created_at,nullzero,default:current_timestamp" json:"created_at"`
 	UpdatedAt    string  `bun:"updated_at,notnull,default:current_timestamp" json:"updated_at"`

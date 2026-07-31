@@ -9,7 +9,6 @@ export interface Subject {
   profile_ids: number[];
   profile_names: string[];
   description: string;
-  priority_rank: string;
   status: boolean;
   created_at: string;
   updated_at: string;

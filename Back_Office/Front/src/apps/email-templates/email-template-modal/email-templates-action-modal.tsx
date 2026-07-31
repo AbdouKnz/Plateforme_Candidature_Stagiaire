@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -16,6 +18,7 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,12 +35,12 @@ import {
   IconPlus,
   IconEye,
   IconTrash,
-  IconX,
 } from "@tabler/icons-react";
 import { EmailTemplate } from "@/models/email-template-model";
 import {
   useCreateEmailTemplate,
   useUpdateEmailTemplate,
+  useEmailTemplates,
 } from "@/hooks/use-email-templates";
 import { DialogEnum, ModalMode } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -45,12 +48,12 @@ import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/use-permissions";
 
 const typeLabelMap: Record<string, Record<string, string>> = {
-  fr: { confirmation: "Accusé réception", acceptance: "Invitation", disapproval: "Refus", reopening: "Réouverture" },
+  fr: { confirmation: "Accusé de réception", acceptance: "Invitation", disapproval: "Refus", reopening: "Réouverture" },
   en: { confirmation: "Confirmation", acceptance: "Acceptance", disapproval: "Disapproval", reopening: "Reopening" },
 };
 
 const subjectOptions = [
-  { label: "Accusé réception", type: "confirmation", subject: "Accusé réception de votre candidature" },
+  { label: "Accusé de réception", type: "confirmation", subject: "Accusé de réception" },
   { label: "Invitation entretien", type: "acceptance", subject: "Invitation à un entretien" },
   { label: "Refus candidature", type: "disapproval", subject: "Refus de votre candidature" },
   { label: "Réouverture", type: "reopening", subject: "Réouverture des candidatures" },
@@ -96,16 +99,16 @@ export function EmailTemplatesActionModal({
   const isAdd = mode === DialogEnum.ADD;
   const isDelete = mode === DialogEnum.DELETE;
 
+  const { data: existingTemplates } = useEmailTemplates();
   const { modulePermissions } = usePermissions();
   const canUpdateEmailTemplate = modulePermissions.email_templates.canUpdate;
 
+  const availableSubjectOptions = isAdd
+    ? subjectOptions.filter((opt) => !existingTemplates?.some((t) => t.type === opt.type))
+    : subjectOptions;
+
   const { mutate: createEmailTemplate, isPending: isCreating } = useCreateEmailTemplate();
   const { mutate: updateEmailTemplate, isPending: isUpdating } = useUpdateEmailTemplate();
-
-  const handleClose = () => {
-    form.reset();
-    onClose();
-  };
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -116,7 +119,19 @@ export function EmailTemplatesActionModal({
       },
   });
 
+  const handleClose = () => {
+    form.reset();
+    onClose();
+  };
+
   function onSubmit(data: FormData) {
+    const duplicate = existingTemplates?.find(
+      (t) => t.type === data.type && t.id !== emailTemplate?.id
+    );
+    if (duplicate) {
+      form.setError("type", { message: t("email_subject_exists") || "This subject is already used by another template" });
+      return;
+    }
     if (isEdit && emailTemplate) {
       updateEmailTemplate(
         { id: emailTemplate.id, data },
@@ -165,146 +180,123 @@ export function EmailTemplatesActionModal({
     );
   }
 
-  const formContent = (
-    <Form {...form}>
-      <form
-        id="email-template-form"
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col h-full"
-      >
-        <div className="flex items-center justify-between px-6 py-3 border-b shrink-0">
-          <DialogTitle className="text-base font-semibold">
-            {isEdit ? t("edit_email_template") : t("add_email_template")}
-          </DialogTitle>
-          <Button variant="ghost" size="icon" type="button" onClick={handleClose} className="size-8">
-            <IconX className="size-4" />
-          </Button>
-        </div>
-
-        <div className="px-6 pt-4 shrink-0 space-y-3">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <Select
-                  disabled={isView}
-                  value={field.value || ""}
-                  onValueChange={(value) => {
-                    const option = subjectOptions.find((o) => o.type === value);
-                    if (option) {
-                      form.setValue("type", option.type);
-                      form.setValue("subject", option.subject);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t("placeholder_email_subject")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subjectOptions.map((opt) => (
-                      <SelectItem key={opt.type} value={opt.type}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <ScrollArea className="flex-1 px-6 pt-3 pb-4">
-          <FormField
-            control={form.control}
-            name="body"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <Textarea
-                    placeholder={t("placeholder_email_body")}
-                    className="min-h-[300px] text-sm resize-none"
-                    disabled={isView}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </ScrollArea>
-
-        <div className="border-t shrink-0 px-4 py-2 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" type="button" onClick={handleClose}>
-            {t("cancel")}
-          </Button>
-          {!isView && (
-            <Button size="sm" type="submit" form="email-template-form" disabled={isCreating || isUpdating}>
-              {isCreating || isUpdating ? (
-                <Spinner variant="circle" className="size-3.5" />
-              ) : (
-                <>
-                  <IconPlus className="size-3.5 mr-1" />
-                  {t("save")}
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-      </form>
-    </Form>
-  );
-
-  const viewContent = emailTemplate && (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-3 border-b shrink-0">
-        <DialogTitle className="text-base font-semibold">{t("view_email_template")}</DialogTitle>
-        <Button variant="ghost" size="icon" type="button" onClick={handleClose} className="size-8">
-          <IconX className="size-4" />
-        </Button>
-      </div>
-
-      <ScrollArea className="flex-1">
-        <div className="px-6 py-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <span className={cn(
-              "text-[10px] font-medium px-1.5 py-0.5 rounded uppercase inline-block leading-none",
-              viewTypeVariants[emailTemplate.type] || ""
-            )}>
-              {typeLabelMap.fr[emailTemplate.type] || emailTemplate.type}
-            </span>
-          </div>
-          <div className="text-sm font-medium text-foreground border rounded-lg px-3 py-2 bg-muted/20">
-            {emailTemplate.subject || "-"}
-          </div>
-          <div className="text-sm whitespace-pre-wrap text-muted-foreground leading-relaxed min-h-[200px] border rounded-lg px-3 py-3 bg-muted/20">
-            {emailTemplate.body || "-"}
-          </div>
-        </div>
-      </ScrollArea>
-
-      <div className="border-t shrink-0 px-4 py-2 flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" type="button" onClick={handleClose}>
-          {t("close")}
-        </Button>
-        {canUpdateEmailTemplate && (
-          <Button size="sm" type="button" onClick={() => switchToEdit?.()} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            <IconEdit className="size-3.5 mr-1" />
-            {t("edit")}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <Dialog open={open} onOpenChange={(state) => { if (!state) handleClose(); }}>
-      <DialogContent
-        className="sm:max-w-3xl h-[80vh] max-h-[750px] min-h-[500px] p-0 gap-0 overflow-hidden"
-        showCloseButton={false}
-      >
-        {isView ? viewContent : formContent}
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader className="border-b pb-3">
+          <DialogTitle className="flex items-center gap-2">
+            <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+              {isEdit ? <IconEdit className="size-5" /> : isView ? <IconEye className="size-5" /> : <IconPlus className="size-5" />}
+            </div>
+            {isEdit ? t("edit_email_template") : isView ? t("view_email_template") : t("add_new_email_template")}
+          </DialogTitle>
+        </DialogHeader>
+
+        {isView && emailTemplate ? (
+          <ScrollArea className="px-6 py-4 max-h-[60vh]">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className={cn(
+                  "text-[10px] font-medium px-1.5 py-0.5 rounded uppercase inline-block leading-none",
+                  viewTypeVariants[emailTemplate.type] || ""
+                )}>
+                  {typeLabelMap.fr[emailTemplate.type] || emailTemplate.type}
+                </span>
+              </div>
+              <div className="text-sm font-medium text-foreground border rounded-lg px-3 py-2 bg-muted/20">
+                {emailTemplate.subject || "-"}
+              </div>
+              <div className="text-sm whitespace-pre-wrap text-muted-foreground leading-relaxed min-h-[200px] border rounded-lg px-3 py-3 bg-muted/20">
+                {emailTemplate.body || "-"}
+              </div>
+            </div>
+          </ScrollArea>
+        ) : (
+          <Form {...form}>
+            <form
+              id="email-template-form"
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 mt-2 p-0.5"
+            >
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                    <FormLabel className="col-span-2 text-right">
+                      {t("subject")}
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        disabled={isView}
+                        value={field.value || ""}
+                        onValueChange={(value) => {
+                          const option = subjectOptions.find((o) => o.type === value);
+                          if (option) {
+                            form.setValue("type", option.type);
+                            form.setValue("subject", option.subject);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="col-span-4">
+                          <SelectValue placeholder={t("placeholder_email_subject")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableSubjectOptions.map((opt) => (
+                            <SelectItem key={opt.type} value={opt.type}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-3" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="body"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1">
+                    <FormLabel className="col-span-2 text-right pt-2">
+                      {t("body")}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder={t("placeholder_email_body")}
+                        className="col-span-4 min-h-[300px] text-sm resize-none"
+                        disabled={isView}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-3" />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={handleClose}>
+                  {t("cancel")}
+                </Button>
+                {isView && canUpdateEmailTemplate && (
+                  <Button type="button" onClick={() => switchToEdit?.()}>
+                    {t("edit")}
+                  </Button>
+                )}
+                {!isView && (
+                  <Button type="submit" form="email-template-form" disabled={isCreating || isUpdating}>
+                    {isCreating || isUpdating ? (
+                      <Spinner variant="circle" />
+                    ) : (
+                      t("submit")
+                    )}
+                  </Button>
+                )}
+              </DialogFooter>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

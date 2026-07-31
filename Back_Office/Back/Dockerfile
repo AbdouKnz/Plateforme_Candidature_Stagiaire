@@ -29,8 +29,11 @@ WORKDIR /app
 
 # Copy timezone info
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
-RUN mkdir -p /app/utils/export/font
-COPY --from=builder /app/utils/export/font ./utils/export/font
+RUN mkdir -p /app/pkg/export/font
+RUN mkdir -p /app/uploads
+
+COPY --from=builder /app/uploads ./uploads
+COPY --from=builder /app/pkg/export/font ./pkg/export/font
 
 # Copy binary
 COPY --from=builder /app/bin/app /app/app

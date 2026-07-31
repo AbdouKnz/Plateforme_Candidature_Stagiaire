@@ -142,7 +142,7 @@ export function ApplicationForm() {
   })
 
   const applicationType = watch("applicationType")
-  const isPair = applicationType?.toLowerCase() === "pair"
+  const isPair = /^(pair|binome|binôme|par binôme)$/i.test(applicationType ?? "")
 
   const nextMonday = (() => {
     const d = new Date()
@@ -166,7 +166,7 @@ export function ApplicationForm() {
           value={field.value}
           onValueChange={(val) => {
             field.onChange(val)
-            if (val.toLowerCase() !== "pair") {
+            if (!/^(pair|binome|binôme|par binôme)$/i.test(val)) {
               setValue("fullName2", "")
               setValue("email2", "")
               setValue("gender2", undefined as any)
@@ -179,8 +179,14 @@ export function ApplicationForm() {
           }}
           onBlur={undefined}
           invalid={!!errors.applicationType}
-          columns={2}
-          options={types.map((t) => ({
+          columns={types.length >= 2 ? 2 : 1}
+          options={[...types].sort((a, b) => {
+            const aIsSolo = /^(solo|seul)$/i.test(a.name)
+            const bIsSolo = /^(solo|seul)$/i.test(b.name)
+            if (aIsSolo && !bIsSolo) return -1
+            if (!aIsSolo && bIsSolo) return 1
+            return 0
+          }).map((t) => ({
             value: t.name,
             title: t.name.charAt(0).toUpperCase() + t.name.slice(1),
           }))}
@@ -238,7 +244,7 @@ export function ApplicationForm() {
     if (data.cv) formData.append("cv", data.cv)
     if (data.motivationLetter) formData.append("motivation_letter", data.motivationLetter)
 
-    if (data.applicationType?.toLowerCase() === "pair") {
+    if (/^(pair|binome|binôme|par binôme)$/i.test(data.applicationType ?? "")) {
       formData.append("full_name2", data.fullName2 ?? "")
       formData.append("email2", data.email2 ?? "")
       formData.append("gender2", data.gender2 ?? "")
@@ -592,7 +598,7 @@ export function ApplicationForm() {
                             <Field data-invalid={!!errors.cv}>
                               <FieldLabel htmlFor="cv">{t("label.cv")}<span className="text-destructive">*</span></FieldLabel>
                               <FileDropzone id="cv" value={field.value as File | null} onChange={field.onChange} onBlur={field.onBlur} invalid={!!errors.cv} describedBy="cv-help" />
-                              {!errors.cv ? <FieldDescription id="cv-help">{t("label.cv.hint")}</FieldDescription> : null}
+
                               <FieldError errors={[errors.cv]} />
                             </Field>
                           )} />

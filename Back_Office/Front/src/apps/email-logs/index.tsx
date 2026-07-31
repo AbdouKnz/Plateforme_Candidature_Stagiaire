@@ -15,16 +15,29 @@ import { IconInfoCircle, IconSend } from "@tabler/icons-react";
 import { useEmailLogsStore } from "@/stores/email-logs-store";
 import { DialogEnum } from "@/models/alert-model";
 import { exportEmailLogs } from "@/service/email-logs";
+import { FieldTypeEnum } from "@/models/table-model";
 
 export function EmailLogs() {
   const { t } = useTranslation();
-  const { queryParams, setQueryParams, currentEmailLogId, openEmailLog } = useEmailLogsStore();
+  const { queryParams, setQueryParams, resetFilterQueryParams, currentEmailLogId, openEmailLog } = useEmailLogsStore();
   const selectedEmailLogId = openEmailLog === DialogEnum.VIEW ? currentEmailLogId : null;
   const { data: emailLogsResponse, isLoading } = useEmailLogs(queryParams);
   const data = useMemo(() => emailLogsResponse?.data ?? [], [emailLogsResponse?.data]);
   const pagination = useMemo(() => emailLogsResponse?.pagination ?? undefined, [emailLogsResponse?.pagination]);
   const columns = useEmailLogColumns();
   const totalEmailLogs = emailLogsResponse?.pagination?.totalRows;
+
+  const typeItems = [
+    { label: t("email_template_type_confirmation"), value: "confirmation" },
+    { label: t("email_template_type_acceptance"), value: "acceptance" },
+    { label: t("email_template_type_disapproval"), value: "disapproval" },
+    { label: t("email_template_type_reopening"), value: "reopening" },
+  ];
+
+  const statusItems = [
+    { label: t("sent"), value: "sent" },
+    { label: t("failed"), value: "failed" },
+  ];
 
   return (
     <>
@@ -73,6 +86,34 @@ export function EmailLogs() {
               tableSearchProps: {
                 placeholder: t("search_email_logs"),
                 setQueryParams,
+              },
+              tableFilterProps: {
+                setQueryParams,
+                resetFilterQueryParams,
+                formDefaultValues: {
+                  template_type: "",
+                  status: "",
+                  start_date: undefined,
+                },
+                formFields: [
+                  {
+                    name: "template_type",
+                    label: t("email_template_type"),
+                    type: FieldTypeEnum.DROPDOWN,
+                    items: typeItems,
+                  },
+                  {
+                    name: "status",
+                    label: t("status"),
+                    type: FieldTypeEnum.DROPDOWN,
+                    items: statusItems,
+                  },
+                  {
+                    name: "start_date",
+                    label: t("sent_at"),
+                    type: FieldTypeEnum.DATE,
+                  },
+                ],
               },
               exportFunction: (props) =>
                 exportEmailLogs(props.fileType, queryParams),

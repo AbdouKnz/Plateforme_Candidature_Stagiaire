@@ -9,7 +9,7 @@ export const DataTableAdd: React.FC<DataTableAddProps> = ({ tableAddProps }) => 
   return (
     <Button
       size="sm"
-      variant="custom"
+      variant="default"
       className="ml-auto hidden h-9 lg:flex"
       onClick={tableAddProps.addFunction}
     >

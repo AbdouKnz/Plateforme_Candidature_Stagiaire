@@ -84,11 +84,9 @@ export function useCreateEmailTemplate() {
         type: AlertEnum.SUCCESS,
       });
     },
-    onError: () => {
-      showAlert({
-        message: errorMessages[getLang()].create,
-        type: AlertEnum.ERROR,
-      });
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.message || errorMessages[getLang()].create;
+      showAlert({ message: msg, type: AlertEnum.ERROR });
     },
   });
 }
@@ -107,11 +105,9 @@ export function useUpdateEmailTemplate() {
         type: AlertEnum.SUCCESS,
       });
     },
-    onError: () => {
-      showAlert({
-        message: errorMessages[getLang()].update,
-        type: AlertEnum.ERROR,
-      });
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.message || errorMessages[getLang()].update;
+      showAlert({ message: msg, type: AlertEnum.ERROR });
     },
   });
 }

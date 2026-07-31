@@ -12,7 +12,7 @@ import (
 )
 
 func ExportToPDF(c *gin.Context, options ExportOptions) {
-	// Set font path
+	// Set font path (adjust if needed)
 	options.FontPath = "./pkg/export/font/DejaVuSans.ttf"
 
 	// Initialize gofpdf

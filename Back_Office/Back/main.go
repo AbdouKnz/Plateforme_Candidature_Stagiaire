@@ -16,7 +16,7 @@ func init() {
 	config.InitLogger()
 }
 
-// @title						Astro - Backend
+// @title						Astrointern - Backend
 // @version					1.0.0
 // @BasePath					/
 // @securityDefinitions.apikey	Bearer

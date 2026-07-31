@@ -24,14 +24,15 @@ type ConfigMode struct {
 		Name     string `env:"DB_NAME,postgres"`
 		SSLMode  string `env:"DB_SSL_MODE,disable"`
 	}
-	SMTP struct {
-		Host     string `env:"SMTP_HOST,localhost"`
-		Port     int    `env:"SMTP_PORT,587"`
-		Username string `env:"SMTP_USERNAME"`
-		Password string `env:"SMTP_PASSWORD"`
-		From     string `env:"SMTP_FROM"`
-		FromName string `env:"SMTP_FROM_NAME,no-reply"`
-		ImageDir string `env:"SMTP_IMAGE_DIR"`
+
+	// ───────────── LOGGING ─────────────
+	Log struct {
+		LogToFile   bool   `env:"LOG_TO_FILE,false"`
+		MaxFileSize int    `env:"MAX_FILE_SIZE,5"`
+		LogLevel    string `env:"LOG_LEVEL,info"`
+		MaxLogFiles int    `env:"MAX_LOG_FILES,10"`
+		LogFileName string `env:"LOG_FILENAME,cpo_log"`
+		Formatted   bool   `env:"FORMATTED,false"`
 	}
 }
 
@@ -65,13 +66,12 @@ func LoadConfig() {
 	Configvar.Database.Name = getEnv("DB_NAME", "postgres")
 	Configvar.Database.SSLMode = getEnv("DB_SSL_MODE", "disable")
 
-	Configvar.SMTP.Host = getEnv("SMTP_HOST", "localhost")
-	Configvar.SMTP.Port = getEnvInt("SMTP_PORT", 587)
-	Configvar.SMTP.Username = getEnv("SMTP_USERNAME", "")
-	Configvar.SMTP.Password = getEnv("SMTP_PASSWORD", "")
-	Configvar.SMTP.From = getEnv("SMTP_FROM", "")
-	Configvar.SMTP.FromName = getEnv("SMTP_FROM_NAME", "no-reply")
-	Configvar.SMTP.ImageDir = getEnv("SMTP_IMAGE_DIR", "")
+	Configvar.Log.LogToFile = getEnv("LOG_TO_FILE", "false") == "true"
+	Configvar.Log.MaxFileSize = getEnvInt("MAX_FILE_SIZE", 5)
+	Configvar.Log.LogLevel = getEnv("LOG_LEVEL", "trace")
+	Configvar.Log.MaxLogFiles = getEnvInt("MAX_LOG_FILES", 10)
+	Configvar.Log.LogFileName = getEnv("LOG_FILENAME", "cpo_log")
+	Configvar.Log.Formatted = getEnv("FORMATTED", "false") == "true"
 
 	log.Info().Msg("Configuration loaded successfully")
 }

@@ -6,6 +6,8 @@ import (
 	"astro-backend/middleware"
 	"astro-backend/pkg"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/rs/zerolog/log"
@@ -126,8 +128,12 @@ func (s *AuthService) RefreshToken(ctx context.Context, refreshToken string) (st
 		Scan(ctx)
 
 	if err != nil {
-		log.Error().Err(err).Int("user_id", claims.UserID).Msg("Error: User not found")
-		return "", "", fmt.Errorf("user not found: %v", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Warn().Int("user_id", claims.UserID).Msg("User not found")
+			return "", "", fmt.Errorf("invalid refresh token")
+		}
+		log.Error().Err(err).Int("user_id", claims.UserID).Msg("Database error during refresh")
+		return "", "", fmt.Errorf("internal error: %v", err)
 	}
 
 	if !user.Status {
@@ -157,44 +163,44 @@ func (s *AuthService) Logout(ctx context.Context, userID int) (*domain.User, err
 
 	var user domain.User
 
-	log.Info().Int("user_id", userID).Msg("Fetching user from DB with credentials: ")
-
 	err := s.db.NewSelect().
 		Model(&user).
 		Relation("Role").
 		Where("u.id = ?", userID).
 		Scan(ctx)
 
-	if err != nil {
-
-		log.Error().Err(err).Int("user_id", userID).Msg("Error: User not found")
-		return nil, fmt.Errorf("user not found: %v", err)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		log.Error().Err(err).Int("user_id", userID).Msg("Database error during logout")
+		return nil, fmt.Errorf("internal error: %v", err)
 	}
 
-	log.Info().Str("firstName", user.FirstName).Str("lastName", user.LastName).Str("role", user.Role.Name).Msg("User fetched successfully")
+	if err == nil {
+		logoutDetails := domain.ChangeDetail{
+			Type: pkg.LOGOUT,
+			Fields: map[string]domain.FieldChange{
+				"firstName": {
+					LoggedOutValues: user.FirstName,
+					Changed:         true,
+				},
+				"lastName": {
+					LoggedOutValues: user.LastName,
+					Changed:         true,
+				},
+				"role": {
+					LoggedOutValues: user.Role.Name,
+					Changed:         true,
+				},
+			},
+		}
 
-	logoutDetails := domain.ChangeDetail{
-		Type: pkg.LOGOUT,
-		Fields: map[string]domain.FieldChange{
-			"firstName": {
-				LoggedOutValues: user.FirstName,
-				Changed:         true,
-			},
-			"lastName": {
-				LoggedOutValues: user.LastName,
-				Changed:         true,
-			},
-			"role": {
-				LoggedOutValues: user.Role.Name,
-				Changed:         true,
-			},
-		},
+		_, auditErr := audit.LogAction(ctx, s.db, pkg.AUTH_MODULE, pkg.LOGOUT_ACTION, logoutDetails)
+		if auditErr != nil {
+			log.Error().Err(auditErr).Msg("Failed to log audit action for Logout")
+		}
+	} else {
+		log.Warn().Int("user_id", userID).Msg("User not found in DB, logout still proceeds")
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.AUTH_MODULE, pkg.LOGOUT_ACTION, logoutDetails)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to log audit action for Logout")
-	}
 	log.Info().Msg("User logged out successfully")
 	return &user, nil
 }

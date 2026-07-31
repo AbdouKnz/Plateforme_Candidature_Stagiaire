@@ -14,6 +14,7 @@ interface CandidaturesState {
   setCurrentCandidatureId: (id: number | null) => void;
   queryParams: CandidatureQueryParams;
   setQueryParams: (params: Partial<CandidatureQueryParams>) => void;
+  resetFilterQueryParams: () => void;
   emailModalData: EmailModalData | null;
   setEmailModalData: (data: EmailModalData | null) => void;
 }
@@ -27,6 +28,13 @@ export const useCandidaturesStore = create<CandidaturesState>((set) => ({
   setQueryParams: (params) =>
     set((state) => ({
       queryParams: { ...state.queryParams, ...params },
+    })),
+  resetFilterQueryParams: () =>
+    set((state) => ({
+      queryParams: {
+        search: state.queryParams.search,
+        status: state.queryParams.status,
+      },
     })),
   emailModalData: null,
   setEmailModalData: (data) => set({ emailModalData: data }),

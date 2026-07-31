@@ -5,6 +5,11 @@ import type { FileType } from "@/models/export-model";
 
 const CANDIDATURE_ENDPOINT = `/candidatures`;
 
+export const getRecentCandidatures = async (): Promise<Candidature[]> => {
+  const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/recent");
+  return response?.data?.data;
+};
+
 export const getCandidatures = async (params?: CandidatureQueryParams): Promise<Candidature[]> => {
   const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/", { params });
   return response?.data?.data;

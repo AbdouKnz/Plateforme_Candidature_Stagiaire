@@ -82,25 +82,13 @@ export function useTypeColumns(): ColumnDef<Type>[] {
             isBlocked={isBlocked}
             tooltipMessage={tooltipMessage}
             className="justify-end mr-4"
-            onView={(data) => {
-              setCurrentTypeId(data.id);
-              setOpenType(DialogEnum.VIEW);
-            }}
-            onEdit={(data) => {
-              setCurrentTypeId(data.id);
-              setOpenType(DialogEnum.EDIT);
-            }}
-            onDelete={(data) => {
-              setCurrentTypeId(data.id);
-              setOpenType(DialogEnum.DELETE);
-            }}
             onBlock={(data) => {
               setCurrentTypeId(data.id);
               setOpenType(DialogEnum.BLOCK);
             }}
-            canView={modulePermissions.types.canView}
+            canView={false}
             canEdit={modulePermissions.types.canUpdate}
-            canDelete={modulePermissions.types.canDelete}
+            canDelete={false}
           />
         );
       },

@@ -41,7 +41,6 @@ type SubjectResponse struct {
 	Code         string                    `json:"code"`
 	Name         string                    `json:"name"`
 	Description  string                    `json:"description"`
-	PriorityRank string                    `json:"priority_rank"`
 	Technologies []SubjectTechnologyResponse `json:"technologies"`
 }
 
@@ -103,7 +102,6 @@ func subjectToResponse(s *domain.Subject) SubjectResponse {
 		Code:         s.Code,
 		Name:         s.Name,
 		Description:  s.Description,
-		PriorityRank: s.PriorityRank,
 		Technologies: techs,
 	}
 }

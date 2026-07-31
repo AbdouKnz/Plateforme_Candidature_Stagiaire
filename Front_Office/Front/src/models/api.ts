@@ -30,7 +30,6 @@ export interface Subject {
   code: string;
   name: string;
   description: string;
-  priority_rank: string;
   technologies: Technology[];
 }
 

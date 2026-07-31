@@ -62,11 +62,19 @@ func (s *EmailTemplateService) GetByID(ctx context.Context, id int) (*domain.Ema
 
 func (s *EmailTemplateService) Create(ctx context.Context, emailTemplate *domain.EmailTemplate) (*domain.EmailTemplate, error) {
 	log.Info().Msg("Creating a new email template...")
+
+	existing := &domain.EmailTemplate{}
+	err := s.db.NewSelect().Model(existing).Where("type = ?", emailTemplate.Type).Scan(ctx)
+	if err == nil {
+		log.Warn().Str("type", emailTemplate.Type).Msg("Email template with this type already exists")
+		return nil, fmt.Errorf("a template with subject '%s' already exists", emailTemplate.Subject)
+	}
+
 	now := time.Now().Format("2006-01-02 15:04:05")
 	emailTemplate.CreatedAt = now
 	emailTemplate.UpdatedAt = now
 
-	err := s.db.NewInsert().Model(emailTemplate).
+	err = s.db.NewInsert().Model(emailTemplate).
 		Column("type", "subject", "body", "status", "created_at", "updated_at").
 		Returning("id").
 		Scan(ctx)
@@ -88,6 +96,15 @@ func (s *EmailTemplateService) Update(ctx context.Context, id int, request Updat
 	}
 
 	if request.Type != "" {
+		emailTemplate.Type = request.Type
+	}
+	if request.Type != "" && request.Type != emailTemplate.Type {
+		existing := &domain.EmailTemplate{}
+		err := s.db.NewSelect().Model(existing).Where("type = ?", request.Type).Scan(ctx)
+		if err == nil {
+			log.Warn().Str("type", request.Type).Msg("Email template with this type already exists")
+			return nil, fmt.Errorf("a template with this subject already exists")
+		}
 		emailTemplate.Type = request.Type
 	}
 	if request.Subject != "" {

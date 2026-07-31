@@ -75,18 +75,6 @@ export function useSubjectColumns(): ColumnDef<Subject>[] {
       meta: { label: t("profiles") },
     },
     {
-      accessorKey: "priority_rank",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("priority_rank")} />
-      ),
-      cell: ({ row }) => {
-        const rank = row.getValue("priority_rank") as string;
-        const variant = rank === "Critical" ? "destructive" : rank === "High" ? "warning" : "secondary";
-        return <Badge variant={variant}>{rank}</Badge>;
-      },
-      meta: { label: t("priority_rank") },
-    },
-    {
       accessorKey: "status",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("status")} />

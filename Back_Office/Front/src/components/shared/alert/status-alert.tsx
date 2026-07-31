@@ -5,6 +5,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -63,6 +64,9 @@ export function StatusAlert({
             )}
             {displayTitle}
           </AlertDialogTitle>
+          <AlertDialogDescription className="sr-only">
+            {displayTitle}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="mt-2 sm:justify-center">
           <AlertDialogCancel onClick={onClose}>{t("cancel")}</AlertDialogCancel>

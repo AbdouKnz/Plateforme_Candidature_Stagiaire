@@ -13,8 +13,8 @@ import {
   Tags,
   BookOpen,
   FileText,
-  Settings,
   Send,
+  Settings,
 } from 'lucide-react'
 
 export const sidebarData: SidebarData = {
@@ -25,7 +25,7 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: 'Internship',
+      name: 'AstroIntern',
       logo: Command,
     },
   ],
@@ -88,7 +88,7 @@ export const sidebarData: SidebarData = {
       ],
     },
     {
-      title: 'settings', 
+      title: 'settings',
       items: [
         {
           title: 'settings',

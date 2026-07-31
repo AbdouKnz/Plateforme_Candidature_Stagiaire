@@ -10,8 +10,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { IconEye, IconFile, IconTrash } from "@tabler/icons-react";
-import { Candidature } from "@/models/candidature-model";
-import { DialogEnum, DialogType } from "@/models/alert-model";
+import { type Candidature } from "@/models/candidature-model";
+import { DialogEnum, type DialogType } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { cn } from "@/lib/utils";
 
@@ -22,12 +22,14 @@ const statusVariants: Record<string, string> = {
 };
 
 function FileLink({ path, label, fallback }: { path?: string; label: string; fallback?: string }) {
-  if (!path) {
+      console.log("****path:", path);
+
+   if (!path) {
     return <span className="text-sm text-muted-foreground">{fallback || "-"}</span>;
   }
   return (
     <a
-      href={"/" + path}
+      href={path}
       target="_blank"
       rel="noopener noreferrer"
       className="flex items-center gap-1 text-sm text-blue-600 underline"
@@ -64,6 +66,7 @@ export function CandidatureActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   if (isDelete && candidature) {
+    console.log("****candidature:", candidature);
     return (
       <Dialog open={open} onOpenChange={(state) => { if (!state) handleClose(); }}>
         <DialogContent className="sm:max-w-md">
@@ -187,11 +190,11 @@ export function CandidatureActionModal({
                       <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2">{t("second_person_info")}</h3>
                       <div className="space-y-2.5">
                         <div className="flex items-start gap-2">
-                          <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("full_name")}:</span>
+                          <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("full_name2")}:</span>
                           <span className="text-sm break-words">{candidature.full_name2 || np()}</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("gender")}:</span>
+                          <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("gender2")}:</span>
                           <span className="text-sm break-words">{candidature.gender2 || np()}</span>
                         </div>
                         <div className="flex items-start gap-2">

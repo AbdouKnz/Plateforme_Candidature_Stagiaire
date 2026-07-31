@@ -5,6 +5,7 @@ import { FileTextIcon, UploadIcon, XIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "@/context/language-context"
 
 interface FileDropzoneProps {
   id: string
@@ -29,6 +30,7 @@ export function FileDropzone({
   invalid,
   describedBy,
 }: FileDropzoneProps) {
+  const t = useTranslation()
   const inputRef = React.useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = React.useState(false)
 
@@ -63,7 +65,7 @@ export function FileDropzone({
           type="button"
           variant="ghost"
           size="icon"
-          aria-label="Remove file"
+          aria-label={t("dropzone.remove")}
           onClick={() => {
             onChange(null)
             if (inputRef.current) inputRef.current.value = ""
@@ -123,9 +125,9 @@ export function FileDropzone({
       </div>
       <div className="flex flex-col gap-0.5">
         <p className="text-sm font-medium text-foreground">
-          {isDragging ? "Drop your file here" : "Click to upload or drag & drop"}
+          {isDragging ? t("dropzone.drop") : t("dropzone.upload")}
         </p>
-        <p className="text-xs text-muted-foreground">PDF only &middot; up to 8MB</p>
+        <p className="text-xs text-muted-foreground">{t("dropzone.hint")}</p>
       </div>
       <input
         ref={inputRef}

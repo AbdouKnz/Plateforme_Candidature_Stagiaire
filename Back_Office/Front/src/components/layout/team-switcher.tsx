@@ -15,17 +15,15 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
     <SidebarMenu>
       <SidebarMenuItem>
         <div className='flex items-center gap-3 px-3 py-4'>
-          <div className="bg-gradient-to-br from-primary to-primary/70 rounded-xl p-2 shadow-sm">
-            <img
-              src="/images/astero.ico"
-              alt="Asteroidea"
-              width={24}
-              height={24}
-              className="rounded object-contain brightness-0 invert"
-            />
-          </div>
+          <img
+            src="/website.png"
+            alt="Asteroidea"
+            width={36}
+            height={36}
+            className="object-contain shrink-0"
+          />
           <div className='grid flex-1 text-start'>
-            <span className='truncate text-sm font-semibold tracking-tight text-sidebar-foreground'>
+            <span className='truncate text-base font-bold tracking-tight text-white'>
               {activeTeam.name}
             </span>
           </div>

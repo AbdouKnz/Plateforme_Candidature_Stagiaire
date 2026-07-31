@@ -18,9 +18,13 @@ func NewEmailLogHandler(service *EmailLogService) *EmailLogHandler {
 
 func (h *EmailLogHandler) GetAllHandler(c *gin.Context) {
 	params := EmailLogParams{
-		Search:   c.DefaultQuery("search", ""),
-		Page:     pkg.ParseInt(c.DefaultQuery("page", "1")),
-		PageSize: pkg.ParseInt(c.DefaultQuery("pageSize", "10")),
+		Search:       c.DefaultQuery("search", ""),
+		Page:         pkg.ParseInt(c.DefaultQuery("page", "1")),
+		PageSize:     pkg.ParseInt(c.DefaultQuery("pageSize", "10")),
+		TemplateType: c.DefaultQuery("template_type", ""),
+		Status:       c.DefaultQuery("status", ""),
+		StartDate:    c.DefaultQuery("start_date", ""),
+		EndDate:      c.DefaultQuery("end_date", ""),
 	}
 
 	response, err := h.Service.GetAll(c.Request.Context(), params)
@@ -34,8 +38,12 @@ func (h *EmailLogHandler) GetAllHandler(c *gin.Context) {
 
 func (h *EmailLogHandler) ExportHandler(c *gin.Context) {
 	params := EmailLogParams{
-		Search:   c.DefaultQuery("search", ""),
-		FileType: c.DefaultQuery("file_type", "pdf"),
+		Search:       c.DefaultQuery("search", ""),
+		FileType:     c.DefaultQuery("file_type", "pdf"),
+		TemplateType: c.DefaultQuery("template_type", ""),
+		Status:       c.DefaultQuery("status", ""),
+		StartDate:    c.DefaultQuery("start_date", ""),
+		EndDate:      c.DefaultQuery("end_date", ""),
 	}
 
 	exportData, err := h.Service.Export(c.Request.Context(), params)

@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/sidebar'
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
-import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
 import { useFilteredSidebarData } from '@/lib/utils'
 
@@ -26,9 +25,7 @@ export function AppSidebar() {
           <NavGroup key={props.title} {...props} />
         ))}
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={filteredSidebarData.user} />
-      </SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   )

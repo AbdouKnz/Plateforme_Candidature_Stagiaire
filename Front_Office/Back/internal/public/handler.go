@@ -9,6 +9,7 @@ import (
 	"front-office-backend/pkg/fileupload"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog/log"
 )
 
 type PublicHandler struct {
@@ -134,9 +135,13 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 		return
 	}
 
-	if cvPath, err := fileupload.SaveUploadedFile(c, "cv", "uploads/cvs", "cv"); err == nil {
+	cvPath, err := fileupload.SaveUploadedFile(c, "cv", "uploads/cvs", "cv")
+	if err != nil {
+		log.Error().Err(err).Msg("CV upload failed")
+	} else {
 		candidature.PathCV = cvPath
 	}
+
 	if lettrePath, err := fileupload.SaveUploadedFile(c, "motivation_letter", "uploads/lettres", "lm"); err == nil {
 		candidature.PathLettreMotivation = lettrePath
 	}

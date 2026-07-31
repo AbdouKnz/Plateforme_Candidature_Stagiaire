@@ -21,19 +21,29 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { IconEdit, IconPlus, IconEye, IconTrash } from "@tabler/icons-react";
 import { Type } from "@/models/type-model";
-import { useCreateType, useUpdateType } from "@/hooks/use-types";
+import { useCreateType, useUpdateType, useTypes } from "@/hooks/use-types";
 import { DialogEnum, ModalMode } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const TYPE_OPTIONS = [
+  { value: "Solo", label: "Solo" },
+  { value: "Pair", label: "Pair" },
+];
 
 const formSchema = z.object({
   name: z
     .string()
-    .nonempty({ message: "Type name is required." })
-    .min(3, { message: "Type name must be at least 3 characters long." }),
+    .nonempty({ message: "Type name is required." }),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -66,6 +76,7 @@ export function TypesActionModal({
   const { modulePermissions } = usePermissions();
   const canUpdateType = modulePermissions.types.canUpdate;
 
+  const { data: allTypes = [] } = useTypes({});
   const { mutate: createType, isPending: isCreating } = useCreateType();
   const { mutate: updateType, isPending: isUpdating } = useUpdateType();
 
@@ -184,18 +195,34 @@ export function TypesActionModal({
                     {t("type_name")}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t("placeholder_type_name")}
-                      className="col-span-4"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
+                    <Select
+                      disabled={isView || (!isEdit && allTypes.length >= 2 && isAdd)}
+                      value={field.value || ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="col-span-4">
+                        <SelectValue placeholder={t("placeholder_type_name")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TYPE_OPTIONS
+                          .filter((opt) => !allTypes.some((t) => t.name === opt.value && t.status && (!isEdit || t.id !== typ?.id)))
+                          .map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
+                  <FormMessage />
                 </FormItem>
               )}
             />
+            {!isEdit && allTypes.length >= 2 && isAdd && (
+              <p className="text-sm text-destructive text-center">
+                Maximum 2 types allowed. Delete an existing type first.
+              </p>
+            )}
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={handleClose}>

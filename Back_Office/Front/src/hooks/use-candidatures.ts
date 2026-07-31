@@ -9,6 +9,7 @@ import {
 import {
   getCandidatures,
   getCandidatureById,
+  getRecentCandidatures,
   createCandidature,
   updateCandidature,
   deleteCandidature,
@@ -22,6 +23,15 @@ export function useCandidatures(params?: CandidatureQueryParams) {
   return useQuery<Candidature[], Error>({
     queryKey: ["candidatures", params],
     queryFn: () => getCandidatures(params),
+    retry: 1,
+    refetchInterval: 5000,
+  } as UseQueryOptions<Candidature[], Error>);
+}
+
+export function useRecentCandidatures() {
+  return useQuery<Candidature[], Error>({
+    queryKey: ["candidatures", "recent"],
+    queryFn: () => getRecentCandidatures(),
     retry: 1,
     refetchInterval: 5000,
   } as UseQueryOptions<Candidature[], Error>);

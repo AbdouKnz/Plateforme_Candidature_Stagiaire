@@ -9,6 +9,7 @@ interface EmailLogsState {
   setCurrentEmailLogId: (id: number | null) => void;
   queryParams: EmailLogQueryParams;
   setQueryParams: (params: Partial<EmailLogQueryParams>) => void;
+  resetFilterQueryParams: () => void;
 }
 
 export const useEmailLogsStore = create<EmailLogsState>((set) => ({
@@ -20,5 +21,13 @@ export const useEmailLogsStore = create<EmailLogsState>((set) => ({
   setQueryParams: (params) =>
     set((state) => ({
       queryParams: { ...state.queryParams, ...params },
+    })),
+  resetFilterQueryParams: () =>
+    set((state) => ({
+      queryParams: {
+        page: state.queryParams.page,
+        pageSize: state.queryParams.pageSize,
+        search: state.queryParams.search,
+      },
     })),
 }));

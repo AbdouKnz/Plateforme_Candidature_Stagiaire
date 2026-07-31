@@ -19,6 +19,7 @@ type ConfigMode struct {
 		FullRequestLogging bool   `env:"FULL_REQUEST_LOGGING,false"`
 		ApiPrefix          string `env:"API_PREFIX,/backend"`
 		TZ                 string `env:"TZ,UTC"`
+		BackendUrl         string `env:"BACKEND_URL,http://localhost:8070"`
 	}
 
 	// ───────────── DATABASE ─────────────
@@ -68,6 +69,11 @@ type ConfigMode struct {
 	// ───────────── FRONT OFFICE BACKEND ─────────────
 	FrontOffice struct {
 		BackendURL string `env:"FRONT_OFFICE_BACKEND_URL,http://127.0.0.1:8301"`
+	}
+
+	// ───────────── EXPORT ─────────────
+	Export struct {
+		FontPath string `env:"FONT_PATH,./pkg/export/font/DejaVuSans.ttf"`
 	}
 }
 

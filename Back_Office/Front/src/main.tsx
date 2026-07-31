@@ -16,7 +16,7 @@ import './styles/index.css'
 
 
 // Create a new router instance
-const router = createRouter({
+export const router = createRouter({
   routeTree,
   context: { queryClient },
   defaultPreload: 'intent',

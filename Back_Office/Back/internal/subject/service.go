@@ -180,9 +180,6 @@ func (s *SubjectService) UpdateSubject(ctx context.Context, id int, request Upda
 	if request.Description != "" {
 		subject.Description = request.Description
 	}
-	if request.PriorityRank != "" {
-		subject.PriorityRank = request.PriorityRank
-	}
 	if request.Status != nil {
 		subject.Status = *request.Status
 	}

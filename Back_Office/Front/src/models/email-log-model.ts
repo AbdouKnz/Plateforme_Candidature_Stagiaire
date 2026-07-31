@@ -17,6 +17,10 @@ export interface EmailLogQueryParams {
   search?: string;
   page?: number;
   pageSize?: number;
+  template_type?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 export interface EmailLogPagination {

@@ -80,8 +80,13 @@ type CandidatureResponse struct {
 }
 
 type CandidatureParams struct {
-	Search   string `json:"search" form:"search"`
-	FileType string `json:"file_type" form:"file_type"`
+	Search          string `json:"search" form:"search"`
+	FileType        string `json:"file_type" form:"file_type"`
+	FullName        string `json:"full_name" form:"full_name"`
+	CandidatureType string `json:"candidature_type" form:"candidature_type"`
+	Gender          string `json:"gender" form:"gender"`
+	SubjectName     string `json:"subject_name" form:"subject_name"`
+	Status          string `json:"status" form:"status"`
 }
 
 type SendEmailRequest struct {

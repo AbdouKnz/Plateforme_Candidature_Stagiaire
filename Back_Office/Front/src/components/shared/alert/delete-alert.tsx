@@ -43,11 +43,9 @@ export function DeleteAlert({
             </div>
             {confirmDeleteText}
           </AlertDialogTitle>
-          {description && (
-            <AlertDialogDescription className='mt-2 text-center'>
-              {description}
-            </AlertDialogDescription>
-          )}
+          <AlertDialogDescription className={description ? 'mt-2 text-center' : 'sr-only'}>
+            {description || confirmDeleteText || ''}
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className='mt-2 sm:justify-center'>
           <AlertDialogCancel onClick={onClose}> {t('cancel')}</AlertDialogCancel>

@@ -101,26 +101,26 @@ export function useCandidatureColumns(): ColumnDef<Candidature>[] {
     {
       accessorKey: "full_name2",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("full_name")} />
+        <DataTableColumnHeader column={column} title={t("full_name2")} />
       ),
       cell: ({ row }) => (
         <LongText className="max-w-36">{row.original.full_name2 || "-"}</LongText>
       ),
       meta: {
-        label: t("full_name"),
+        label: t("full_name2"),
       },
     },
     {
       accessorKey: "gender2",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("gender")} />
+        <DataTableColumnHeader column={column} title={t("gender2")} />
       ),
       cell: ({ row }) => {
         const gender = row.getValue("gender2") as string;
         return <Badge variant="secondary">{gender || "-"}</Badge>;
       },
       meta: {
-        label: t("gender"),
+        label: t("gender2"),
       },
     },
     {

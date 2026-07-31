@@ -112,7 +112,6 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 				code VARCHAR(255) NOT NULL UNIQUE,
 				name VARCHAR(255) NOT NULL,
 				description TEXT NOT NULL,
-				priority_rank VARCHAR(50) NOT NULL,
 				status BOOLEAN NOT NULL DEFAULT true,
 				created_at TIMESTAMP DEFAULT current_timestamp,
 				updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
@@ -129,9 +128,9 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 			ALTER TABLE subject 
 				ADD COLUMN IF NOT EXISTS code VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '',
-				ADD COLUMN IF NOT EXISTS priority_rank VARCHAR(50) NOT NULL DEFAULT 'Medium',
 				ADD COLUMN IF NOT EXISTS status BOOLEAN NOT NULL DEFAULT true,
 				ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT current_timestamp,
+				DROP COLUMN IF EXISTS priority_rank,
 				DROP COLUMN IF EXISTS technology_id,
 				DROP COLUMN IF EXISTS profile_id
 		`)

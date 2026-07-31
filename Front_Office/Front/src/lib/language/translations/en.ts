@@ -107,7 +107,6 @@ export const en = {
   "step3.title": "Document Upload",
   "step3.description": "Upload your CV and optionally a motivation letter.",
   "label.cv": "CV / Resume",
-  "label.cv.hint": "Required . PDF format only.",
   "label.motivationLetter": "Motivation letter",
   "label.motivationLetter.optional": "(optional)",
   "confirm.title": "Ready to submit?",
@@ -170,7 +169,7 @@ export const en = {
   "internship.devops.description": "CI/CD, cloud infrastructure, monitoring and reliability.",
   "internshipCards.search": "Search internships by title, department or keyword...",
   "internshipCards.noResults": "No internships match your search.",
-  "label.fullName2": "Second candidate full name",
+  "label.fullName2": "Full name",
   "placeholder.fullName2": "Foulen Ben Foulen",
   "label.gender2": "Second candidate gender",
   "label.email2": "Second candidate email",
@@ -278,4 +277,19 @@ export const en = {
   "closed.invalidEmail": "Please enter a valid email address.",
   "closed.privacy": "Privacy",
   "closed.terms": "Terms & conditions",
+
+  "dropzone.upload": "Click to upload or drag & drop",
+  "dropzone.drop": "Drop your file here",
+  "dropzone.hint": "PDF only \u00B7 up to 8MB",
+  "dropzone.remove": "Remove file",
+
+  "home.heroTitle1": "Build Your Future",
+  "home.heroTitle2": "With Us",
+
+  "about.missionBadge": "Our Mission",
+  "about.missionTitle": "Enhancing User Experiences",
+  "about.missionDesc": "Our mission is to enable our clients to deliver the best possible user experience for their customers. We achieve this by offering tailored advice and innovative solutions that meet the unique needs of each project. At Asteroidea, we believe that every parking challenge is an opportunity to create a seamless and efficient experience for users.",
+  "about.techBadge": "Technologies",
+  "about.techTitle": "Our Tech Stack",
+  "about.techDesc": "Modern tools and technologies we work with",
 }

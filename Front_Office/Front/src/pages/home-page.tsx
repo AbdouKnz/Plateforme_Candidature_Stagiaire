@@ -74,9 +74,9 @@ export function HomePage() {
               </div>
 
               <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Build Your Future<br />
+                {t("home.heroTitle1")}<br />
                 <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                  With Us
+                  {t("home.heroTitle2")}
                 </span>
               </h1>
 

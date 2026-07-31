@@ -23,13 +23,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import type { MultiSelectOption } from "@/components/ui/multi-select";
 import { IconEdit, IconPlus, IconEye, IconTrash } from "@tabler/icons-react";
@@ -56,9 +49,6 @@ const formSchema = z.object({
     .string()
     .nonempty({ message: "Description is required." })
     .min(10, { message: "Description must be at least 10 characters long." }),
-  priority_rank: z
-    .string()
-    .nonempty({ message: "Priority rank is required." }),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -109,7 +99,6 @@ export function SubjectsActionModal({
       technology_ids: subject?.technology_ids || [],
       profile_ids: subject?.profile_ids || [],
       description: subject?.description || "",
-      priority_rank: subject?.priority_rank || "",
     },
   });
 
@@ -141,7 +130,6 @@ export function SubjectsActionModal({
         technology_ids: subject.technology_ids || [],
         profile_ids: subject.profile_ids || [],
         description: subject.description || "",
-        priority_rank: subject.priority_rank || "",
       });
     } else {
       form.reset({
@@ -150,7 +138,6 @@ export function SubjectsActionModal({
         technology_ids: [],
         profile_ids: [],
         description: "",
-        priority_rank: "",
       });
     }
   }, [subject, form]);
@@ -200,7 +187,7 @@ export function SubjectsActionModal({
         onClose();
       }}
     >
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader className="border-b pb-3">
           <DialogTitle className="flex items-center gap-2">
             <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
@@ -224,102 +211,94 @@ export function SubjectsActionModal({
           <form
             id="subject-form"
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 mt-2"
+            className="space-y-4 mt-2 p-0.5"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                    <FormLabel className="col-span-2 text-right">
-                      {t("subject_code")}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("placeholder_subject_code")}
-                        className="col-span-4"
-                        autoComplete="off"
-                        disabled={isView}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="col-span-4 col-start-3" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                    <FormLabel className="col-span-2 text-right">
-                      {t("subject_name")}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={t("placeholder_subject_name")}
-                        className="col-span-4"
-                        autoComplete="off"
-                        disabled={isView}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className="col-span-4 col-start-3" />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="technology_ids"
-                render={() => (
-                  <FormItem className="grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1">
-                    <FormLabel className="col-span-2 text-right pt-2">
-                      {t("technologies")}
-                    </FormLabel>
-                    <FormControl>
-                      <div className="col-span-4">
-                        <MultiSelect
-                          options={technologyOptions}
-                          selected={form.watch("technology_ids").map(String)}
-                          onChange={(vals) => form.setValue("technology_ids", vals.map(Number), { shouldValidate: true })}
-                          placeholder={t("select_technologies")}
-                          disabled={isView}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage className="col-span-4 col-start-3" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="profile_ids"
-                render={() => (
-                  <FormItem className="grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1">
-                    <FormLabel className="col-span-2 text-right pt-2">
-                      {t("profiles")}
-                    </FormLabel>
-                    <FormControl>
-                      <div className="col-span-4">
-                        <MultiSelect
-                          options={profileOptions}
-                          selected={form.watch("profile_ids").map(String)}
-                          onChange={(vals) => form.setValue("profile_ids", vals.map(Number), { shouldValidate: true })}
-                          placeholder={t("select_profiles")}
-                          disabled={isView}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage className="col-span-4 col-start-3" />
-                  </FormItem>
-                )}
-              />
-            </div>
-
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("subject_code")}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t("placeholder_subject_code")}
+                      className="col-span-4"
+                      autoComplete="off"
+                      disabled={isView}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("subject_name")}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t("placeholder_subject_name")}
+                      className="col-span-4"
+                      autoComplete="off"
+                      disabled={isView}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="technology_ids"
+              render={() => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("technologies")}
+                  </FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={technologyOptions}
+                      selected={form.watch("technology_ids").map(String)}
+                      onChange={(vals) => form.setValue("technology_ids", vals.map(Number), { shouldValidate: true })}
+                      placeholder={t("select_technologies")}
+                      disabled={isView}
+                      className="col-span-4 h-8 py-1"
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="profile_ids"
+              render={() => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("profiles")}
+                  </FormLabel>
+                  <FormControl>
+                    <MultiSelect
+                      options={profileOptions}
+                      selected={form.watch("profile_ids").map(String)}
+                      onChange={(vals) => form.setValue("profile_ids", vals.map(Number), { shouldValidate: true })}
+                      placeholder={t("select_profiles")}
+                      disabled={isView}
+                      className="col-span-4 h-8 py-1"
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="description"
@@ -336,36 +315,6 @@ export function SubjectsActionModal({
                       disabled={isView}
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="priority_rank"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("priority_rank")}
-                  </FormLabel>
-                  <FormControl>
-                    <Select
-                      disabled={isView}
-                      value={field.value || ""}
-                      onValueChange={field.onChange}
-                    >
-                      <SelectTrigger className="col-span-4">
-                        <SelectValue placeholder={t("select_priority")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Low">{t("priority_low")}</SelectItem>
-                        <SelectItem value="Medium">{t("priority_medium")}</SelectItem>
-                        <SelectItem value="High">{t("priority_high")}</SelectItem>
-                        <SelectItem value="Critical">{t("priority_critical")}</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </FormControl>
                   <FormMessage className="col-span-4 col-start-3" />
                 </FormItem>

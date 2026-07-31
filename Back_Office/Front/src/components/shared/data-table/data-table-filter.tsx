@@ -106,96 +106,94 @@ export function DataTableFilter({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align='end' className='w-80'>
-        <div className='grid gap-4 space-y-2'>
-          <div className='space-y-2'>
-            <h4 className='leading-none font-medium'>{t('filter_options')}</h4>
-            <Separator className='mt-4' />
+      <PopoverContent align='end' className='w-96 p-5'>
+        <div className='space-y-4'>
+          <div>
+            <h4 className='text-sm font-semibold'>{t('filter_options')}</h4>
+            <Separator className='mt-3' />
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
-              <div className='grid gap-2'>
+            <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-4'>
+              <div className='space-y-3'>
                 {tableFilterProps.formFields?.map((field) => (
                   <FormField
                     key={field.name}
                     control={form.control}
                     name={field.name}
                     render={({ field: formField }) => (
-                      <div className='grid grid-cols-3 items-center gap-4'>
-                        <FormLabel className='col-span-1'>
+                      <div className='flex flex-col gap-1.5'>
+                        <FormLabel className='text-xs font-medium text-muted-foreground'>
                           {field.label}
                         </FormLabel>
-                        <FormItem className='col-span-2'>
-                          {field.type === 'dropdown' && (
-                            <SelectDropdown
-                              defaultValue={formField.value}
-                              onValueChange={formField.onChange}
-                              placeholder={`${t('select')} ${field.label.toLowerCase()}`}
-                              items={field.items || []}
-                              className='w-full'
+                        {field.type === 'dropdown' && (
+                          <SelectDropdown
+                            defaultValue={formField.value}
+                            onValueChange={formField.onChange}
+                            placeholder={`${t('select')} ${field.label.toLowerCase()}`}
+                            items={field.items || []}
+                            className='w-full'
+                          />
+                        )}
+                        {field.type === 'date' && (
+                          <DateTimePicker
+                            value={
+                              formField.value
+                                ? new Date(formField.value)
+                                : undefined
+                            }
+                            onChange={(date) =>
+                              handleDateChange(formField, date)
+                            }
+                            granularity='minute'
+                            displayFormat={{ hour24: 'yyyy-MM-dd HH:mm:ss' }}
+                            minDate={
+                              field.name === 'end' && startDate
+                                ? new Date(startDate)
+                                : undefined
+                            }
+                            maxDate={
+                              field.name === 'start' && endDate
+                                ? new Date(endDate)
+                                : undefined
+                            }
+                          />
+                        )}
+                        {field.type === 'text' && (
+                          <FormControl>
+                            <Input
+                              value={formField.value}
+                              onChange={formField.onChange}
+                              placeholder={`${field.label}`}
+                              className='h-9'
                             />
-                          )}
-                          {field.type === 'date' && (
-                            <DateTimePicker
-                              value={
-                                formField.value
-                                  ? new Date(formField.value)
-                                  : undefined
-                              }
-                              onChange={(date) =>
-                                handleDateChange(formField, date)
-                              }
-                              granularity='minute'
-                              displayFormat={{ hour24: 'yyyy-MM-dd HH:mm:ss' }}
-                              // Restrict End Date based on Start Date
-                              minDate={
-                                field.name === 'end' && startDate
-                                  ? new Date(startDate)
-                                  : undefined
-                              }
-                              // Optional: Restrict Start Date based on End Date
-                              maxDate={
-                                field.name === 'start' && endDate
-                                  ? new Date(endDate)
-                                  : undefined
-                              }
-                            />
-                          )}
-                          {field.type === 'text' && (
-                            <FormControl>
-                              <Input
-                                value={formField.value}
-                                onChange={formField.onChange}
-                                placeholder={`${field.label}`}
-                              />
-                            </FormControl>
-                          )}
+                          </FormControl>
+                        )}
 
-                          {field.type === 'number' && (
-                            <FormControl>
-                              <Input
-                                type='number'
-                                value={formField.value}
-                                onChange={(e) =>
-                                  formField.onChange(e.target.value)
-                                }
-                                placeholder={`${field.label}`}
-                              />
-                            </FormControl>
-                          )}
-                        </FormItem>
+                        {field.type === 'number' && (
+                          <FormControl>
+                            <Input
+                              type='number'
+                              value={formField.value}
+                              onChange={(e) =>
+                                formField.onChange(e.target.value)
+                              }
+                              placeholder={`${field.label}`}
+                              className='h-9'
+                            />
+                          </FormControl>
+                        )}
                       </div>
                     )}
                   />
                 ))}
               </div>
 
-              <div className='flex justify-end gap-2'>
-                <Button variant='outline' type='button' onClick={onCancel}>
+              <div className='flex justify-end gap-2 pt-1'>
+                <Button variant='outline' type='button' onClick={onCancel} size='sm'>
                   {t('reset_button')}
                 </Button>
-                <Button type='submit'>{t('apply')}</Button>
+                <Button type='submit' size='sm'>{t('apply')}</Button>
               </div>
             </form>
           </Form>

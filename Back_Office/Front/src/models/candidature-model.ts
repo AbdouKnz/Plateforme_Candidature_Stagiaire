@@ -31,6 +31,10 @@ export interface Candidature {
 export interface CandidatureQueryParams {
   search?: string;
   status?: string;
+  full_name?: string;
+  candidature_type?: string;
+  gender?: string;
+  subject_name?: string;
 }
 
 export type CandidatureResponse = ApiResponse<Candidature>;
