@@ -5,19 +5,14 @@ import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { useTranslation } from "@/context/language-context"
 import { Link } from "react-router-dom"
+import { AuroraBackground } from "@/components/ui/animated-background"
 
 export function FormPage() {
   const t = useTranslation()
 
   return (
-    <div className="relative min-h-svh bg-background">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-32 -right-32 h-[400px] w-[400px] rounded-full bg-gradient-to-br from-primary/8 to-secondary/5 blur-3xl" />
-        <div className="absolute -bottom-32 -left-32 h-[350px] w-[350px] rounded-full bg-gradient-to-tr from-accent/8 to-primary/5 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(109,40,217,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(109,40,217,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
-      </div>
-
-      <div className="relative z-10 flex min-h-svh flex-col">
+    <AuroraBackground className="min-h-svh">
+      <div className="flex min-h-svh flex-col">
         <Navbar />
 
         <main className="flex-1">
@@ -72,6 +67,6 @@ export function FormPage() {
 
         <Footer />
       </div>
-    </div>
+    </AuroraBackground>
   )
 }

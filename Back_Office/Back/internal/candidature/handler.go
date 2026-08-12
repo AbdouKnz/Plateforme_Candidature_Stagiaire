@@ -38,8 +38,9 @@ func (h *CandidatureHandler) CreateHandler(c *gin.Context) {
 		StartDate:   c.PostForm("start_date"),
 		SubjectName: c.PostForm("subject_name"),
 		University:  c.PostForm("university"),
-		University2: c.PostForm("university2"),
 		Status:      c.PostForm("status"),
+		Step:        c.PostForm("step"),
+		Notes:       c.PostForm("notes"),
 	}
 
 	if candidature.FullName == "" || candidature.Email1 == "" || candidature.Gender1 == "" || candidature.Phone1 == "" {
@@ -83,26 +84,35 @@ func (h *CandidatureHandler) UpdateHandler(c *gin.Context) {
 		return
 	}
 
-	c.Request.ParseMultipartForm(32 << 20)
-
-	request := UpdateCandidatureRequest{
-		FullName:    c.PostForm("full_name"),
-		Email1:      c.PostForm("email1"),
-		Gender1:     c.PostForm("gender1"),
-		Phone1:      c.PostForm("phone1"),
-		Degree1:     c.PostForm("degree1"),
-		FullName2:   c.PostForm("full_name2"),
-		Email2:      c.PostForm("email2"),
-		Gender2:     c.PostForm("gender2"),
-		Phone2:      c.PostForm("phone2"),
-		Degree2:     c.PostForm("degree2"),
-		Duration:    c.PostForm("duration"),
-		Methode:     c.PostForm("methode"),
-		StartDate:   c.PostForm("start_date"),
-		SubjectName: c.PostForm("subject_name"),
-		University:  c.PostForm("university"),
-		University2: c.PostForm("university2"),
-		Status:      c.PostForm("status"),
+	var request UpdateCandidatureRequest
+	if strings.Contains(c.ContentType(), "application/json") {
+		if err := c.ShouldBindJSON(&request); err != nil {
+			pkg.BadRequest(c, err.Error())
+			return
+		}
+	} else {
+		c.Request.ParseMultipartForm(32 << 20)
+		request = UpdateCandidatureRequest{
+			FullName:    c.PostForm("full_name"),
+			Email1:      c.PostForm("email1"),
+			Gender1:     c.PostForm("gender1"),
+			Phone1:      c.PostForm("phone1"),
+			Degree1:     c.PostForm("degree1"),
+			FullName2:   c.PostForm("full_name2"),
+			Email2:      c.PostForm("email2"),
+			Gender2:     c.PostForm("gender2"),
+			Phone2:      c.PostForm("phone2"),
+			Degree2:     c.PostForm("degree2"),
+			Duration:    c.PostForm("duration"),
+			Methode:     c.PostForm("methode"),
+			StartDate:   c.PostForm("start_date"),
+			SubjectName: c.PostForm("subject_name"),
+			University:  c.PostForm("university"),
+			University2: c.PostForm("university2"),
+			Status:      c.PostForm("status"),
+			Step:        c.PostForm("step"),
+			Notes:       c.PostForm("notes"),
+		}
 	}
 
 	updated, err := h.Service.Update(c.Request.Context(), id, request)
@@ -181,8 +191,10 @@ func (h *CandidatureHandler) ParseCandidatureParams(c *gin.Context) CandidatureP
 		FullName:        c.DefaultQuery("full_name", ""),
 		CandidatureType: c.DefaultQuery("candidature_type", ""),
 		Gender:          c.DefaultQuery("gender", ""),
+		Degree:          c.DefaultQuery("degree", ""),
 		SubjectName:     c.DefaultQuery("subject_name", ""),
 		Status:          c.DefaultQuery("status", ""),
+		Step:            c.DefaultQuery("step", ""),
 	}
 }
 

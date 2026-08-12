@@ -2,54 +2,166 @@
 
 import { Main } from "@/components/layout/main";
 import { DataTable } from "@/components/shared/data-table";
-import { IconFileDescription, IconInfoCircle } from "@tabler/icons-react";
+import {
+  IconFileDescription,
+  IconInfoCircle,
+  IconCheck,
+  IconX,
+} from "@tabler/icons-react";
 import { useCandidatureColumns } from "./table/candidatures-columns";
 import { CandidatureModals } from "./candidature-modal";
+import { SendEmailModal } from "./candidature-modal/send-email-modal";
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
 import { useCandidatureToolbarProps } from "./table/data";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
-import { useCandidatures } from "@/hooks/use-candidatures";
-import { DialogEnum } from "@/models/alert-model";
+import { useCandidatures, useUpdateCandidature } from "@/hooks/use-candidatures";
+import { DialogEnum, AlertEnum } from "@/models/alert-model";
+import { useAlertStore } from "@/stores/alert-store";
+import type { Candidature } from "@/models/candidature-model";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+
+type BulkTemplateType = "acceptance" | "disapproval";
+
+interface BulkState {
+  queue: Candidature[];
+  index: number;
+  templateType: BulkTemplateType;
+}
+
+import { PIPELINE_STEPS, DEFAULT_STEP, nextPipelineStep } from "./pipeline";
+
+const pipelineSteps = [
+  { value: "all", labelKey: "all" },
+  ...PIPELINE_STEPS.map((step) => ({
+    value: step,
+    labelKey: `pipeline_step_${step}`,
+  })),
+];
 
 const statusTabs = [
   { value: "all", labelKey: "all", color: "text-foreground" },
   { value: "pending", labelKey: "candidature_status_pending", color: "text-amber-600 dark:text-amber-400" },
-  { value: "invited", labelKey: "candidature_status_invited", color: "text-green-600 dark:text-green-400" },
+  { value: "accepted", labelKey: "candidature_status_accepted", color: "text-green-600 dark:text-green-400" },
   { value: "rejected", labelKey: "candidature_status_rejected", color: "text-red-600 dark:text-red-400" },
 ];
 
 export function Candidatures() {
   const { t } = useTranslation();
-  const { queryParams, setQueryParams, currentCandidatureId, openCandidature } = useCandidaturesStore();
+  const { showAlert } = useAlertStore();
+  const { queryParams, currentCandidatureId, openCandidature } = useCandidaturesStore();
   const selectedCandidatureId = openCandidature === DialogEnum.VIEW ? currentCandidatureId : null;
   const [statusFilter, setStatusFilter] = useState("all");
+  const [stepFilter, setStepFilter] = useState("all");
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const [bulk, setBulk] = useState<BulkState | null>(null);
 
-  const { data: candidatures, isLoading } = useCandidatures(queryParams);
+  const { data: candidatures } = useCandidatures(queryParams);
   const allData = useMemo(() => candidatures ?? [], [candidatures]);
 
-  const counts = useMemo(() => {
-    const pending = allData.filter((d) => !d.status || d.status === "pending").length;
-    const invited = allData.filter((d) => d.status === "invited").length;
-    const rejected = allData.filter((d) => d.status === "rejected").length;
-    return { all: allData.length, pending, invited, rejected };
+  const stepCounts = useMemo(() => {
+    const map: Record<string, number> = { all: allData.length };
+    for (const step of PIPELINE_STEPS) {
+      map[step] = allData.filter((d) => (d.step || DEFAULT_STEP) === step).length;
+    }
+    return map;
   }, [allData]);
 
-  const data = useMemo(() => {
-    if (statusFilter === "all") return allData;
-    if (statusFilter === "pending") return allData.filter((d) => !d.status || d.status === "pending");
-    return allData.filter((d) => d.status === statusFilter);
-  }, [allData, statusFilter]);
+  const stepData = useMemo(
+    () =>
+      stepFilter === "all"
+        ? allData
+        : allData.filter((d) => (d.step || DEFAULT_STEP) === stepFilter),
+    [allData, stepFilter]
+  );
 
-  const columns = useCandidatureColumns();
+  const counts = useMemo(() => {
+    const pending = stepData.filter((d) => !d.status || d.status === "pending").length;
+    const accepted = stepData.filter((d) => d.status === "accepted" || d.status === "invited").length;
+    const rejected = stepData.filter((d) => d.status === "rejected").length;
+    return { all: stepData.length, pending, accepted, rejected };
+  }, [stepData]);
+
+  const data = useMemo(() => {
+    if (statusFilter === "all") return stepData;
+    if (statusFilter === "pending") return stepData.filter((d) => !d.status || d.status === "pending");
+    if (statusFilter === "accepted") return stepData.filter((d) => d.status === "accepted" || d.status === "invited");
+    return stepData.filter((d) => d.status === statusFilter);
+  }, [stepData, statusFilter]);
+
+  const selectedRows = useMemo(
+    () => data.filter((c) => rowSelection[String(c.id)]),
+    [data, rowSelection]
+  );
+
+  const updateMutation = useUpdateCandidature();
+
+  const handleBulkAdvance = () => {
+    const queue = selectedRows.filter(
+      (c) => !c.status || c.status === "pending"
+    );
+    if (queue.length === 0) {
+      showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
+      return;
+    }
+    queue.forEach((candidature) => {
+      const next = nextPipelineStep(candidature.step);
+      if (!next) {
+        updateMutation.mutate({
+          id: candidature.id,
+          data: { status: "accepted" },
+        });
+        return;
+      }
+      updateMutation.mutate({
+        id: candidature.id,
+        data: { step: next, status: "pending" },
+      });
+    });
+    setRowSelection({});
+  };
+
+  const startBulk = (templateType: BulkTemplateType) => {
+    const queue = selectedRows.filter(
+      (c) => !c.status || c.status === "pending"
+    );
+    if (queue.length === 0) {
+      showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
+      return;
+    }
+    setBulk({ queue, index: 0, templateType });
+  };
+
+  const handleBulkSent = () => {
+    if (!bulk) return;
+    const isLast = bulk.index + 1 >= bulk.queue.length;
+    if (isLast) {
+      setBulk(null);
+      setRowSelection({});
+    } else {
+      setBulk({ ...bulk, index: bulk.index + 1 });
+    }
+  };
+
+  const handleBulkClose = () => {
+    setBulk(null);
+    setRowSelection({});
+  };
+
+  const columns = useCandidatureColumns(
+    (candidature) => {
+      setStepFilter(candidature.step || DEFAULT_STEP);
+    },
+    stepFilter !== "all"
+  );
   const toolbarProps = useCandidatureToolbarProps();
 
   return (
@@ -89,7 +201,32 @@ export function Candidatures() {
           </Card>
         </div>
 
-        <div className="mt-4 mb-3">
+        <nav className="mt-4 mb-3 flex flex-nowrap gap-0.5 overflow-x-auto pb-1">
+          {pipelineSteps.map((step) => (
+            <Button
+              key={step.value}
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStepFilter(step.value);
+                setRowSelection({});
+              }}
+              className={cn(
+                "justify-start shrink-0 whitespace-nowrap px-2",
+                stepFilter === step.value
+                  ? "bg-muted"
+                  : "hover:bg-accent hover:underline"
+              )}
+            >
+              {t(step.labelKey)}
+              <span className="ml-1.5 text-xs text-muted-foreground">
+                ({stepCounts[step.value] || 0})
+              </span>
+            </Button>
+          ))}
+        </nav>
+
+        <div className="mb-3">
           <Tabs value={statusFilter} onValueChange={setStatusFilter}>
             <TabsList>
               {statusTabs.map((tab) => (
@@ -104,16 +241,67 @@ export function Candidatures() {
           </Tabs>
         </div>
 
+        {stepFilter !== "all" && selectedRows.length > 0 && (
+          <Card className="bg-card mb-3 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3 shadow-sm">
+            <div className="flex items-center gap-3 text-sm font-medium">
+              <span>{t("x_selected", { count: selectedRows.length })}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setRowSelection({})}
+              >
+                {t("clear_selection")}
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-green-600 hover:border-green-300 hover:text-green-700"
+                onClick={handleBulkAdvance}
+                title={t("advance_to_next_step")}
+              >
+                <IconCheck size={16} />
+                {t("bulk_advance")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!!bulk}
+                className="text-red-600 hover:border-red-300 hover:text-red-700"
+                onClick={() => startBulk("disapproval")}
+              >
+                <IconX size={16} />
+                {t("bulk_reject")}
+              </Button>
+            </div>
+          </Card>
+        )}
+
         <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12">
           <DataTable
             data={data}
             columns={columns}
             toolbarProps={toolbarProps}
             selectedRowId={selectedCandidatureId}
+            enableRowSelection={stepFilter !== "all"}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
           />
         </div>
       </Main>
       <CandidatureModals />
+      {bulk && bulk.index < bulk.queue.length && (
+        <SendEmailModal
+          open
+          onClose={handleBulkClose}
+          onSent={handleBulkSent}
+          candidature={bulk.queue[bulk.index]}
+          templateType={bulk.templateType}
+          bulkIndex={bulk.index}
+          bulkTotal={bulk.queue.length}
+        />
+      )}
     </>
   );
 }

@@ -1,10 +1,5 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  RowData,
-  SortingState,
-  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -13,9 +8,17 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type RowData,
+  type RowSelectionState,
+  type SortingState,
+  type Updater,
+  type VisibilityState,
 } from '@tanstack/react-table'
-import { PaginationMetadata } from '@/models/api'
-import { ToolbarProps } from '@/models/table-model'
+import { Checkbox } from '@/components/ui/checkbox'
+import type { PaginationMetadata } from '@/models/api'
+import type { ToolbarProps } from '@/models/table-model'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
 import {
@@ -48,6 +51,9 @@ interface DataTableProps<TData extends RowData> {
   pagination?: PaginationMetadata
   selectedRowId?: string | number | null
   getRowId?: (row: TData) => string | number
+  enableRowSelection?: boolean
+  rowSelection?: Record<string, boolean>
+  onRowSelectionChange?: (updater: Updater<RowSelectionState>) => void
 }
 
 export function DataTable<TData extends RowData>({
@@ -60,25 +66,62 @@ export function DataTable<TData extends RowData>({
   pagination,
   selectedRowId,
   getRowId = (row) => (row as any).id,
+  enableRowSelection = false,
+  rowSelection,
+  onRowSelectionChange,
 }: DataTableProps<TData>) {
   const { t } = useTranslation()
 
-  const [rowSelection, setRowSelection] = useState({})
+  const [internalRowSelection, setInternalRowSelection] = useState({})
+
+  const tableColumns = useMemo(() => {
+    if (!enableRowSelection) return columns
+    return [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label='Select all'
+            className='ml-4 translate-y-[2px]'
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label='Select row'
+            className='ml-4 translate-y-[2px]'
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+        meta: { className: 'w-12' },
+      },
+      ...columns,
+    ] as ColumnDef<TData>[]
+  }, [columns, enableRowSelection])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
   const table = useReactTable({
     data,
-    columns,
+    columns: tableColumns,
     state: {
       sorting,
       columnVisibility,
-      rowSelection,
+      rowSelection: rowSelection ?? internalRowSelection,
       columnFilters,
     },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
+    enableRowSelection,
+    onRowSelectionChange: onRowSelectionChange ?? setInternalRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,

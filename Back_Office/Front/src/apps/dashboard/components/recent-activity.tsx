@@ -5,9 +5,10 @@ import { useMemo } from "react";
 import { CheckCircle2, XCircle, UserPlus, Activity } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-type ActivityType = "new" | "invited" | "rejected";
+type ActivityType = "new" | "accepted" | "invited" | "rejected";
 
 const activityConfig: Record<ActivityType, { icon: typeof CheckCircle2; className: string }> = {
+  accepted: { icon: CheckCircle2, className: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" },
   invited: { icon: CheckCircle2, className: "text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10" },
   rejected: { icon: XCircle, className: "text-red-500 bg-red-50 dark:bg-red-500/10" },
   new: { icon: UserPlus, className: "text-sky-500 bg-sky-50 dark:bg-sky-500/10" },
@@ -24,9 +25,9 @@ export function RecentActivity() {
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
       .slice(0, 10)
       .map(c => {
-        const type: ActivityType = c.status === "invited" ? "invited" : c.status === "rejected" ? "rejected" : "new";
-        const description = type === "invited"
-          ? `${c.full_name} invited`
+        const type: ActivityType = (c.status === "accepted" || c.status === "invited") ? "accepted" : c.status === "rejected" ? "rejected" : "new";
+        const description = (type === "accepted" || type === "invited")
+          ? `${c.full_name} accepted`
           : type === "rejected"
           ? `${c.full_name} rejected`
           : `New application from ${c.full_name}`;

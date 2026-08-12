@@ -206,6 +206,7 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				path_cv2 TEXT DEFAULT '',
 				path_lettre_motivation2 TEXT DEFAULT '',
 				status VARCHAR(50) NOT NULL DEFAULT 'pending',
+				step VARCHAR(50) NOT NULL DEFAULT 'cv_screening',
 				created_at TIMESTAMP DEFAULT current_timestamp,
 				updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 			)
@@ -241,6 +242,7 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS path_cv2 TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS path_lettre_motivation2 TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'pending',
+				ADD COLUMN IF NOT EXISTS step VARCHAR(50) NOT NULL DEFAULT 'cv_screening',
 				ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT current_timestamp
 		`)
 		if err != nil {

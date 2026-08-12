@@ -24,6 +24,8 @@ type CreateCandidatureRequest struct {
 	PathCV2               string `json:"path_cv2,omitempty"`
 	PathLettreMotivation2 string `json:"path_lettre_motivation2,omitempty"`
 	Status                string `json:"status,omitempty"`
+	Step                  string `json:"step,omitempty"`
+	Notes                 string `json:"notes,omitempty"`
 }
 
 type UpdateCandidatureRequest struct {
@@ -49,6 +51,13 @@ type UpdateCandidatureRequest struct {
 	PathCV2               string `json:"path_cv2,omitempty"`
 	PathLettreMotivation2 string `json:"path_lettre_motivation2,omitempty"`
 	Status                string `json:"status,omitempty"`
+	Step                  string `json:"step,omitempty"`
+	ScoreCVScreening      *int   `json:"score_cv_screening,omitempty"`
+	ScoreOnlineQuiz       *int   `json:"score_online_quiz,omitempty"`
+	ScoreOnlineMeeting    *int   `json:"score_online_meeting,omitempty"`
+	ScoreF2FMeeting       *int   `json:"score_f2f_meeting,omitempty"`
+	ScoreFinalDecision    *int   `json:"score_final_decision,omitempty"`
+	Notes                 string `json:"notes,omitempty"`
 }
 
 type CandidatureResponse struct {
@@ -75,6 +84,13 @@ type CandidatureResponse struct {
 	PathCV2               string `json:"path_cv2"`
 	PathLettreMotivation2 string `json:"path_lettre_motivation2"`
 	Status                string `json:"status"`
+	Step                  string `json:"step"`
+	ScoreCVScreening      int    `json:"score_cv_screening"`
+	ScoreOnlineQuiz       int    `json:"score_online_quiz"`
+	ScoreOnlineMeeting    int    `json:"score_online_meeting"`
+	ScoreF2FMeeting       int    `json:"score_f2f_meeting"`
+	ScoreFinalDecision    int    `json:"score_final_decision"`
+	Notes                 string `json:"notes"`
 	CreatedAt             string `json:"created_at"`
 	UpdatedAt             string `json:"updated_at"`
 }
@@ -85,8 +101,10 @@ type CandidatureParams struct {
 	FullName        string `json:"full_name" form:"full_name"`
 	CandidatureType string `json:"candidature_type" form:"candidature_type"`
 	Gender          string `json:"gender" form:"gender"`
+	Degree          string `json:"degree" form:"degree"`
 	SubjectName     string `json:"subject_name" form:"subject_name"`
 	Status          string `json:"status" form:"status"`
+	Step            string `json:"step" form:"step"`
 }
 
 type SendEmailRequest struct {
@@ -126,6 +144,13 @@ func ToResponse(c *domain.Candidature) CandidatureResponse {
 		PathCV2:               c.PathCV2,
 		PathLettreMotivation2: c.PathLettreMotivation2,
 		Status:                c.Status,
+		Step:                  c.Step,
+		ScoreCVScreening:      c.ScoreCVScreening,
+		ScoreOnlineQuiz:       c.ScoreOnlineQuiz,
+		ScoreOnlineMeeting:    c.ScoreOnlineMeeting,
+		ScoreF2FMeeting:       c.ScoreF2FMeeting,
+		ScoreFinalDecision:    c.ScoreFinalDecision,
+		Notes:                 c.Notes,
 		CreatedAt:             c.CreatedAt,
 		UpdatedAt:             c.UpdatedAt,
 	}

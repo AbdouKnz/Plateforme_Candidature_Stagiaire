@@ -13,17 +13,7 @@ import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { useTranslation } from "@/context/language-context"
 import { cn } from "@/lib/utils"
-
-function FloatingShapes() {
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute -top-24 -right-24 h-[500px] w-[500px] rounded-full bg-gradient-to-br from-primary/8 to-secondary/5 blur-3xl animate-pulse-glow" />
-      <div className="absolute -bottom-32 -left-32 h-[400px] w-[400px] rounded-full bg-gradient-to-tr from-accent/8 to-primary/5 blur-3xl animate-float" />
-      <div className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-gradient-to-r from-primary/5 to-secondary/5 blur-3xl animate-float-delayed" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(109,40,217,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(109,40,217,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
-    </div>
-  )
-}
+import { AuroraBackground } from "@/components/ui/animated-background"
 
 export function HomePage() {
   const t = useTranslation()
@@ -31,10 +21,10 @@ export function HomePage() {
   const [page, setPage] = useState(0)
 
   const whyJoinItems = [
-    { icon: CodeIcon, title: t("home.why.realProjects"), desc: t("home.why.realProjectsDesc"), gradient: "from-primary/20 to-primary/5", iconColor: "text-primary" },
-    { icon: UsersIcon, title: t("home.why.expertMentorship"), desc: t("home.why.expertMentorshipDesc"), gradient: "from-secondary/20 to-secondary/5", iconColor: "text-secondary" },
-    { icon: TargetIcon, title: t("home.why.learningOpp"), desc: t("home.why.learningOppDesc"), gradient: "from-accent/20 to-accent/5", iconColor: "text-accent" },
-    { icon: TrendingUpIcon, title: t("home.why.careerGrowth"), desc: t("home.why.careerGrowthDesc"), gradient: "from-primary/20 to-secondary/5", iconColor: "text-primary" },
+    { icon: CodeIcon, title: t("home.why.realProjects"), desc: t("home.why.realProjectsDesc"), gradient: "from-violet-200/90 to-violet-50/60 dark:from-primary/20 dark:to-primary/5", iconColor: "text-violet-700 dark:text-primary" },
+    { icon: UsersIcon, title: t("home.why.expertMentorship"), desc: t("home.why.expertMentorshipDesc"), gradient: "from-purple-200/90 to-purple-50/60 dark:from-secondary/20 dark:to-secondary/5", iconColor: "text-purple-700 dark:text-secondary" },
+    { icon: TargetIcon, title: t("home.why.learningOpp"), desc: t("home.why.learningOppDesc"), gradient: "from-indigo-200/90 to-indigo-50/60 dark:from-accent/20 dark:to-accent/5", iconColor: "text-indigo-700 dark:text-accent" },
+    { icon: TrendingUpIcon, title: t("home.why.careerGrowth"), desc: t("home.why.careerGrowthDesc"), gradient: "from-violet-200/90 to-purple-50/60 dark:from-primary/20 dark:to-secondary/5", iconColor: "text-violet-700 dark:text-primary" },
   ]
 
   const processSteps = [
@@ -53,10 +43,7 @@ export function HomePage() {
   }, [nextPage])
 
   return (
-    <div className="relative min-h-svh bg-background">
-      <FloatingShapes />
-
-      <div className="relative z-10">
+    <AuroraBackground className="min-h-svh">
         <Navbar />
 
         {/* ── Hero + Right Card ── */}
@@ -112,23 +99,23 @@ export function HomePage() {
               transition={{ duration: 0.6, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="relative"
             >
-              <div className="rounded-2xl border border-border/50 bg-card shadow-sm overflow-hidden">
+              <div className="rounded-2xl border border-violet-200/70 bg-white/75 shadow-lg shadow-violet-500/10 backdrop-blur-xl overflow-hidden dark:border-border/50 dark:bg-card dark:shadow-sm">
                 {/* Tab header */}
-                <div className="flex border-b border-border/50">
+                <div className="flex border-b border-violet-200/60 bg-violet-50/40 dark:border-border/50 dark:bg-transparent">
                   <button
                     onClick={() => setPage(0)}
                     className={cn(
                       "flex-1 px-4 py-3 text-xs font-semibold tracking-wide transition-colors relative",
                       page === 0
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground",
+                        ? "text-violet-700 dark:text-primary"
+                        : "text-violet-400/80 hover:text-violet-700 dark:text-muted-foreground dark:hover:text-foreground",
                     )}
                   >
                     {t("form.whyApply")}
                     {page === 0 && (
                       <motion.div
                         layoutId="card-tab"
-                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
+                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-violet-600 rounded-full dark:bg-primary"
                       />
                     )}
                   </button>
@@ -137,15 +124,15 @@ export function HomePage() {
                     className={cn(
                       "flex-1 px-4 py-3 text-xs font-semibold tracking-wide transition-colors relative",
                       page === 1
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground",
+                        ? "text-violet-700 dark:text-primary"
+                        : "text-violet-400/80 hover:text-violet-700 dark:text-muted-foreground dark:hover:text-foreground",
                     )}
                   >
                     {t("form.stepsTitle")}
                     {page === 1 && (
                       <motion.div
                         layoutId="card-tab"
-                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
+                        className="absolute bottom-0 left-2 right-2 h-0.5 bg-violet-600 rounded-full dark:bg-primary"
                       />
                     )}
                   </button>
@@ -166,7 +153,7 @@ export function HomePage() {
                           {whyJoinItems.map((item, i) => (
                             <div
                               key={i}
-                              className="flex flex-col justify-center rounded-xl border border-border/60 bg-muted/40 p-5"
+                              className="flex flex-col justify-center rounded-xl border border-violet-200/60 bg-white/60 p-5 backdrop-blur-sm dark:border-border/60 dark:bg-muted/40"
                             >
                               <div className={cn(
                                 "mb-3 flex size-10 items-center justify-center rounded-xl bg-gradient-to-br",
@@ -194,13 +181,13 @@ export function HomePage() {
                           {processSteps.map((step, i) => (
                             <div key={i} className="relative flex flex-1 items-start gap-4 pl-10">
                               {i < processSteps.length - 1 && (
-                                <div className="absolute left-[13px] top-[32px] bottom-0 w-0.5 bg-gradient-to-b from-primary/25 to-primary/5" />
+                                <div className="absolute left-[13px] top-[32px] bottom-0 w-0.5 bg-gradient-to-b from-violet-400/40 to-violet-200/20 dark:from-primary/25 dark:to-primary/5" />
                               )}
-                              <div className="absolute left-0 top-3 flex size-7 items-center justify-center rounded-full border-2 border-primary/30 bg-card text-xs font-bold text-primary shadow-sm">
+                              <div className="absolute left-0 top-3 flex size-7 items-center justify-center rounded-full border-2 border-violet-300/60 bg-white/90 text-xs font-bold text-violet-700 shadow-sm dark:border-primary/30 dark:bg-card dark:text-primary">
                                 {step.step}
                               </div>
-                              <div className="flex flex-1 items-center gap-3 rounded-xl border border-border/60 bg-muted/40 px-4 py-3 min-h-[56px]">
-                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-base">
+                              <div className="flex flex-1 items-center gap-3 rounded-xl border border-violet-200/60 bg-white/60 px-4 py-3 min-h-[56px] backdrop-blur-sm dark:border-border/60 dark:bg-muted/40">
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-100/80 text-base dark:bg-primary/8">
                                   {step.icon}
                                 </span>
                                 <div className="flex-1 min-w-0">
@@ -224,7 +211,7 @@ export function HomePage() {
                       onClick={() => setPage(i)}
                       className={cn(
                         "size-2 rounded-full transition-all duration-300",
-                        page === i ? "bg-primary w-5" : "bg-muted-foreground/20 hover:bg-muted-foreground/40",
+                        page === i ? "bg-violet-600 w-5 dark:bg-primary" : "bg-violet-300/40 hover:bg-violet-400/60 dark:bg-muted-foreground/20 dark:hover:bg-muted-foreground/40",
                       )}
                     />
                   ))}
@@ -237,7 +224,6 @@ export function HomePage() {
 
 
         <Footer />
-      </div>
-    </div>
+    </AuroraBackground>
   )
 }

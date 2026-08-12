@@ -23,6 +23,8 @@ type CandidatureService struct {
 	db *bun.DB
 }
 
+const defaultStep = "cv_screening"
+
 func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string) (*domain.EmailTemplate, error) {
 	var template domain.EmailTemplate
 	err := s.db.NewSelect().Model(&template).
@@ -90,12 +92,20 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 		query = query.Where("(cnd.gender1 = ? OR cnd.gender2 = ?)", params.Gender, params.Gender)
 	}
 
+	if params.Degree != "" {
+		query = query.Where("(cnd.degree1 = ? OR cnd.degree2 = ?)", params.Degree, params.Degree)
+	}
+
 	if params.SubjectName != "" {
 		query = query.Where("cnd.subject_name ILIKE ?", "%"+params.SubjectName+"%")
 	}
 
 	if params.Status != "" {
 		query = query.Where("cnd.status = ?", params.Status)
+	}
+
+	if params.Step != "" {
+		query = query.Where("cnd.step = ?", params.Step)
 	}
 
 	err := query.Order("cnd.id DESC").Scan(ctx)
@@ -147,6 +157,12 @@ func (s *CandidatureService) GetByID(ctx context.Context, id int) (*domain.Candi
 
 func (s *CandidatureService) Create(ctx context.Context, candidature *domain.Candidature) (*domain.Candidature, error) {
 	log.Info().Str("full_name", candidature.FullName).Msg("Creating a new candidature...")
+	if candidature.Step == "" {
+		candidature.Step = defaultStep
+	}
+	if candidature.Status == "" {
+		candidature.Status = "pending"
+	}
 	candidature.DateApplication = time.Now().Format("2006-01-02")
 	candidature.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
@@ -230,9 +246,6 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	if request.University2 != "" {
 		candidature.University2 = request.University2
 	}
-	if request.DateApplication != "" {
-		candidature.DateApplication = request.DateApplication
-	}
 	if request.PathCV != "" {
 		candidature.PathCV = request.PathCV
 	}
@@ -248,12 +261,18 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	if request.Status != "" {
 		candidature.Status = request.Status
 	}
+	if request.Step != "" {
+		candidature.Step = request.Step
+	}
+	// Notes is always synced so users can also clear an existing note
+	candidature.Notes = request.Notes
 
 	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 
 	_, err = s.db.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("could not update candidature with ID %d: %w", candidature.ID, err)
+		log.Error().Err(err).Int("id", id).Msg("Could not update candidature")
+		return nil, fmt.Errorf("could not update candidature: %w", err)
 	}
 
 	changeDetails := domain.ChangeDetail{
@@ -408,7 +427,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
 	}
 
-	status := "invited"
+	status := "accepted"
 	if req.Type == "disapproval" {
 		status = "rejected"
 	}
@@ -464,12 +483,20 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 		query = query.Where("(cnd.gender1 = ? OR cnd.gender2 = ?)", params.Gender, params.Gender)
 	}
 
+	if params.Degree != "" {
+		query = query.Where("(cnd.degree1 = ? OR cnd.degree2 = ?)", params.Degree, params.Degree)
+	}
+
 	if params.SubjectName != "" {
 		query = query.Where("cnd.subject_name ILIKE ?", "%"+params.SubjectName+"%")
 	}
 
 	if params.Status != "" {
 		query = query.Where("cnd.status = ?", params.Status)
+	}
+
+	if params.Step != "" {
+		query = query.Where("cnd.step = ?", params.Step)
 	}
 
 	err := query.Order("cnd.id DESC").Scan(ctx)

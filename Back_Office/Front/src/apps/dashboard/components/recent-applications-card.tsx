@@ -3,16 +3,44 @@ import { useNavigate } from "@tanstack/react-router";
 import { useRecentCandidatures } from "@/hooks/use-candidatures";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { DialogEnum } from "@/models/alert-model";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Eye, UserRound } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, Eye, FolderKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const statusColors: Record<string, string> = {
-  pending: "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10",
-  invited: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10",
-  rejected: "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10",
+const avatarColors = [
+  "from-violet-500 to-purple-600",
+  "from-sky-500 to-blue-600",
+  "from-emerald-500 to-teal-600",
+  "from-amber-500 to-orange-600",
+  "from-pink-500 to-rose-600",
+  "from-indigo-500 to-blue-600",
+];
+
+const statusStyles: Record<string, { variant: "success" | "warning" | "destructive" | "blue" | "login"; dot: string; labelKey: string }> = {
+  pending: { variant: "warning", dot: "bg-[#FFA559]", labelKey: "candidature_status_pending" },
+  accepted: { variant: "success", dot: "bg-[#6BCF9D]", labelKey: "candidature_status_accepted" },
+  invited: { variant: "success", dot: "bg-[#6BCF9D]", labelKey: "candidature_status_accepted" },
+  rejected: { variant: "destructive", dot: "bg-red-500", labelKey: "candidature_status_rejected" },
+  on_hold: { variant: "blue", dot: "bg-[#3B82F6]", labelKey: "candidature_status_on_hold" },
 };
+
+function statusLabelKey(status: string, gender?: string): string {
+  if (status === "accepted" || status === "invited") {
+    return gender === "Female" ? "candidature_status_accepted_f" : "candidature_status_accepted_m";
+  }
+  return statusStyles[status]?.labelKey ?? "candidature_status_pending";
+}
+
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
 
 export function RecentApplicationsCard() {
   const { t } = useTranslation();
@@ -30,63 +58,98 @@ export function RecentApplicationsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Clock className="size-4" />
-          {t("recent_applications")}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400">
+              <Clock className="size-4" />
+            </div>
+            {t("recent_applications")}
+          </CardTitle>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/candidatures" })}
+            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          >
+            {t("view_all")}
+            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-            Loading...
-          </div>
-        ) : !candidatures || candidatures.length === 0 ? (
-          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-            {t("recent_applications_empty")}
-          </div>
-        ) : (
-          <div className="divide-y">
-            {candidatures.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-              >
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                  <UserRound className="size-4 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{c.full_name}</p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    {c.subject_name && <span className="truncate">{c.subject_name}</span>}
-                    {c.date_application && (
-                      <>
-                        <span className="shrink-0">·</span>
-                        <span className="shrink-0">{c.date_application}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium capitalize",
-                      statusColors[c.status ?? "pending"] ?? statusColors.pending,
-                    )}
-                  >
-                    {c.status || "pending"}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8"
-                    onClick={() => handleView(c.id)}
-                    title={t("view")}
-                  >
-                    <Eye className="size-4" />
-                  </Button>
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 animate-pulse">
+                <div className="size-9 rounded-full bg-muted" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 w-1/3 rounded bg-muted" />
+                  <div className="h-2.5 w-1/2 rounded bg-muted" />
                 </div>
               </div>
             ))}
+          </div>
+        ) : !candidatures || candidatures.length === 0 ? (
+          <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <FolderKanban className="size-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">{t("recent_applications_empty")}</p>
+          </div>
+        ) : (
+          <div className="divide-y">
+            {candidatures.map((c, i) => {
+              const status = c.status ?? "pending";
+              const style = statusStyles[status] ?? statusStyles.pending;
+              return (
+                <div
+                  key={c.id}
+                  className="group flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                >
+                  <div
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xs font-bold text-white shadow-sm",
+                      avatarColors[i % avatarColors.length],
+                    )}
+                  >
+                    {getInitials(c.full_name) || "?"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {c.full_name}
+                    </p>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                      {c.subject_name && (
+                        <span className="flex items-center gap-1 truncate">
+                          <FolderKanban className="size-3 shrink-0" />
+                          <span className="truncate">{c.subject_name}</span>
+                        </span>
+                      )}
+                      {c.date_application && (
+                        <span className="flex shrink-0 items-center gap-1">
+                          <span className="text-muted-foreground/40">·</span>
+                          <CalendarDays className="size-3" />
+                          <span>{c.date_application}</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Badge variant={style.variant} className="w-24 justify-start pl-2.5">
+                      <span className={cn("size-1.5 rounded-full", style.dot)} />
+                      {t(statusLabelKey(status, c.gender1))}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => handleView(c.id)}
+                      title={t("view")}
+                      className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                    >
+                      <Eye className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </CardContent>

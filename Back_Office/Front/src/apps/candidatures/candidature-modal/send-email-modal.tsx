@@ -23,7 +23,7 @@ import { DatePicker } from "@/components/date-picker";
 import { format, nextMonday } from 'date-fns'
 import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Candidature } from "@/models/candidature-model";
+import type { Candidature } from "@/models/candidature-model";
 import { getEmailPreview, sendEmail } from "@/service/candidatures";
 import { useQueryClient } from "@tanstack/react-query";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -33,8 +33,11 @@ import { AlertEnum } from "@/models/alert-model";
 interface SendEmailModalProps {
   open: boolean;
   onClose: () => void;
+  onSent?: () => void;
   candidature: Candidature;
   templateType: "confirmation" | "acceptance" | "disapproval" | "reopening";
+  bulkIndex?: number;
+  bulkTotal?: number;
 }
 
 function formatDate(dateStr: string): string {
@@ -44,7 +47,7 @@ function formatDate(dateStr: string): string {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-export function SendEmailModal({ open, onClose, candidature, templateType }: SendEmailModalProps) {
+export function SendEmailModal({ open, onClose, onSent, candidature, templateType, bulkIndex, bulkTotal }: SendEmailModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { showAlert } = useAlertStore();
@@ -115,11 +118,15 @@ export function SendEmailModal({ open, onClose, candidature, templateType }: Sen
       queryClient.getQueriesData<any[]>({ queryKey: ["candidatures"] })
         .forEach(([queryKey]) => {
           queryClient.setQueryData<any[]>(queryKey, (old) =>
-            old?.map((c) => c.id === candidature.id ? { ...c, status: templateType === "disapproval" ? "rejected" : "invited" } : c),
+            old?.map((c) => c.id === candidature.id ? { ...c, status: templateType === "disapproval" ? "rejected" : "accepted" } : c),
           );
         });
       showAlert({ message: t("email_sent_successfully"), type: AlertEnum.SUCCESS });
-      onClose();
+      if (onSent) {
+        onSent();
+      } else {
+        onClose();
+      }
     } catch (err: any) {
       showAlert({
         message: err?.response?.data?.error || t("error_sending_email"),
@@ -139,6 +146,11 @@ export function SendEmailModal({ open, onClose, candidature, templateType }: Sen
               <IconMail className="size-5" />
             </div>
             {templateType === "disapproval" ? t("send_rejection_email") : t("send_confirmation_email")}
+            {bulkIndex != null && bulkTotal != null && (
+              <span className="ml-auto rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+                {t("bulk_progress", { current: bulkIndex + 1, total: bulkTotal })}
+              </span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -153,9 +165,18 @@ export function SendEmailModal({ open, onClose, candidature, templateType }: Sen
           </div>
         ) : (
           <div className="space-y-4 mt-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <IconEye className="size-4" />
-              {t("send_email_to")} <strong>{candidature.email1}</strong>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              <IconEye className="size-4 shrink-0" />
+              <span>{t("send_email_to")}</span>
+              <strong className="text-foreground">
+                {candidature.full_name || candidature.email1}
+              </strong>
+              <span>({candidature.email1})</span>
+              {candidature.full_name2 && (
+                <span className="text-xs">
+                  + {candidature.full_name2} ({candidature.email2})
+                </span>
+              )}
             </div>
             {templateType === "acceptance" && (
               <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-muted/20">

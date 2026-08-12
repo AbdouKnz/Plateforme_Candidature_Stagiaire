@@ -9,14 +9,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IconEye, IconFile, IconTrash } from "@tabler/icons-react";
+import { IconEye, IconFile, IconTrash, IconNote, IconCheck, IconLoader2 } from "@tabler/icons-react";
 import { type Candidature } from "@/models/candidature-model";
 import { DialogEnum, type DialogType } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { useUpdateCandidature } from "@/hooks/use-candidatures";
+import { useQueryClient } from "@tanstack/react-query";
 
 const statusVariants: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  accepted: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   invited: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
@@ -58,8 +62,34 @@ export function CandidatureActionModal({
   isDeleting,
 }: CandidatureActionModalProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const { mutate: updateCandidature, isPending: isSavingNotes } = useUpdateCandidature();
+
+  const [notes, setNotes] = useState(candidature?.notes ?? "");
+  const [notesSaved, setNotesSaved] = useState(false);
+
+  // Reset notes when the viewed candidature changes
+  useEffect(() => {
+    setNotes(candidature?.notes ?? "");
+    setNotesSaved(false);
+  }, [candidature?.id, candidature?.notes]);
+
   const handleClose = () => {
     onClose();
+  };
+
+  const handleSaveNotes = () => {
+    if (!candidature) return;
+    updateCandidature(
+      { id: candidature.id, data: { notes } },
+      {
+        onSuccess: () => {
+          setNotesSaved(true);
+          queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+          setTimeout(() => setNotesSaved(false), 2500);
+        },
+      }
+    );
   };
 
   const isView = mode === DialogEnum.VIEW;
@@ -246,13 +276,54 @@ export function CandidatureActionModal({
                       <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("subject")}:</span>
                       <span className="text-sm break-words">{candidature.subject_name || np()}</span>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("start_date")}:</span>
-                      <span className="text-sm break-words">{candidature.start_date ? candidature.start_date.split("-").reverse().join("/") : np()}</span>
-                    </div>
+
                     <div className="flex items-start gap-2">
                       <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("duration")}:</span>
                       <span className="text-sm break-words">{candidature.duration || np()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notes / Feedback section */}
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2 flex items-center gap-1.5">
+                    <IconNote className="size-4" />
+                    {t("notes_feedback")}
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    <textarea
+                      id="candidature-notes"
+                      value={notes}
+                      onChange={(e) => {
+                        setNotes(e.target.value);
+                        setNotesSaved(false);
+                      }}
+                      placeholder={t("notes_placeholder")}
+                      rows={4}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-colors"
+                    />
+                    <div className="flex items-center justify-end gap-2">
+                      {notesSaved && (
+                        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                          <IconCheck className="size-3.5" />
+                          {t("notes_saved")}
+                        </span>
+                      )}
+                      <Button
+                        size="sm"
+                        onClick={handleSaveNotes}
+                        disabled={isSavingNotes}
+                        className="gap-1.5"
+                      >
+                        {isSavingNotes ? (
+                          <>
+                            <IconLoader2 className="size-3.5 animate-spin" />
+                            {t("saving")}
+                          </>
+                        ) : (
+                          t("save_notes")
+                        )}
+                      </Button>
                     </div>
                   </div>
                 </div>

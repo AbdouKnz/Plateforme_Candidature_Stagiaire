@@ -24,6 +24,8 @@ export interface Candidature {
   path_cv2: string;
   path_lettre_motivation2: string;
   status?: string;
+  step?: string;
+  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +36,7 @@ export interface CandidatureQueryParams {
   full_name?: string;
   candidature_type?: string;
   gender?: string;
+  degree?: string;
   subject_name?: string;
 }
 

@@ -1,22 +1,26 @@
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DataTableColumnHeader,
 } from "@/components/shared/data-table";
 import { useTranslation } from "react-i18next";
-import { Candidature } from "@/models/candidature-model";
+import type { Candidature } from "@/models/candidature-model";
 import { DialogEnum } from "@/models/alert-model";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
+import { useUpdateCandidature } from "@/hooks/use-candidatures";
+import { nextPipelineStep } from "../pipeline";
+import { PipelineStepCell } from "../pipeline-step-cell";
 import { IconEye, IconCheck, IconX } from "@tabler/icons-react";
 
 const statusVariants: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   invited: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  accepted: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
@@ -25,8 +29,35 @@ const typeVariants: Record<string, string> = {
   pair: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
 };
 
-export function useCandidatureColumns(): ColumnDef<Candidature>[] {
+export function useCandidatureColumns(
+  onView?: (candidature: Candidature) => void,
+  showStepActions = false
+): ColumnDef<Candidature>[] {
   const { t } = useTranslation();
+  const updateMutation = useUpdateCandidature();
+  const { setOpenCandidature, setCurrentCandidatureId } = useCandidaturesStore();
+
+  const handleAdvance = (candidature: Candidature) => {
+    const next = nextPipelineStep(candidature.step);
+    if (!next) {
+      updateMutation.mutate({
+        id: candidature.id,
+        data: { status: "accepted" },
+      });
+      return;
+    }
+    updateMutation.mutate({
+      id: candidature.id,
+      data: { step: next, status: "pending" },
+    });
+  };
+
+  const handleReject = (candidature: Candidature) => {
+    updateMutation.mutate({
+      id: candidature.id,
+      data: { status: "rejected" },
+    });
+  };
 
   return [
     {
@@ -70,6 +101,17 @@ export function useCandidatureColumns(): ColumnDef<Candidature>[] {
       meta: {
         label: t("type"),
         className: "pl-6",
+      },
+    },
+    {
+      accessorKey: "step",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t("step")} />
+      ),
+      cell: ({ row }) => <PipelineStepCell step={row.original.step} />,
+      meta: {
+        label: t("step"),
+        className: "text-left",
       },
     },
     {
@@ -135,20 +177,7 @@ export function useCandidatureColumns(): ColumnDef<Candidature>[] {
         label: t("project"),
       },
     },
-    {
-      accessorKey: "start_date",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("start_date")} />
-      ),
-      cell: ({ row }) => (
-        <Badge variant="outline" className="text-xs">
-          {row.original.start_date || "-"}
-        </Badge>
-      ),
-      meta: {
-        label: t("start_date"),
-      },
-    },
+
     {
       id: "actions",
       header: ({ column }) => (
@@ -159,7 +188,6 @@ export function useCandidatureColumns(): ColumnDef<Candidature>[] {
         />
       ),
       cell: ({ row }) => {
-        const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
         const status = row.original.status || "pending";
         const isPending = status === "pending";
 
@@ -170,40 +198,48 @@ export function useCandidatureColumns(): ColumnDef<Candidature>[] {
               size="sm"
               className="size-8 p-0 text-blue-500 hover:border-blue-300 hover:text-blue-600"
               onClick={() => {
+                onView?.(row.original);
                 setCurrentCandidatureId(row.original.id);
                 setOpenCandidature(DialogEnum.VIEW);
               }}
+              title={t("view_candidature")}
             >
               <IconEye size={16} />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!isPending}
-              className={cn(
-                "size-8 p-0",
-                isPending
-                  ? "text-green-500 hover:border-green-300 hover:text-green-600"
-                  : "text-muted-foreground/40"
-              )}
-              onClick={() => setEmailModalData({ candidatureId: row.original.id, templateType: "acceptance" })}
-            >
-              <IconCheck size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!isPending}
-              className={cn(
-                "size-8 p-0",
-                isPending
-                  ? "text-red-500 hover:border-red-300 hover:text-red-600"
-                  : "text-muted-foreground/40"
-              )}
-              onClick={() => setEmailModalData({ candidatureId: row.original.id, templateType: "disapproval" })}
-            >
-              <IconX size={16} />
-            </Button>
+            {showStepActions && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!isPending}
+                  className={cn(
+                    "size-8 p-0",
+                    isPending
+                      ? "text-green-500 hover:border-green-300 hover:text-green-600"
+                      : "text-muted-foreground/40"
+                  )}
+                  onClick={() => handleAdvance(row.original)}
+                  title={t("advance_to_next_step")}
+                >
+                  <IconCheck size={16} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!isPending}
+                  className={cn(
+                    "size-8 p-0",
+                    isPending
+                      ? "text-red-500 hover:border-red-300 hover:text-red-600"
+                      : "text-muted-foreground/40"
+                  )}
+                  onClick={() => handleReject(row.original)}
+                  title={t("decline_candidature")}
+                >
+                  <IconX size={16} />
+                </Button>
+              </>
+            )}
           </div>
         );
       },

@@ -14,6 +14,10 @@ RUN apk add --no-cache tzdata
 # Copy the entire project
 COPY . .
 
+# Fail the build early if the font isn't present in the build context
+RUN test -f /app/pkg/export/font/DejaVuSans.ttf || \
+    (echo "ERROR: DejaVuSans.ttf missing from build context" && exit 1)
+
 # Build the Go binary as a static executable, without CGO enabled
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /app/bin/app .
 
@@ -33,10 +37,16 @@ RUN mkdir -p /app/pkg/export/font
 RUN mkdir -p /app/uploads
 
 COPY --from=builder /app/uploads ./uploads
-COPY --from=builder /app/pkg/export/font ./pkg/export/font
+
+# Explicitly copy the font file (not just the directory)
+COPY --from=builder /app/pkg/export/font/DejaVuSans.ttf ./pkg/export/font/DejaVuSans.ttf
 
 # Copy binary
 COPY --from=builder /app/bin/app /app/app
+
+# Verify the font actually landed in the final image
+RUN test -f /app/pkg/export/font/DejaVuSans.ttf || \
+    (echo "ERROR: DejaVuSans.ttf missing in final image" && exit 1)
 
 # Set executable permissions
 RUN chmod +x /app/app

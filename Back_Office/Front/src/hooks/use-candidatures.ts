@@ -76,7 +76,8 @@ export function useUpdateCandidature() {
 
   return useMutation<CandidatureResponse, Error, { id: number; data: Partial<Candidature> }>({
     mutationFn: ({ id, data }) => updateCandidature(id, data),
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["candidatures"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

@@ -28,6 +28,13 @@ type Candidature struct {
 	PathCV2               string `bun:"path_cv2" json:"path_cv2"`
 	PathLettreMotivation2 string `bun:"path_lettre_motivation2" json:"path_lettre_motivation2"`
 	Status                string `bun:"status,notnull,default:'pending'" json:"status"`
+	Step                  string `bun:"step,notnull,default:'cv_screening'" json:"step"`
+	ScoreCVScreening      int    `bun:"score_cv_screening,notnull,default:0" json:"score_cv_screening"`
+	ScoreOnlineQuiz       int    `bun:"score_online_quiz,notnull,default:0" json:"score_online_quiz"`
+	ScoreOnlineMeeting    int    `bun:"score_online_meeting,notnull,default:0" json:"score_online_meeting"`
+	ScoreF2FMeeting       int    `bun:"score_f2f_meeting,notnull,default:0" json:"score_f2f_meeting"`
+	ScoreFinalDecision    int    `bun:"score_final_decision,notnull,default:0" json:"score_final_decision"`
+	Notes                 string `bun:"notes" json:"notes"`
 	CreatedAt             string `bun:"created_at,nullzero,default:current_timestamp" json:"created_at"`
 	UpdatedAt             string `bun:"updated_at,notnull,default:current_timestamp" json:"updated_at"`
 }

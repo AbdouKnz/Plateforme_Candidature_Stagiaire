@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { PieChart as PieChartIcon } from "lucide-react";
 
 const COLORS = ["#f59e0b", "#6D5EF5", "#ef4444"];
-const LABELS = ["Pending", "Invited", "Rejected"];
+const LABELS = ["Pending", "Accepted", "Rejected"];
 
 export function StatusDistribution() {
   const { t } = useTranslation();
@@ -15,13 +15,13 @@ export function StatusDistribution() {
   const data = useMemo(() => {
     if (!candidatures) return [];
     const pending = candidatures.filter(c => c.status === "pending" || !c.status).length;
-    const invited = candidatures.filter(c => c.status === "invited").length;
+    const accepted = candidatures.filter(c => c.status === "accepted" || c.status === "invited").length;
     const rejected = candidatures.filter(c => c.status === "rejected").length;
-    const total = pending + invited + rejected;
+    const total = pending + accepted + rejected;
     if (total === 0) return [];
     return [
       { name: "Pending", value: pending, color: COLORS[0] },
-      { name: "Invited", value: invited, color: COLORS[1] },
+      { name: "Accepted", value: accepted, color: COLORS[1] },
       { name: "Rejected", value: rejected, color: COLORS[2] },
     ].filter(item => item.value > 0);
   }, [candidatures]);

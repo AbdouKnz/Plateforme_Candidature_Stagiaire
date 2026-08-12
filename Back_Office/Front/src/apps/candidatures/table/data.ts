@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { useSubjects } from "@/hooks/use-subjects";
+import { useDegrees } from "@/hooks/use-degrees";
 import { exportCandidatures } from "@/service/candidatures";
 import type { FileType } from "@/models/export-model";
 import { FieldTypeEnum } from "@/models/table-model";
@@ -9,11 +10,12 @@ import { FieldTypeEnum } from "@/models/table-model";
 export const useCandidatureToolbarProps = () => {
   const { t } = useTranslation();
   const { data: subjects } = useSubjects();
+  const { data: degrees } = useDegrees();
   const { queryParams, setQueryParams, resetFilterQueryParams } = useCandidaturesStore();
 
   const statusItems = [
     { label: t("candidature_status_pending"), value: "pending" },
-    { label: t("candidature_status_invited"), value: "invited" },
+    { label: t("candidature_status_accepted"), value: "accepted" },
     { label: t("candidature_status_rejected"), value: "rejected" },
   ];
 
@@ -26,6 +28,15 @@ export const useCandidatureToolbarProps = () => {
     { label: t("male"), value: "Male" },
     { label: t("female"), value: "Female" },
   ];
+
+  const degreeItems = useMemo(
+    () =>
+      (degrees ?? []).map((d) => ({
+        label: d.name,
+        value: d.name,
+      })),
+    [degrees],
+  );
 
   const subjectItems = useMemo(
     () =>
@@ -48,6 +59,7 @@ export const useCandidatureToolbarProps = () => {
         status: "",
         candidature_type: "",
         gender: "",
+        degree: "",
         subject_name: "",
       },
       formFields: [
@@ -68,6 +80,12 @@ export const useCandidatureToolbarProps = () => {
           label: t("candidature_filter_gender"),
           type: FieldTypeEnum.DROPDOWN,
           items: genderItems,
+        },
+        {
+          name: "degree",
+          label: t("degree"),
+          type: FieldTypeEnum.DROPDOWN,
+          items: degreeItems,
         },
         {
           name: "subject_name",

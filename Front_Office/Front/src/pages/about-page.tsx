@@ -16,6 +16,7 @@ import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { useTranslation } from "@/context/language-context"
 import { cn } from "@/lib/utils"
+import { AuroraBackground } from "@/components/ui/animated-background"
 
 const values = [
   {
@@ -74,20 +75,13 @@ export function AboutPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="relative min-h-svh bg-background">
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -top-48 -right-48 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary/8 to-secondary/5 blur-3xl" />
-        <div className="absolute -bottom-48 -left-48 h-[400px] w-[400px] rounded-full bg-gradient-to-tr from-accent/8 to-primary/5 blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(109,40,217,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(109,40,217,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
-      </div>
+    <AuroraBackground className="min-h-svh">
       <img
         src="/website.png"
         alt=""
         className="fixed left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-auto opacity-[0.08] dark:opacity-[0.06] select-none object-contain pointer-events-none"
         aria-hidden="true"
       />
-
-      <div className="relative z-10">
         <Navbar />
 
         {/* ── Hero + Story Card ── */}
@@ -284,7 +278,6 @@ export function AboutPage() {
         
 
         <Footer />
-      </div>
-    </div>
+    </AuroraBackground>
   )
 }
