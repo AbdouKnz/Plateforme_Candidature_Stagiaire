@@ -18,6 +18,11 @@ export const STEP_VARIANTS: Record<string, string> = {
   final_decision: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
 };
 
+export function stepPosition(step?: string): number {
+  const idx = PIPELINE_STEPS.indexOf((step || DEFAULT_STEP) as PipelineStep);
+  return idx === -1 ? 0 : idx;
+}
+
 export function nextPipelineStep(step?: string): PipelineStep | null {
   const idx = PIPELINE_STEPS.indexOf((step || DEFAULT_STEP) as PipelineStep);
   if (idx === -1 || idx === PIPELINE_STEPS.length - 1) return null;

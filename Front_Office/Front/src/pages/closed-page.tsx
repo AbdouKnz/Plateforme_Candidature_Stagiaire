@@ -5,6 +5,7 @@ import { useTranslation } from "@/context/language-context"
 import { useTheme } from "@/context/theme-context"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
+import { AuroraBackground } from "@/components/ui/animated-background"
 import { subscribeWaitlist } from "@/service/front-office"
 import { z } from "zod"
 
@@ -151,7 +152,7 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
   }
 
   return (
-    <div className={`relative min-h-svh flex flex-col items-center justify-center overflow-hidden ${isDark ? "bg-[#050505]" : "bg-[#FAF9FF]"}`}>
+    <AuroraBackground className="min-h-svh">
       <svg width="0" height="0" className="absolute">
         <defs>
           <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -160,19 +161,6 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           </linearGradient>
         </defs>
       </svg>
-
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(109,40,217,0.12),transparent_70%)]" />
-        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] rounded-full blur-[120px] opacity-20 bg-[#6D28D9]" />
-        <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[120px] opacity-20 bg-[#8B5CF6]" />
-        <div className="absolute top-[40%] right-[5%] w-[30%] h-[30%] rounded-full blur-[100px] opacity-15 bg-[#A78BFA]" />
-        <div className="absolute inset-0 opacity-[0.15]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23${isDark ? "ffffff" : "6D28D9"}' fill-opacity='${isDark ? "0.06" : "0.04"}'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
-        <div className="absolute inset-0" style={{
-          background: `linear-gradient(180deg, transparent 0%, ${isDark ? "rgba(5,5,5,0.8)" : "rgba(250,249,255,0.8)"} 50%, transparent 100%)`,
-        }} />
-      </div>
 
       <div className="relative flex flex-col items-center justify-center w-full min-h-svh px-6 py-16 sm:px-8">
         <div className="absolute top-6 right-6 flex items-center gap-2">
@@ -285,6 +273,6 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           </button>
         </motion.div>
       </div>
-    </div>
+    </AuroraBackground>
   )
 }

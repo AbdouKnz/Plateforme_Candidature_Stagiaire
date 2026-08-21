@@ -20,6 +20,7 @@ func SubjectsRoutes(r *gin.RouterGroup, db *bun.DB) {
 		subjectGroup.Use(middleware.PermissionMiddleware(pkg.SUBJECTS_PERMISSIONS))
 		{
 			subjectGroup.POST("/", handler.CreateSubjectHandler)
+			subjectGroup.POST("/export", handler.ExportSubjectsHandler)
 			subjectGroup.GET("/:id", handler.GetSubjectByIDHandler)
 			subjectGroup.DELETE("/:id", handler.DeleteSubjectHandler)
 			subjectGroup.PUT("/:id", handler.UpdateSubjectHandler)

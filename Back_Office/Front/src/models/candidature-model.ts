@@ -2,11 +2,15 @@ import type { ApiResponse } from "./api";
 
 export interface Candidature {
   id: number;
+  first_name?: string;
+  last_name?: string;
   full_name: string;
   email1: string;
   gender1: string;
   phone1: string;
   degree1: string;
+  first_name2?: string;
+  last_name2?: string;
   full_name2: string;
   email2: string;
   gender2: string;
@@ -25,6 +29,11 @@ export interface Candidature {
   path_lettre_motivation2: string;
   status?: string;
   step?: string;
+  score_cv_screening?: number;
+  score_online_quiz?: number;
+  score_online_meeting?: number;
+  score_f2f_meeting?: number;
+  score_final_decision?: number;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -38,6 +47,12 @@ export interface CandidatureQueryParams {
   gender?: string;
   degree?: string;
   subject_name?: string;
+}
+
+export interface RejectionReason {
+  key: string;
+  fr: string;
+  en: string;
 }
 
 export type CandidatureResponse = ApiResponse<Candidature>;

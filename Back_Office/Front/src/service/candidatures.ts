@@ -1,6 +1,6 @@
 import axiosApi from "@/lib/axios";
 import { createDownloadLink } from "@/lib/utils";
-import { Candidature, CandidatureResponse, CandidatureQueryParams } from "@/models/candidature-model";
+import { Candidature, CandidatureResponse, CandidatureQueryParams, RejectionReason } from "@/models/candidature-model";
 import type { FileType } from "@/models/export-model";
 
 const CANDIDATURE_ENDPOINT = `/candidatures`;
@@ -55,13 +55,29 @@ export const deleteCandidature = async (id: number): Promise<CandidatureResponse
   return response?.data;
 };
 
-export const sendEmail = async (id: number, data: { type: string }): Promise<CandidatureResponse> => {
+export const sendEmail = async (
+  id: number,
+  data: { type: string; interview_date?: string; interview_time?: string; rejection_reason?: string }
+): Promise<CandidatureResponse> => {
   const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/${id}/send-email`, data);
   return response?.data;
 };
 
-export const getEmailPreview = async (id: number, type: string, interviewDate?: string, interviewTime?: string): Promise<{ to: string; subject: string; body: string }> => {
-  const response = await axiosApi.get(`${CANDIDATURE_ENDPOINT}/${id}/email-preview`, { params: { type, interview_date: interviewDate, interview_time: interviewTime } });
+export const getEmailPreview = async (
+  id: number,
+  type: string,
+  interviewDate?: string,
+  interviewTime?: string,
+  rejectionReason?: string
+): Promise<{ to: string; subject: string; body: string }> => {
+  const response = await axiosApi.get(`${CANDIDATURE_ENDPOINT}/${id}/email-preview`, {
+    params: { type, interview_date: interviewDate, interview_time: interviewTime, rejection_reason: rejectionReason },
+  });
+  return response?.data?.data;
+};
+
+export const getRejectionReasons = async (): Promise<Record<string, RejectionReason[]>> => {
+  const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/rejection-reasons");
   return response?.data?.data;
 };
 

@@ -4,10 +4,13 @@ import (
 	"astro-backend/domain"
 	"astro-backend/internal/audit"
 	"astro-backend/pkg"
+	"astro-backend/pkg/export"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -19,6 +22,19 @@ type SubjectService struct {
 }
 
 func (s *SubjectService) loadRelations(ctx context.Context, subject *domain.Subject) error {
+	if subject.DurationID != nil {
+		var duration domain.Duration
+		err := s.db.NewSelect().Model((*domain.Duration)(nil)).
+			Where("id = ?", *subject.DurationID).
+			Scan(ctx, &duration)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		if err == nil {
+			subject.Duration = &duration
+		}
+	}
+
 	var techIDs []int
 	err := s.db.NewSelect().Model((*domain.SubjectTechnology)(nil)).
 		Column("technology_id").
@@ -87,6 +103,78 @@ func (s *SubjectService) GetAllSubjects(ctx context.Context, params SubjectParam
 
 	log.Info().Int("count", len(subjects)).Msg("Successfully retrieved subjects")
 	return subjects, nil
+}
+
+func (s *SubjectService) ExportSubjects(ctx context.Context, params SubjectParams) (*export.ExportOptions, error) {
+	log.Info().Str("type", params.FileType).Msg("Exporting subjects data")
+
+	subjects, err := s.GetAllSubjects(ctx, params)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to fetch subjects for export")
+		return nil, fmt.Errorf("failed to fetch subjects: %w", err)
+	}
+
+	headers := []string{"ID", "Code", "Name", "Description", "Status", "Duration", "Technologies", "Profiles"}
+	if params.FileType == "excel" {
+		headers = []string{"id", "code", "name", "description", "status", "duration", "technologies", "profiles"}
+	}
+	widths := []float64{15, 25, 40, 50, 18, 25, 40, 40}
+
+	if len(subjects) == 0 {
+		log.Warn().Msg("No subjects found matching criteria")
+		return &export.ExportOptions{
+			TableOrientation: "L",
+			Data:             [][]string{},
+			Widths:           widths,
+			FileName:         "Subjects",
+			Title:            "No subjects data",
+			Headers:          headers,
+		}, nil
+	}
+
+	var data [][]string
+	for _, subj := range subjects {
+		status := "Active"
+		if !subj.Status {
+			status = "Inactive"
+		}
+
+		duration := ""
+		if subj.Duration != nil {
+			duration = subj.Duration.Name
+		}
+
+		techNames := make([]string, 0, len(subj.Technologies))
+		for _, t := range subj.Technologies {
+			techNames = append(techNames, t.Name)
+		}
+
+		profNames := make([]string, 0, len(subj.Profiles))
+		for _, p := range subj.Profiles {
+			profNames = append(profNames, p.Name)
+		}
+
+		row := []string{
+			strconv.Itoa(subj.ID),
+			subj.Code,
+			subj.Name,
+			subj.Description,
+			status,
+			duration,
+			strings.Join(techNames, ", "),
+			strings.Join(profNames, ", "),
+		}
+		data = append(data, row)
+	}
+
+	return &export.ExportOptions{
+		TableOrientation: "L",
+		Data:             data,
+		Widths:           widths,
+		FileName:         "Subjects",
+		Title:            "Subjects Report",
+		Headers:          headers,
+	}, nil
 }
 
 func (s *SubjectService) GetSubjectByID(ctx context.Context, id int) (*domain.Subject, error) {
@@ -182,6 +270,18 @@ func (s *SubjectService) UpdateSubject(ctx context.Context, id int, request Upda
 	}
 	if request.Status != nil {
 		subject.Status = *request.Status
+	}
+	if request.OnlineQuizLink != nil {
+		subject.OnlineQuizLink = *request.OnlineQuizLink
+	}
+	if request.OnlineMeetingLink != nil {
+		subject.OnlineMeetingLink = *request.OnlineMeetingLink
+	}
+	if request.F2FMeetingLink != nil {
+		subject.F2FMeetingLink = *request.F2FMeetingLink
+	}
+	if request.DurationID != nil {
+		subject.DurationID = request.DurationID
 	}
 
 	subject.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")

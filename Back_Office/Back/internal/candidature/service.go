@@ -25,6 +25,21 @@ type CandidatureService struct {
 
 const defaultStep = "cv_screening"
 
+func currentStepScore(c *domain.Candidature) int {
+	switch c.Step {
+	case "online_quiz":
+		return c.ScoreOnlineQuiz
+	case "online_meeting":
+		return c.ScoreOnlineMeeting
+	case "f2f_meeting":
+		return c.ScoreF2FMeeting
+	case "final_decision":
+		return c.ScoreFinalDecision
+	default:
+		return c.ScoreCVScreening
+	}
+}
+
 func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string) (*domain.EmailTemplate, error) {
 	var template domain.EmailTemplate
 	err := s.db.NewSelect().Model(&template).
@@ -35,6 +50,20 @@ func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templat
 		return nil, err
 	}
 	return &template, nil
+}
+
+// replaceRejectionReasonPlaceholders replaces every supported rejection-reason
+// placeholder with the selected reason. Supported placeholders:
+// {Motif}, {{MotifRefus}}, {{MotifRejet}}, [Motif de refus], [MotifRefus], [Motif de rejet]
+func replaceRejectionReasonPlaceholders(s string, reason string) string {
+	s = strings.ReplaceAll(s, "{Motif}", reason)
+	s = strings.ReplaceAll(s, "{motif}", reason)
+	s = strings.ReplaceAll(s, "{{MotifRefus}}", reason)
+	s = strings.ReplaceAll(s, "{{MotifRejet}}", reason)
+	s = strings.ReplaceAll(s, "[Motif de refus]", reason)
+	s = strings.ReplaceAll(s, "[MotifRefus]", reason)
+	s = strings.ReplaceAll(s, "[Motif de rejet]", reason)
+	return s
 }
 
 func (s *CandidatureService) GetRecent(ctx context.Context) ([]*domain.Candidature, error) {
@@ -122,9 +151,21 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 	return candidatures, nil
 }
 
-func (s *CandidatureService) GetByID(ctx context.Context, id int) (*domain.Candidature, error) {
+// storedRelPath returns the path portion after the last "uploads/" segment,
+// so polluted rows (already-prefixed full URLs) are normalized to "cvs/file.pdf".
+func storedRelPath(path string) string {
+	idx := strings.LastIndex(path, "uploads/")
+	if idx < 0 {
+		return path
+	}
+	return path[idx+len("uploads/"):]
+}
+
+// getStoredByID loads a candidature from the database WITHOUT mutating the
+// stored file paths into public URLs. Persistence flows must use this so they
+// never write API-rendered (prefixed) paths back into the database.
+func (s *CandidatureService) getStoredByID(ctx context.Context, id int) (*domain.Candidature, error) {
 	log.Info().Int("id", id).Msg("Fetching candidature by ID...")
-	backendUrl := config.Configvar.Server.BackendUrl
 
 	candidature := &domain.Candidature{}
 	err := s.db.NewSelect().Model(candidature).
@@ -139,11 +180,22 @@ func (s *CandidatureService) GetByID(ctx context.Context, id int) (*domain.Candi
 		return nil, fmt.Errorf("could not fetch candidature: %w", err)
 	}
 
+	return candidature, nil
+}
+
+func (s *CandidatureService) GetByID(ctx context.Context, id int) (*domain.Candidature, error) {
+	backendUrl := config.Configvar.Server.BackendUrl
+
+	candidature, err := s.getStoredByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
 	addBackendURL := func(path string) string {
 		if path == "" {
 			return path
 		}
-		return backendUrl + path
+		return strings.TrimRight(backendUrl, "/") + "/api/uploads/" + storedRelPath(path)
 	}
 
 	candidature.PathCV = addBackendURL(candidature.PathCV)
@@ -193,7 +245,7 @@ func (s *CandidatureService) Create(ctx context.Context, candidature *domain.Can
 func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateCandidatureRequest) (*domain.Candidature, error) {
 	log.Info().Int("id", id).Msg("Updating candidature...")
 
-	candidature, err := s.GetByID(ctx, id)
+	candidature, err := s.getStoredByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -264,8 +316,29 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	if request.Step != "" {
 		candidature.Step = request.Step
 	}
+	if request.ScoreCVScreening != nil {
+		candidature.ScoreCVScreening = int(*request.ScoreCVScreening)
+	}
+	if request.ScoreOnlineQuiz != nil {
+		candidature.ScoreOnlineQuiz = int(*request.ScoreOnlineQuiz)
+	}
+	if request.ScoreOnlineMeeting != nil {
+		candidature.ScoreOnlineMeeting = int(*request.ScoreOnlineMeeting)
+	}
+	if request.ScoreF2FMeeting != nil {
+		candidature.ScoreF2FMeeting = int(*request.ScoreF2FMeeting)
+	}
+	if request.ScoreFinalDecision != nil {
+		candidature.ScoreFinalDecision = int(*request.ScoreFinalDecision)
+	}
 	// Notes is always synced so users can also clear an existing note
 	candidature.Notes = request.Notes
+
+	if request.Status == "accepted" || request.Status == "rejected" {
+		if currentStepScore(candidature) <= 0 {
+			return nil, fmt.Errorf("cannot set status to %s: a score is required for the current step (%s)", request.Status, candidature.Step)
+		}
+	}
 
 	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 
@@ -292,7 +365,7 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	return candidature, nil
 }
 
-func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, interviewDate string, interviewTime string) (*EmailPreviewResponse, error) {
+func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, interviewDate string, interviewTime string, rejectionReason string) (*EmailPreviewResponse, error) {
 	candidature, err := s.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -312,6 +385,7 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 	subject = strings.ReplaceAll(subject, "[nom]", candidature.FullName)
 	subject = strings.ReplaceAll(subject, "{{DateEntretien}}", interviewDate)
 	subject = strings.ReplaceAll(subject, "{{HeureEntretien}}", interviewTime)
+	subject = replaceRejectionReasonPlaceholders(subject, rejectionReason)
 
 	body := template.Body
 	body = strings.ReplaceAll(body, "{{NomCandidat}}", candidature.FullName)
@@ -323,6 +397,7 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 	body = strings.ReplaceAll(body, "{{HeureEntretien}}", interviewTime)
 	body = strings.ReplaceAll(body, "[Date]", interviewDate)
 	body = strings.ReplaceAll(body, "[Heure]", interviewTime)
+	body = replaceRejectionReasonPlaceholders(body, rejectionReason)
 
 	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", "Adresse")
 	body = strings.ReplaceAll(body, "[LienGoogleMaps]", "Adresse")
@@ -338,7 +413,7 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmailRequest) error {
 	log.Info().Int("id", id).Str("type", req.Type).Msg("Sending email for candidature...")
 
-	candidature, err := s.GetByID(ctx, id)
+	candidature, err := s.getStoredByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -361,6 +436,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	subject = strings.ReplaceAll(subject, "[nom]", candidature.FullName)
 	subject = strings.ReplaceAll(subject, "{{DateEntretien}}", req.InterviewDate)
 	subject = strings.ReplaceAll(subject, "{{HeureEntretien}}", req.InterviewTime)
+	subject = replaceRejectionReasonPlaceholders(subject, req.RejectionReason)
 
 	body := template.Body
 	body = strings.ReplaceAll(body, "{{NomCandidat}}", candidature.FullName)
@@ -372,6 +448,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	body = strings.ReplaceAll(body, "{{HeureEntretien}}", req.InterviewTime)
 	body = strings.ReplaceAll(body, "[Date]", req.InterviewDate)
 	body = strings.ReplaceAll(body, "[Heure]", req.InterviewTime)
+	body = replaceRejectionReasonPlaceholders(body, req.RejectionReason)
 
 	googleMapsLink := `<a href="https://www.google.com/maps/place/Asteroidea/@36.7683782,10.2420193,909m/data=!3m2!1e3!4b1!4m6!3m5!1s0x12fd370003d7b35b:0xba18eae5e43a8557!8m2!3d36.7683739!4d10.2445942!16s%2Fg%2F11vy5k2_b2?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D">Adresse</a>`
 	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", googleMapsLink)
@@ -431,6 +508,13 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	if req.Type == "disapproval" {
 		status = "rejected"
 	}
+
+	if req.Type == "disapproval" {
+		if currentStepScore(candidature) <= 0 {
+			return fmt.Errorf("cannot reject: a score is required for the current step (%s)", candidature.Step)
+		}
+	}
+
 	candidature.Status = status
 	candidature.UpdatedAt = now
 

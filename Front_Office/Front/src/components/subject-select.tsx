@@ -19,6 +19,7 @@ interface SubjectSelectProps {
   options: readonly SubjectOption[]
   selected: string[]
   onChange: (ids: string[]) => void
+  fieldName?: string
   invalid?: boolean
 }
 
@@ -26,6 +27,7 @@ export function SubjectSelect({
   options,
   selected,
   onChange,
+  fieldName,
   invalid,
 }: SubjectSelectProps) {
   const [open, setOpen] = React.useState(false)
@@ -54,7 +56,7 @@ export function SubjectSelect({
         : t("subjectSelect.nSelected", { n: selected.length })
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} data-field={fieldName} className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}

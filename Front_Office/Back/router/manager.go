@@ -31,7 +31,7 @@ func RouterManager(db *bun.DB) {
 
 	r.NoRoute(func(c *gin.Context) { pkg.HttpError(c, 404, "Route not found") })
 
-	r.Static("/api/uploads", "./uploads")
+	r.Static("/api/uploads", config.Configvar.Server.UploadsPath)
 
 	InitRouter(r, db)
 

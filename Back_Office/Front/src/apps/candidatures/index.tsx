@@ -4,7 +4,6 @@ import { Main } from "@/components/layout/main";
 import { DataTable } from "@/components/shared/data-table";
 import {
   IconFileDescription,
-  IconInfoCircle,
   IconCheck,
   IconX,
 } from "@tabler/icons-react";
@@ -16,11 +15,6 @@ import { useMemo, useState } from "react";
 import { useCandidatureToolbarProps } from "./table/data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { useCandidatures, useUpdateCandidature } from "@/hooks/use-candidatures";
 import { DialogEnum, AlertEnum } from "@/models/alert-model";
@@ -38,14 +32,8 @@ interface BulkState {
 }
 
 import { PIPELINE_STEPS, DEFAULT_STEP, nextPipelineStep } from "./pipeline";
-
-const pipelineSteps = [
-  { value: "all", labelKey: "all" },
-  ...PIPELINE_STEPS.map((step) => ({
-    value: step,
-    labelKey: `pipeline_step_${step}`,
-  })),
-];
+import { hasCurrentStepScore } from "./scoring";
+import { PipelineNav } from "./pipeline-nav";
 
 const statusTabs = [
   { value: "all", labelKey: "all", color: "text-foreground" },
@@ -112,6 +100,10 @@ export function Candidatures() {
       showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
       return;
     }
+    if (!queue.every(hasCurrentStepScore)) {
+      showAlert({ message: t("score_required_bulk"), type: AlertEnum.WARNING });
+      return;
+    }
     queue.forEach((candidature) => {
       const next = nextPipelineStep(candidature.step);
       if (!next) {
@@ -135,6 +127,10 @@ export function Candidatures() {
     );
     if (queue.length === 0) {
       showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
+      return;
+    }
+    if (!queue.every(hasCurrentStepScore)) {
+      showAlert({ message: t("score_required_bulk"), type: AlertEnum.WARNING });
       return;
     }
     setBulk({ queue, index: 0, templateType });
@@ -175,70 +171,15 @@ export function Candidatures() {
             {t("candidature_management")}
           </h2>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mt-4">
-          <Card className="bg-card text-card-foreground p-0 gap-0 rounded-xl border shadow-sm">
-            <div className="p-6 flex flex-row items-center justify-between space-y-0 pt-4 pb-2">
-              <div className="tracking-tight flex items-center gap-2 text-sm font-medium">
-                <IconFileDescription className="size-5" />
-                {t("total_candidatures")}
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <IconInfoCircle
-                    size={24}
-                    strokeWidth={1.25}
-                    className="text-muted-foreground scale-90"
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  {t("total_candidatures_description")}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="p-6 pt-0 pb-4">
-              <div className="text-2xl font-bold">{allData.length}</div>
-            </div>
-          </Card>
-        </div>
-
-        <nav className="mt-4 mb-3 flex flex-nowrap gap-0.5 overflow-x-auto pb-1">
-          {pipelineSteps.map((step) => (
-            <Button
-              key={step.value}
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setStepFilter(step.value);
-                setRowSelection({});
-              }}
-              className={cn(
-                "justify-start shrink-0 whitespace-nowrap px-2",
-                stepFilter === step.value
-                  ? "bg-muted"
-                  : "hover:bg-accent hover:underline"
-              )}
-            >
-              {t(step.labelKey)}
-              <span className="ml-1.5 text-xs text-muted-foreground">
-                ({stepCounts[step.value] || 0})
-              </span>
-            </Button>
-          ))}
-        </nav>
-
-        <div className="mb-3">
-          <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-            <TabsList>
-              {statusTabs.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5">
-                  <span className={cn(tab.color)}>{t(tab.labelKey)}</span>
-                  <span className="text-xs text-muted-foreground">
-                    ({counts[tab.value as keyof typeof counts] || 0})
-                  </span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+        <div className="mt-4 mb-3">
+          <PipelineNav
+            value={stepFilter}
+            counts={stepCounts}
+            onValueChange={(value) => {
+              setStepFilter(value);
+              setRowSelection({});
+            }}
+          />
         </div>
 
         {stepFilter !== "all" && selectedRows.length > 0 && (
@@ -287,6 +228,20 @@ export function Candidatures() {
             enableRowSelection={stepFilter !== "all"}
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}
+            toolbarCenter={
+              <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+                <TabsList>
+                  {statusTabs.map((tab) => (
+                    <TabsTrigger key={tab.value} value={tab.value} className="gap-1.5">
+                      <span className={cn(tab.color)}>{t(tab.labelKey)}</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({counts[tab.value as keyof typeof counts] || 0})
+                      </span>
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            }
           />
         </div>
       </Main>

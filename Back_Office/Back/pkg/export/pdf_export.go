@@ -1,6 +1,7 @@
 package export
 
 import (
+	"astro-backend/config"
 	"bytes"
 	"fmt"
 	"net/http"
@@ -12,8 +13,13 @@ import (
 )
 
 func ExportToPDF(c *gin.Context, options ExportOptions) {
-	// Set font path (adjust if needed)
-	options.FontPath = "./pkg/export/font/DejaVuSans.ttf"
+	// Resolve font path from config (FONT_PATH env) with a relative fallback
+	if options.FontPath == "" {
+		options.FontPath = config.Configvar.Export.FontPath
+	}
+	if options.FontPath == "" {
+		options.FontPath = "./pkg/export/font/DejaVuSans.ttf"
+	}
 
 	// Initialize gofpdf
 	pdf := gofpdf.New(options.TableOrientation, "mm", "A4", "")

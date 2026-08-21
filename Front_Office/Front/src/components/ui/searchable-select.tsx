@@ -7,10 +7,9 @@ interface SearchableSelectProps {
   onValueChange: (value: string) => void
   placeholder?: string
   options: string[]
+  fieldName?: string
   ariaInvalid?: boolean
   disabled?: boolean
-  otherOption?: string
-  onOtherChange?: (value: string) => void
 }
 
 function SearchableSelect({
@@ -18,17 +17,13 @@ function SearchableSelect({
   onValueChange,
   placeholder,
   options,
+  fieldName,
   ariaInvalid,
   disabled,
-  otherOption,
-  onOtherChange,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
-  const [otherMode, setOtherMode] = React.useState(false)
-  const [otherInput, setOtherInput] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement>(null)
-  const textInputRef = React.useRef<HTMLInputElement>(null)
   const containerRef = React.useRef<HTMLDivElement>(null)
 
   const filteredOptions = React.useMemo(
@@ -37,21 +32,16 @@ function SearchableSelect({
   )
 
   React.useEffect(() => {
-    if (open && inputRef.current && !otherMode) {
+    if (open && inputRef.current) {
       inputRef.current.focus()
     }
-    if (open && otherMode && textInputRef.current) {
-      textInputRef.current.focus()
-    }
-  }, [open, otherMode])
+  }, [open])
 
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
         setSearch("")
-        setOtherMode(false)
-        setOtherInput("")
       }
     }
     if (open) {
@@ -60,49 +50,35 @@ function SearchableSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [open])
 
-  function handleSelect(option: string) {
-    onValueChange(option)
-    if (onOtherChange) onOtherChange("")
-    setOpen(false)
-    setSearch("")
-    setOtherMode(false)
-  }
-
-  function handleOtherClick() {
-    setOtherMode(true)
-    setSearch("")
-  }
-
-  function handleOtherTextChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value
-    setOtherInput(val)
-    onOtherChange?.(val)
+    setSearch(val)
     onValueChange(val)
   }
 
-  function handleOtherKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && otherInput.trim()) {
+  function handleSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter") {
+      e.preventDefault()
       setOpen(false)
-      setOtherMode(false)
-      setOtherInput("")
+      setSearch("")
     }
   }
 
+  function handleSelect(option: string) {
+    onValueChange(option)
+    setOpen(false)
+    setSearch("")
+  }
+
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} data-field={fieldName} className="relative">
       <button
         type="button"
         disabled={disabled}
-        onClick={() => {
-          if (!open) {
-            setOtherMode(false)
-            setOtherInput("")
-          }
-          setOpen((prev) => !prev)
-        }}
+        onClick={() => setOpen((prev) => !prev)}
         data-invalid={ariaInvalid}
         className={cn(
-          "flex h-12 w-full items-center justify-between gap-1.5 rounded-xl border border-input bg-white/70 px-4 text-sm text-foreground shadow-sm whitespace-nowrap transition-all duration-200 outline-none select-none",
+          "flex h-12 w-full items-center justify-between gap-1.5 rounded-xl border border-input bg-card px-4 text-sm text-foreground shadow-sm whitespace-nowrap transition-all duration-200 outline-none select-none",
           "focus-visible:border-ring focus-visible:ring-4 focus-visible:ring-ring/15 focus-visible:shadow-md",
           "disabled:cursor-not-allowed disabled:opacity-50",
           "aria-invalid:border-destructive aria-invalid:ring-4 aria-invalid:ring-destructive/15",
@@ -122,7 +98,7 @@ function SearchableSelect({
         />
       </button>
 
-      {open && !otherMode && (
+      {open && (
         <div
           className={cn(
             "absolute z-50 mt-1 w-full min-w-36 overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/5",
@@ -133,13 +109,14 @@ function SearchableSelect({
             <input
               ref={inputRef}
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search..."
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              placeholder={placeholder}
               className="w-full rounded-lg border border-input bg-background/50 px-3 py-1.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/15"
             />
           </div>
           <ul className="max-h-60 overflow-y-auto p-1" role="listbox">
-            {filteredOptions.length === 0 && !otherOption ? (
+            {filteredOptions.length === 0 ? (
               <li className="px-2 py-4 text-center text-sm text-muted-foreground/50">
                 No results found
               </li>
@@ -164,36 +141,6 @@ function SearchableSelect({
               ))
             )}
           </ul>
-          {otherOption && (
-            <div className="border-t border-border/40 p-1">
-              <button
-                type="button"
-                onClick={handleOtherClick}
-                className="flex w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/[0.08] hover:text-foreground"
-              >
-                {otherOption}
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {open && otherMode && (
-        <div
-          className={cn(
-            "absolute z-50 mt-1 w-full overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/5 p-3",
-            "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
-          )}
-        >
-          <input
-            ref={textInputRef}
-            type="text"
-            value={otherInput}
-            onChange={handleOtherTextChange}
-            onKeyDown={handleOtherKeyDown}
-            placeholder={otherOption}
-            className="w-full rounded-xl border border-input bg-background/50 px-4 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-ring focus:ring-2 focus:ring-ring/15"
-          />
         </div>
       )}
     </div>

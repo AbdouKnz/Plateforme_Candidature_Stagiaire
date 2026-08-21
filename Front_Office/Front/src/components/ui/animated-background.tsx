@@ -1,4 +1,6 @@
 import type { ReactNode } from "react"
+import { useTheme } from "@/context/theme-context"
+import MoltenMetal from "./molten-metal"
 
 interface AuroraBackgroundProps {
   children: ReactNode
@@ -6,21 +8,32 @@ interface AuroraBackgroundProps {
 }
 
 export function AuroraBackground({ children, className = "" }: AuroraBackgroundProps) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === "dark"
+
   return (
-    <div className={`relative min-h-screen overflow-hidden w-full bg-[#FAF9FF] dark:bg-black ${className}`}>
+    <div className={`relative min-h-screen overflow-hidden w-full bg-background ${className}`}>
       <div className="absolute inset-0">
-        <div className="absolute inset-0 opacity-80 dark:opacity-70">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-300/60 via-purple-200/50 to-indigo-300/55 dark:from-blue-900/40 dark:via-purple-900/30 dark:to-indigo-900/40" />
-        </div>
-
-        <div className="absolute inset-0">
-          <div className="absolute inset-0 opacity-75 dark:opacity-60 animate-aurora-1 aurora-wave-1" />
-          <div className="absolute inset-0 opacity-65 dark:opacity-50 animate-aurora-2 aurora-wave-2" />
-          <div className="absolute inset-0 opacity-55 dark:opacity-40 animate-aurora-3 aurora-wave-3" />
-          <div className="absolute inset-0 opacity-45 dark:opacity-30 animate-aurora-4 aurora-wave-4" />
-        </div>
-
-        <div className="absolute inset-0 bg-gradient-to-t from-purple-100/25 via-transparent to-white/10 dark:from-black/20 dark:via-transparent dark:to-black/10" />
+        <MoltenMetal
+          color1={isDark ? "#4C1D95" : "#7C3AED"}
+          color2={isDark ? "#7C3AED" : "#8B5CF6"}
+          color3={isDark ? "#DDD6FE" : "#C4B5FD"}
+          speed={0.35}
+          scale={4}
+          detail={3}
+          glow={1.6}
+          coreSize={0.1}
+          swirl={1}
+          fold={-0.2}
+          blackPoint={isDark ? 0.1 : 0.14}
+          brightness={isDark ? 1.35 : 1.28}
+          colorMode="molten"
+          grain
+          grainIntensity={0.04}
+          mouseInteraction
+          mouseStrength={0.3}
+          opacity={isDark ? 0.68 : 0.58}
+        />
       </div>
 
       <div className="relative z-10">{children}</div>

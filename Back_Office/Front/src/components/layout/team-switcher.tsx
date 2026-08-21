@@ -2,7 +2,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { Team } from '@/models/sidebar-model'
+import type { Team } from '@/models/sidebar-model'
 
 type TeamSwitcherProps = {
   teams: Team[]
@@ -23,7 +23,7 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
             className="object-contain shrink-0"
           />
           <div className='grid flex-1 text-start'>
-            <span className='truncate text-base font-bold tracking-tight text-white'>
+            <span className='truncate text-base font-bold tracking-tight text-foreground'>
               {activeTeam.name}
             </span>
           </div>

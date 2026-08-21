@@ -173,15 +173,15 @@ func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candida
 	var id int
 	err := s.db.NewRaw(`
 		INSERT INTO candidature (
-			full_name, email1, gender1, phone1, degree1,
-			full_name2, email2, gender2, phone2, degree2,
+			first_name, last_name, full_name, email1, gender1, phone1, degree1,
+			first_name2, last_name2, full_name2, email2, gender2, phone2, degree2,
 			duration, methode, start_date, subject_name, university, university2,
 			date_application, path_cv, path_lettre_motivation,
 			path_cv2, path_lettre_motivation2,
 			status, created_at, updated_at
 		) VALUES (
-			?, ?, ?, ?, ?,
-			?, ?, ?, ?, ?,
+			?, ?, ?, ?, ?, ?, ?,
+			?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?,
 			?, ?, ?,
 			?, ?,
@@ -189,8 +189,8 @@ func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candida
 		)
 		RETURNING id
 	`,
-		c.FullName, c.Email1, c.Gender1, c.Phone1, c.Degree1,
-		c.FullName2, c.Email2, c.Gender2, c.Phone2, c.Degree2,
+		c.FirstName, c.LastName, c.FullName, c.Email1, c.Gender1, c.Phone1, c.Degree1,
+		c.FirstName2, c.LastName2, c.FullName2, c.Email2, c.Gender2, c.Phone2, c.Degree2,
 		c.Duration, c.Methode, c.StartDate, c.SubjectName, c.University, c.University2,
 		c.DateApplication, c.PathCV, c.PathLettreMotivation,
 		c.PathCV2, c.PathLettreMotivation2,

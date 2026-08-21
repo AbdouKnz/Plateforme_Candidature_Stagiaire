@@ -12,9 +12,10 @@ var Configvar ConfigMode
 
 type ConfigMode struct {
 	Server struct {
-		Port    int    `env:"SERVER_PORT,8301"`
-		GinMode string `env:"GIN_MODE,release"`
-		TZ      string `env:"TZ,UTC"`
+		Port        int    `env:"SERVER_PORT,8301"`
+		GinMode     string `env:"GIN_MODE,release"`
+		TZ          string `env:"TZ,UTC"`
+		UploadsPath string `env:"UPLOADS_PATH,uploads"`
 	}
 	Database struct {
 		Host     string `env:"DB_HOST,localhost"`
@@ -58,6 +59,7 @@ func LoadConfig() {
 	Configvar.Server.Port = getEnvInt("SERVER_PORT", 8301)
 	Configvar.Server.GinMode = getEnv("GIN_MODE", "release")
 	Configvar.Server.TZ = getEnv("TZ", "UTC")
+	Configvar.Server.UploadsPath = getEnv("UPLOADS_PATH", "uploads")
 
 	Configvar.Database.Host = getEnv("DB_HOST", "localhost")
 	Configvar.Database.Port = getEnv("DB_PORT", "5432")

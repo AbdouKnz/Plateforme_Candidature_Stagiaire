@@ -14,7 +14,8 @@ export function createApplicationSchema(t: (key: string) => string) {
 
   return z
     .object({
-      fullName: z.string().trim().min(2, t("validation.fullName.required")).max(80, t("validation.fullName.tooLong")),
+      firstName: z.string().trim().min(2, t("validation.firstName.required")).max(80, t("validation.firstName.tooLong")),
+      lastName: z.string().trim().min(2, t("validation.lastName.required")).max(80, t("validation.lastName.tooLong")),
       gender: z.enum(["Male", "Female"], { error: t("validation.gender.required") }),
       email: z.string().email(t("validation.email.invalid")).trim(),
       phone: z.string().trim().regex(phoneRegex, t("validation.phone.digitCount")),
@@ -23,7 +24,8 @@ export function createApplicationSchema(t: (key: string) => string) {
 
       applicationType: z.string().min(1, t("validation.applicationType.required")),
 
-      fullName2: z.string().optional(),
+      firstName2: z.string().optional(),
+      lastName2: z.string().optional(),
       gender2: z.enum(["Male", "Female"]).optional(),
       email2: z.string().optional(),
       phone2: z.string().optional(),
@@ -45,9 +47,15 @@ export function createApplicationSchema(t: (key: string) => string) {
         .refine((v) => {
           const d = new Date(v)
           if (Number.isNaN(d.getTime())) return false
+          d.setHours(0, 0, 0, 0)
           const today = new Date(); today.setHours(0, 0, 0, 0)
-          return d >= today
-        }, t("validation.startDate.past"))
+          const y = today.getFullYear()
+          const mar15 = new Date(y, 2, 15); mar15.setHours(0, 0, 0, 0)
+          const year = today > mar15 ? y + 1 : y
+          const min = new Date(year, 0, 1); min.setHours(0, 0, 0, 0)
+          const max = new Date(year, 2, 15); max.setHours(0, 0, 0, 0)
+          return d >= min && d <= max
+        }, t("validation.startDate.range"))
         .refine((v) => {
           const d = new Date(v)
           return !Number.isNaN(d.getTime()) && d.getDay() >= 1 && d.getDay() <= 5
@@ -55,8 +63,11 @@ export function createApplicationSchema(t: (key: string) => string) {
     })
     .superRefine((data, ctx) => {
       if (data.applicationType !== "pair") return
-      if (!data.fullName2 || data.fullName2.trim().length < 2) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("validation.fullName2.required"), path: ["fullName2"] })
+      if (!data.firstName2 || data.firstName2.trim().length < 2) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("validation.firstName2.required"), path: ["firstName2"] })
+      }
+      if (!data.lastName2 || data.lastName2.trim().length < 2) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("validation.lastName2.required"), path: ["lastName2"] })
       }
       if (!data.email2 || !emailCheck(data.email2)) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, message: t("validation.email2.required"), path: ["email2"] })

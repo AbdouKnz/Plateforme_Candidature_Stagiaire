@@ -11,7 +11,9 @@ interface MondayPickerProps {
   value: string
   onChange: (value: string) => void
   onBlur?: () => void
+  fieldName?: string
   min: string
+  max?: string
   invalid?: boolean
 }
 
@@ -49,7 +51,9 @@ export function MondayPicker({
   value,
   onChange,
   onBlur,
+  fieldName,
   min,
+  max,
   invalid,
 }: MondayPickerProps) {
   const [open, setOpen] = React.useState(false)
@@ -60,10 +64,14 @@ export function MondayPicker({
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const minDate = new Date(min)
+  minDate.setHours(0, 0, 0, 0)
+  const maxDate = max ? new Date(max) : null
+  if (maxDate) maxDate.setHours(0, 0, 0, 0)
+  const initialDate = minDate
   const initialMonday = getNextMonday(today)
 
-  const [viewMonth, setViewMonth] = React.useState(() => initialMonday.getMonth())
-  const [viewYear, setViewYear] = React.useState(() => initialMonday.getFullYear())
+  const [viewMonth, setViewMonth] = React.useState(() => initialDate.getMonth())
+  const [viewYear, setViewYear] = React.useState(() => initialDate.getFullYear())
 
   useOnClickOutside(ref, () => {
     setOpen(false)
@@ -96,10 +104,19 @@ export function MondayPicker({
     const prevMonthDate = viewMonth === 0
       ? new Date(viewYear - 1, 11, 1)
       : new Date(viewYear, viewMonth - 1, 1)
-    const nextMonday = getNextMonday(today)
-    return prevMonthDate.getFullYear() > nextMonday.getFullYear() ||
-      (prevMonthDate.getFullYear() === nextMonday.getFullYear() &&
-        prevMonthDate.getMonth() >= nextMonday.getMonth())
+    return prevMonthDate.getFullYear() > minDate.getFullYear() ||
+      (prevMonthDate.getFullYear() === minDate.getFullYear() &&
+        prevMonthDate.getMonth() >= minDate.getMonth())
+  }
+
+  const canGoNext = () => {
+    if (!maxDate) return true
+    const nextMonthDate = viewMonth === 11
+      ? new Date(viewYear + 1, 0, 1)
+      : new Date(viewYear, viewMonth + 1, 1)
+    return nextMonthDate.getFullYear() < maxDate.getFullYear() ||
+      (nextMonthDate.getFullYear() === maxDate.getFullYear() &&
+        nextMonthDate.getMonth() <= maxDate.getMonth())
   }
 
   type DayCell = { day: number; monday: Date; enabled: boolean } | null
@@ -109,12 +126,12 @@ export function MondayPicker({
   }
   for (let d = 1; d <= daysInMonth; d++) {
     const date = new Date(viewYear, viewMonth, d)
-    const isMonday = date.getDay() === 1
     const isBeforeMin = date < minDate
+    const isAfterMax = maxDate ? date > maxDate : false
     days.push({
       day: d,
       monday: date,
-      enabled: isWeekday(date) && !isBeforeMin,
+      enabled: isWeekday(date) && !isBeforeMin && !isAfterMax,
     })
   }
 
@@ -128,7 +145,7 @@ export function MondayPicker({
     : ""
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} data-field={fieldName} className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -170,7 +187,8 @@ export function MondayPicker({
             <button
               type="button"
               onClick={nextMonth}
-              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted"
+              disabled={!canGoNext()}
+              className="flex size-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted disabled:opacity-30"
             >
               <ChevronRightIcon className="size-4" />
             </button>

@@ -6,11 +6,15 @@ type Candidature struct {
 	bun.BaseModel `bun:"table:candidature,alias:cnd" json:"-"`
 
 	ID                    int    `bun:"id,pk,autoincrement" json:"id"`
+	FirstName             string `bun:"first_name,default:''" json:"first_name"`
+	LastName              string `bun:"last_name,default:''" json:"last_name"`
 	FullName              string `bun:"full_name,notnull" json:"full_name" binding:"required"`
 	Email1                string `bun:"email1,notnull" json:"email1" binding:"required"`
 	Gender1               string `bun:"gender1,notnull" json:"gender1" binding:"required"`
 	Phone1                string `bun:"phone1,notnull" json:"phone1" binding:"required"`
 	Degree1               string `bun:"degree1,notnull" json:"degree1" binding:"required"`
+	FirstName2            string `bun:"first_name2,default:''" json:"first_name2"`
+	LastName2             string `bun:"last_name2,default:''" json:"last_name2"`
 	FullName2             string `bun:"full_name2" json:"full_name2"`
 	Email2                string `bun:"email2" json:"email2"`
 	Gender2               string `bun:"gender2" json:"gender2"`

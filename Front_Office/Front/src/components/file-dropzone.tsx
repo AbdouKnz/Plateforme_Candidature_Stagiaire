@@ -45,6 +45,7 @@ export function FileDropzone({
   if (value) {
     return (
       <div
+        data-field={id}
         className={cn(
           "flex items-center gap-4 rounded-xl border bg-card p-3.5 shadow-xs transition-all",
           invalid ? "border-destructive/60" : "border-border",
@@ -89,6 +90,7 @@ export function FileDropzone({
 
   return (
     <div
+      data-field={id}
       role="button"
       tabIndex={0}
       aria-describedby={describedBy}

@@ -1,0 +1,137 @@
+.outer-container {
+  width: 100%;
+}
+
+.step-circle-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.step-indicator-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0 1.75rem;
+}
+
+.step-content-default {
+  position: relative;
+}
+
+.step-default {
+  width: 100%;
+}
+
+.footer-container {
+  padding: 1.75rem 0 0;
+}
+
+.footer-nav {
+  margin-top: 1.25rem;
+  display: flex;
+}
+
+.footer-nav.spread {
+  justify-content: space-between;
+}
+
+.footer-nav.end {
+  justify-content: flex-end;
+}
+
+.back-button {
+  transition: color 350ms;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  color: var(--foreground);
+}
+
+.back-button.inactive {
+  pointer-events: none;
+  opacity: 0.5;
+  color: var(--muted-foreground);
+}
+
+.next-button {
+  transition:
+    background-color 350ms,
+    transform 350ms;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  padding: 0.625rem 1.25rem;
+  cursor: pointer;
+}
+
+.next-button:hover {
+  background-color: color-mix(in oklab, var(--primary), black 8%);
+}
+
+.step-indicator {
+  position: relative;
+  cursor: pointer;
+  outline: none;
+}
+
+.step-indicator-inner {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.active-dot {
+  height: 0.75rem;
+  width: 0.75rem;
+  border-radius: 9999px;
+  background-color: var(--primary-foreground);
+}
+
+.step-number {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.step-connector {
+  position: relative;
+  height: 0.25rem;
+  flex: 1;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  background-color: var(--border);
+}
+
+.step-connector-inner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+}
+
+.check-icon {
+  height: 1rem;
+  width: 1rem;
+  color: var(--accent-foreground);
+}
+
+.stepper-footer-hidden {
+  display: none !important;
+}

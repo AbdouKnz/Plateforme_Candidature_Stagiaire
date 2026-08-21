@@ -113,6 +113,10 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 				name VARCHAR(255) NOT NULL,
 				description TEXT NOT NULL,
 				status BOOLEAN NOT NULL DEFAULT true,
+				online_quiz_link TEXT DEFAULT '',
+				online_meeting_link TEXT DEFAULT '',
+				f2f_meeting_link TEXT DEFAULT '',
+				duration_id INT DEFAULT NULL,
 				created_at TIMESTAMP DEFAULT current_timestamp,
 				updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 			)
@@ -129,6 +133,10 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS code VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status BOOLEAN NOT NULL DEFAULT true,
+				ADD COLUMN IF NOT EXISTS online_quiz_link TEXT DEFAULT '',
+				ADD COLUMN IF NOT EXISTS online_meeting_link TEXT DEFAULT '',
+				ADD COLUMN IF NOT EXISTS f2f_meeting_link TEXT DEFAULT '',
+				ADD COLUMN IF NOT EXISTS duration_id INT DEFAULT NULL,
 				ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT current_timestamp,
 				DROP COLUMN IF EXISTS priority_rank,
 				DROP COLUMN IF EXISTS technology_id,
@@ -184,11 +192,15 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 		_, err = db.ExecContext(ctx, `
 			CREATE TABLE IF NOT EXISTS candidature (
 				id SERIAL PRIMARY KEY,
+				first_name VARCHAR(255) DEFAULT '',
+				last_name VARCHAR(255) DEFAULT '',
 				full_name VARCHAR(255) NOT NULL,
 				email1 VARCHAR(255) NOT NULL,
 				gender1 VARCHAR(50) NOT NULL,
 				phone1 VARCHAR(50) NOT NULL,
 				degree1 VARCHAR(255) DEFAULT '',
+				first_name2 VARCHAR(255) DEFAULT '',
+				last_name2 VARCHAR(255) DEFAULT '',
 				full_name2 VARCHAR(255) DEFAULT '',
 				email2 VARCHAR(255) DEFAULT '',
 				gender2 VARCHAR(50) DEFAULT '',
@@ -207,6 +219,11 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				path_lettre_motivation2 TEXT DEFAULT '',
 				status VARCHAR(50) NOT NULL DEFAULT 'pending',
 				step VARCHAR(50) NOT NULL DEFAULT 'cv_screening',
+				score_cv_screening INT NOT NULL DEFAULT 0,
+				score_online_quiz INT NOT NULL DEFAULT 0,
+				score_online_meeting INT NOT NULL DEFAULT 0,
+				score_f2f_meeting INT NOT NULL DEFAULT 0,
+				score_final_decision INT NOT NULL DEFAULT 0,
 				created_at TIMESTAMP DEFAULT current_timestamp,
 				updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 			)
@@ -220,11 +237,15 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 		log.Info().Msg("Candidature table exists, ensuring schema is up to date...")
 		_, err = db.ExecContext(ctx, `
 			ALTER TABLE candidature 
+				ADD COLUMN IF NOT EXISTS first_name VARCHAR(255) DEFAULT '',
+				ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) DEFAULT '',
 				ADD COLUMN IF NOT EXISTS full_name VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS email1 VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS gender1 VARCHAR(50) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS phone1 VARCHAR(50) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS degree1 VARCHAR(255) DEFAULT '',
+				ADD COLUMN IF NOT EXISTS first_name2 VARCHAR(255) DEFAULT '',
+				ADD COLUMN IF NOT EXISTS last_name2 VARCHAR(255) DEFAULT '',
 				ADD COLUMN IF NOT EXISTS full_name2 VARCHAR(255) DEFAULT '',
 				ADD COLUMN IF NOT EXISTS email2 VARCHAR(255) DEFAULT '',
 				ADD COLUMN IF NOT EXISTS gender2 VARCHAR(50) DEFAULT '',
@@ -243,6 +264,11 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS path_lettre_motivation2 TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'pending',
 				ADD COLUMN IF NOT EXISTS step VARCHAR(50) NOT NULL DEFAULT 'cv_screening',
+				ADD COLUMN IF NOT EXISTS score_cv_screening INT NOT NULL DEFAULT 0,
+				ADD COLUMN IF NOT EXISTS score_online_quiz INT NOT NULL DEFAULT 0,
+				ADD COLUMN IF NOT EXISTS score_online_meeting INT NOT NULL DEFAULT 0,
+				ADD COLUMN IF NOT EXISTS score_f2f_meeting INT NOT NULL DEFAULT 0,
+				ADD COLUMN IF NOT EXISTS score_final_decision INT NOT NULL DEFAULT 0,
 				ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT current_timestamp
 		`)
 		if err != nil {
@@ -257,6 +283,37 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 		log.Warn().Err(err).Msg("Failed to migrate 'on_hold' rows to 'pending'")
 	} else {
 		log.Info().Msg("Migrated 'on_hold' rows to 'pending'")
+	}
+
+	_, err = db.ExecContext(ctx, `
+		UPDATE candidature
+		SET first_name = split_part(full_name, ' ', 1),
+		    last_name  = CASE
+				WHEN full_name LIKE '% %' THEN split_part(full_name, ' ', 2) || CASE WHEN full_name LIKE '% % %' THEN ' ' || substring(full_name from position(' ' in full_name) + 1) ELSE '' END
+				ELSE full_name
+			END
+		WHERE (first_name = '' OR last_name = '') AND full_name <> ''
+	`)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to backfill first_name/last_name from full_name")
+	} else {
+		log.Info().Msg("Backfilled first_name/last_name from full_name")
+	}
+
+	// Repair previously polluted paths: strip everything before the last "uploads/"
+	// segment so stored values are always relative (e.g. uploads/cvs/file.pdf).
+	_, err = db.ExecContext(ctx, `
+		UPDATE candidature
+		SET path_cv = regexp_replace(path_cv, '^.*uploads/(.*)$', 'uploads/\1'),
+		    path_lettre_motivation = regexp_replace(path_lettre_motivation, '^.*uploads/(.*)$', 'uploads/\1'),
+		    path_cv2 = regexp_replace(path_cv2, '^.*uploads/(.*)$', 'uploads/\1'),
+		    path_lettre_motivation2 = regexp_replace(path_lettre_motivation2, '^.*uploads/(.*)$', 'uploads/\1')
+		WHERE path_cv <> '' OR path_lettre_motivation <> '' OR path_cv2 <> '' OR path_lettre_motivation2 <> ''
+	`)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to repair candidature file paths")
+	} else {
+		log.Info().Msg("Repaired candidature file paths (removed URL prefixes)")
 	}
 
 	return nil
@@ -430,7 +487,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 		{
 			Type:      "disapproval",
 			Subject:   "Refus de votre candidature",
-			Body:      "Bonjour {{NomCandidat}},\n\nNous vous remercions pour l'intérêt que vous avez porté à notre entreprise ainsi que pour le temps consacré à votre candidature concernant le sujet de PFE {{TitreSujet}}.\n\nAprès une étude attentive des différentes candidatures reçues, nous regrettons de vous informer que votre candidature n'a pas été retenue pour cette opportunité.\n\nCette décision ne remet pas en cause la qualité de votre parcours. Le nombre important de candidatures nous a conduits à effectuer une sélection selon les besoins spécifiques du projet.\n\nNous vous souhaitons pleine réussite dans la poursuite de vos études et de vos futurs projets professionnels.\n\nCordialement,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Body:      "Bonjour {{NomCandidat}},\n\nNous vous remercions pour l'intérêt que vous avez porté à notre entreprise ainsi que pour le temps consacré à votre candidature concernant le sujet de PFE {{TitreSujet}}.\n\nAprès une étude attentive des différentes candidatures reçues, nous regrettons de vous informer que votre candidature n'a pas été retenue pour cette opportunité.\n\nMotif de refus : {{MotifRefus}}\n\nCette décision ne remet pas en cause la qualité de votre parcours. Le nombre important de candidatures nous a conduits à effectuer une sélection selon les besoins spécifiques du projet.\n\nNous vous souhaitons pleine réussite dans la poursuite de vos études et de vos futurs projets professionnels.\n\nCordialement,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,

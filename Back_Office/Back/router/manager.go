@@ -49,7 +49,7 @@ func RouterManager(db *bun.DB) {
 	}
 
 	// Serve uploaded files (shared filesystem with Front_Office)
-	r.Static("/api/uploads", "./uploads")
+	r.Static("/api/uploads", config.Configvar.Server.UploadsPath)
 
 	// Routes
 	r.GET("/api", func(c *gin.Context) { pkg.OK(c, nil, nil) })            // OK Route

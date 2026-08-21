@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -54,6 +54,7 @@ interface DataTableProps<TData extends RowData> {
   enableRowSelection?: boolean
   rowSelection?: Record<string, boolean>
   onRowSelectionChange?: (updater: Updater<RowSelectionState>) => void
+  toolbarCenter?: ReactNode
 }
 
 export function DataTable<TData extends RowData>({
@@ -69,6 +70,7 @@ export function DataTable<TData extends RowData>({
   enableRowSelection = false,
   rowSelection,
   onRowSelectionChange,
+  toolbarCenter,
 }: DataTableProps<TData>) {
   const { t } = useTranslation()
 
@@ -138,7 +140,11 @@ export function DataTable<TData extends RowData>({
     <div className='space-y-4'>
       <div className='rounded-md'>
         <Card paddingY='pb-4'>
-          <DataTableToolbar table={table} toolbarProps={toolbarProps} />
+          <DataTableToolbar
+            table={table}
+            toolbarProps={toolbarProps}
+            toolbarCenter={toolbarCenter}
+          />
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (

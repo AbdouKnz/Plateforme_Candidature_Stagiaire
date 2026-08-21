@@ -7,17 +7,22 @@ import (
 	"strings"
 	"time"
 
+	"front-office-backend/config"
+
 	"github.com/gin-gonic/gin"
 )
 
-func init() {
-	os.MkdirAll("uploads/cvs", 0755)
-	os.MkdirAll("uploads/lettres", 0755)
-}
-
 const MaxFileSize = 10 << 20
 
-func SaveUploadedFile(c *gin.Context, formField string, uploadDir string, prefix string) (string, error) {
+func uploadRoot() string {
+	root := config.Configvar.Server.UploadsPath
+	if root == "" {
+		root = "uploads"
+	}
+	return root
+}
+
+func SaveUploadedFile(c *gin.Context, formField string, subDir string, prefix string, selectedAtField string) (string, error) {
 	file, err := c.FormFile(formField)
 	if err != nil {
 		return "", err
@@ -27,14 +32,28 @@ func SaveUploadedFile(c *gin.Context, formField string, uploadDir string, prefix
 		return "", fmt.Errorf("file too large (max 10MB)")
 	}
 
+	physicalDir := filepath.Join(uploadRoot(), subDir)
+	if err := os.MkdirAll(physicalDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create upload directory: %w", err)
+	}
+
 	ext := filepath.Ext(file.Filename)
-	filename := fmt.Sprintf("%s_%s%s", prefix, time.Now().Format("02-01-2006-15-04-05"), ext)
-	savePath := filepath.Join(uploadDir, filename)
+	selectedAt := time.Now()
+	if rawSelectedAt := c.PostForm(selectedAtField); rawSelectedAt != "" {
+		if parsed, err := time.Parse(time.RFC3339Nano, rawSelectedAt); err == nil {
+			selectedAt = parsed
+		}
+	}
+
+	// Keep the browser's selection time and add a server-side nonce so two files can never overwrite each other.
+	filename := fmt.Sprintf("%s_%s_%d%s", prefix, selectedAt.UTC().Format("20060102T150405.000000000"), time.Now().UnixNano(), ext)
+	savePath := filepath.Join(physicalDir, filename)
 
 	if err := c.SaveUploadedFile(file, savePath); err != nil {
 		return "", fmt.Errorf("failed to save file: %w", err)
 	}
 
-	savePath = strings.ReplaceAll(savePath, "\\", "/")
-	return savePath, nil
+	relPath := filepath.Join("uploads", subDir, filename)
+	relPath = strings.ReplaceAll(relPath, "\\", "/")
+	return relPath, nil
 }

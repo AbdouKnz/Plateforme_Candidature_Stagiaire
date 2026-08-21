@@ -23,8 +23,8 @@ import { DatePicker } from "@/components/date-picker";
 import { format, nextMonday } from 'date-fns'
 import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Candidature } from "@/models/candidature-model";
-import { getEmailPreview, sendEmail } from "@/service/candidatures";
+import type { Candidature, RejectionReason } from "@/models/candidature-model";
+import { getEmailPreview, getRejectionReasons, sendEmail } from "@/service/candidatures";
 import { useQueryClient } from "@tanstack/react-query";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { useAlertStore } from "@/stores/alert-store";
@@ -48,7 +48,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function SendEmailModal({ open, onClose, onSent, candidature, templateType, bulkIndex, bulkTotal }: SendEmailModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const { showAlert } = useAlertStore();
   const [loading, setLoading] = useState(true);
@@ -61,6 +61,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   const [interviewMinute, setInterviewMinute] = useState("");
   const [pendingHour, setPendingHour] = useState("08");
   const [pendingMinute, setPendingMinute] = useState("00");
+  const [rejectionReasons, setRejectionReasons] = useState<RejectionReason[] | null>(null);
+  const [selectedRejectionReason, setSelectedRejectionReason] = useState("");
 
   const interviewTime = useMemo(() => {
     if (!interviewHour || !interviewMinute) return "";
@@ -93,7 +95,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     setLoading(true);
     setError(null);
     try {
-      const preview = await getEmailPreview(candidature.id, templateType, formattedDate, interviewTime);
+      const preview = await getEmailPreview(candidature.id, templateType, formattedDate, interviewTime, selectedRejectionReason);
       setEditedSubject(preview.subject);
       setEditedBody(preview.body || "");
     } catch (err: any) {
@@ -101,11 +103,34 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     } finally {
       setLoading(false);
     }
-  }, [candidature.id, templateType, formattedDate, interviewTime, t]);
+  }, [candidature.id, templateType, formattedDate, interviewTime, selectedRejectionReason, t]);
 
   useEffect(() => {
     if (open) loadPreview();
   }, [open, loadPreview]);
+
+  // Load the rejection reasons matching the candidate's current pipeline step
+  // (used for the "disapproval" template). Falls back to all reasons when the
+  // current step has none configured. The selection is reset once the reasons
+  // for the current candidate are loaded (e.g. when advancing in a bulk send).
+  useEffect(() => {
+    if (!open || templateType !== "disapproval") return;
+    let cancelled = false;
+    getRejectionReasons()
+      .then((all) => {
+        if (cancelled) return;
+        const step = candidature.step || "cv_screening";
+        const forStep = all[step] ?? [];
+        setRejectionReasons(forStep.length > 0 ? forStep : Object.values(all).flat());
+        setSelectedRejectionReason("");
+      })
+      .catch(() => {
+        if (!cancelled) setRejectionReasons([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, templateType, candidature.id, candidature.step]);
 
   const handleSend = async () => {
     setSending(true);
@@ -114,6 +139,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
         type: templateType,
         interview_date: templateType === "acceptance" ? formattedDate : "",
         interview_time: templateType === "acceptance" ? interviewTime : "",
+        rejection_reason: templateType === "disapproval" ? selectedRejectionReason : "",
       });
       queryClient.getQueriesData<any[]>({ queryKey: ["candidatures"] })
         .forEach(([queryKey]) => {
@@ -178,6 +204,37 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                 </span>
               )}
             </div>
+            {templateType === "disapproval" && (
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
+                <Label className="flex items-center gap-1">
+                  <IconAlertCircle className="size-4" />
+                  {t("rejection_reason")}
+                </Label>
+                {rejectionReasons === null ? (
+                  <div className="flex items-center gap-2 py-1.5 text-sm text-muted-foreground">
+                    <Spinner variant="circle" className="size-4" />
+                    {t("loading")}
+                  </div>
+                ) : rejectionReasons.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">{t("no_rejection_reasons")}</p>
+                ) : (
+                  <Select value={selectedRejectionReason} onValueChange={setSelectedRejectionReason}>
+                    <SelectTrigger className="h-9 w-full text-sm">
+                      <SelectValue placeholder={t("select_rejection_reason")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <ScrollArea className="h-48">
+                        {rejectionReasons.map((reason) => (
+                          <SelectItem key={reason.key} value={i18n.language?.startsWith("fr") ? reason.fr : reason.en}>
+                            {i18n.language?.startsWith("fr") ? reason.fr : reason.en}
+                          </SelectItem>
+                        ))}
+                      </ScrollArea>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
             {templateType === "acceptance" && (
               <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-muted/20">
                 <div className="space-y-2">
@@ -267,7 +324,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
           <Button variant="outline" type="button" onClick={onClose} disabled={sending}>
             {t("cancel")}
           </Button>
-          <Button type="button" onClick={handleSend} disabled={sending || loading || !!error}>
+          <Button type="button" onClick={handleSend} disabled={sending || loading || !!error || (templateType === "disapproval" && (rejectionReasons?.length ?? 0) > 0 && !selectedRejectionReason)}>
             {sending ? <Spinner variant="circle" className="size-4" /> : <IconSend className="size-4" />}
             {t("send")}
           </Button>

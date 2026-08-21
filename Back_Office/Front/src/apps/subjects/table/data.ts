@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 import { DialogEnum } from "@/models/alert-model";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useSubjectsStore } from "@/stores/subjects-store";
+import { exportSubjects } from "@/service/subjects";
+import type { FileType } from "@/models/export-model";
 
 export const useSubjectToolbarProps = () => {
   const { t } = useTranslation();
-  const { setOpenSubject, setQueryParams } = useSubjectsStore();
+  const { setOpenSubject, setQueryParams, queryParams } = useSubjectsStore();
   const { modulePermissions } = usePermissions();
 
   const canCreateSubject = modulePermissions.subjects?.canCreate;
@@ -23,5 +25,7 @@ export const useSubjectToolbarProps = () => {
           addFunction: () => setOpenSubject(DialogEnum.ADD),
         }
       : undefined,
+    exportFunction: (props: { fileType: FileType }) =>
+      exportSubjects(props.fileType, queryParams),
   };
 };

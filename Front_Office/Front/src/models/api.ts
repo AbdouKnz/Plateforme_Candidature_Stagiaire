@@ -35,6 +35,8 @@ export interface Subject {
 
 export interface CandidaturePayload {
   full_name: string;
+  first_name?: string;
+  last_name?: string;
   email1: string;
   gender1: string;
   phone1: string;

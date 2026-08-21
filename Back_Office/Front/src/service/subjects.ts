@@ -1,5 +1,7 @@
 import axiosApi from "@/lib/axios";
-import { Subject, SubjectResponse, SubjectQueryParams } from "@/models/subject-model";
+import { createDownloadLink } from "@/lib/utils";
+import type { Subject, SubjectResponse, SubjectQueryParams } from "@/models/subject-model";
+import type { FileType } from "@/models/export-model";
 
 const SUBJECT_ENDPOINT = `/subjects`;
 
@@ -26,4 +28,15 @@ export const updateSubject = async (subjectId: number, subjectData: Partial<Subj
 export const deleteSubject = async (subjectId: number): Promise<SubjectResponse> => {
   const response = await axiosApi.delete(`${SUBJECT_ENDPOINT}/${subjectId}`);
   return response?.data;
+};
+
+export const exportSubjects = async (fileType: FileType, params?: SubjectQueryParams): Promise<void> => {
+  const queryParams = new URLSearchParams(params as Record<string, string>).toString();
+  const url = `${SUBJECT_ENDPOINT}/export?file_type=${fileType}${queryParams ? `&${queryParams}` : ""}`;
+  const response = await axiosApi.post(url, null, { responseType: "blob" });
+  const contentDisposition = response.headers["content-disposition"];
+  const filename = contentDisposition
+    ? contentDisposition.split("filename=")[1].replace(/"/g, "")
+    : `subjects.${fileType === "pdf" ? "pdf" : "xlsx"}`;
+  createDownloadLink(new Blob([response.data]), filename);
 };

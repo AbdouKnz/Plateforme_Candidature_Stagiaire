@@ -5,11 +5,24 @@ import (
 	"astro-backend/pkg"
 	"astro-backend/pkg/export"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 )
+
+func parseScore(value string) *FlexInt {
+	if value == "" {
+		return nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return nil
+	}
+	v := FlexInt(parsed)
+	return &v
+}
 
 type CandidatureHandler struct {
 	Service *CandidatureService
@@ -113,6 +126,11 @@ func (h *CandidatureHandler) UpdateHandler(c *gin.Context) {
 			Step:        c.PostForm("step"),
 			Notes:       c.PostForm("notes"),
 		}
+		request.ScoreCVScreening = parseScore(c.PostForm("score_cv_screening"))
+		request.ScoreOnlineQuiz = parseScore(c.PostForm("score_online_quiz"))
+		request.ScoreOnlineMeeting = parseScore(c.PostForm("score_online_meeting"))
+		request.ScoreF2FMeeting = parseScore(c.PostForm("score_f2f_meeting"))
+		request.ScoreFinalDecision = parseScore(c.PostForm("score_final_decision"))
 	}
 
 	updated, err := h.Service.Update(c.Request.Context(), id, request)
@@ -138,8 +156,9 @@ func (h *CandidatureHandler) GetEmailPreviewHandler(c *gin.Context) {
 
 	interviewDate := c.Query("interview_date")
 	interviewTime := c.Query("interview_time")
+	rejectionReason := c.Query("rejection_reason")
 
-	preview, err := h.Service.GetEmailPreview(c.Request.Context(), id, templateType, interviewDate, interviewTime)
+	preview, err := h.Service.GetEmailPreview(c.Request.Context(), id, templateType, interviewDate, interviewTime, rejectionReason)
 	if err != nil {
 		log.Error().Err(err).Int("id", id).Str("type", templateType).Msg("GetEmailPreview failed")
 		pkg.InternalError(c, err.Error())
@@ -147,6 +166,12 @@ func (h *CandidatureHandler) GetEmailPreviewHandler(c *gin.Context) {
 	}
 
 	pkg.OK(c, preview, nil)
+}
+
+// GetRejectionReasonsHandler exposes the rejection reasons grouped by pipeline
+// step so the HR UI can offer the relevant options when sending a rejection email.
+func (h *CandidatureHandler) GetRejectionReasonsHandler(c *gin.Context) {
+	pkg.OK(c, GetRejectionReasons(), nil)
 }
 
 func (h *CandidatureHandler) SendEmailHandler(c *gin.Context) {

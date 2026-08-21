@@ -65,9 +65,7 @@ const advantages = [
 ]
 
 const techStack = [
-  "React", "TypeScript", "Node.js", "Python", "AWS",
-  "Docker", "PostgreSQL", "GraphQL", "Next.js", "Tailwind CSS",
-  "React Native", "Go",
+  "React", "TypeScript", "Go", "Python", "Docker", "PostgreSQL", "MySQL",
 ]
 
 export function AboutPage() {
@@ -79,7 +77,7 @@ export function AboutPage() {
       <img
         src="/website.png"
         alt=""
-        className="fixed left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-auto opacity-[0.08] dark:opacity-[0.06] select-none object-contain pointer-events-none"
+        className="fixed left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[600px] w-auto opacity-[0.2] dark:opacity-[0.2] select-none object-contain pointer-events-none"
         aria-hidden="true"
       />
         <Navbar />

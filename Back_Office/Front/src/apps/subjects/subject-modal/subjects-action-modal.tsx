@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,11 +23,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MultiSelect } from "@/components/ui/multi-select";
 import type { MultiSelectOption } from "@/components/ui/multi-select";
 import { IconEdit, IconPlus, IconEye, IconTrash } from "@tabler/icons-react";
 import { Subject } from "@/models/subject-model";
 import { useCreateSubject, useUpdateSubject } from "@/hooks/use-subjects";
+import { useDurations } from "@/hooks/use-durations";
 import { useTechnologies } from "@/hooks/use-technologies";
 import { useProfiles } from "@/hooks/use-profiles";
 import { DialogEnum, ModalMode } from "@/models/alert-model";
@@ -49,6 +57,10 @@ const formSchema = z.object({
     .string()
     .nonempty({ message: "Description is required." })
     .min(10, { message: "Description must be at least 10 characters long." }),
+  online_quiz_link: z.string(),
+  online_meeting_link: z.string(),
+  f2f_meeting_link: z.string(),
+  duration_id: z.number().nullable(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -85,6 +97,7 @@ export function SubjectsActionModal({
   const { mutate: updateSubject, isPending: isUpdating } = useUpdateSubject();
   const { data: technologies = [] } = useTechnologies({ status: true });
   const { data: profiles = [] } = useProfiles({ status: true });
+  const { data: durations = [] } = useDurations({ status: true });
 
   const handleClose = () => {
     form.reset();
@@ -99,17 +112,44 @@ export function SubjectsActionModal({
       technology_ids: subject?.technology_ids || [],
       profile_ids: subject?.profile_ids || [],
       description: subject?.description || "",
+      online_quiz_link: subject?.online_quiz_link || "",
+      online_meeting_link: subject?.online_meeting_link || "",
+      f2f_meeting_link: subject?.f2f_meeting_link || "",
+      duration_id: subject?.duration_id ?? null,
     },
   });
 
-  const technologyOptions: MultiSelectOption[] = technologies.map((t) => ({
-    value: String(t.id),
-    label: t.name,
-  }));
-  const profileOptions: MultiSelectOption[] = profiles.map((p) => ({
-    value: String(p.id),
-    label: p.name,
-  }));
+  const technologyOptions: MultiSelectOption[] = useMemo(() => {
+    const options = technologies.map((t) => ({
+      value: String(t.id),
+      label: t.name,
+    }));
+    const known = new Set(options.map((o) => o.value));
+    subject?.technology_ids?.forEach((id, index) => {
+      const value = String(id);
+      if (!known.has(value)) {
+        known.add(value);
+        options.push({ value, label: subject.technology_names?.[index] ?? value });
+      }
+    });
+    return options;
+  }, [technologies, subject]);
+
+  const profileOptions: MultiSelectOption[] = useMemo(() => {
+    const options = profiles.map((p) => ({
+      value: String(p.id),
+      label: p.name,
+    }));
+    const known = new Set(options.map((o) => o.value));
+    subject?.profile_ids?.forEach((id, index) => {
+      const value = String(id);
+      if (!known.has(value)) {
+        known.add(value);
+        options.push({ value, label: subject.profile_names?.[index] ?? value });
+      }
+    });
+    return options;
+  }, [profiles, subject]);
 
   function onSubmit(data: FormData) {
     if (isEdit && subject) {
@@ -130,6 +170,10 @@ export function SubjectsActionModal({
         technology_ids: subject.technology_ids || [],
         profile_ids: subject.profile_ids || [],
         description: subject.description || "",
+        online_quiz_link: subject.online_quiz_link || "",
+        online_meeting_link: subject.online_meeting_link || "",
+        f2f_meeting_link: subject.f2f_meeting_link || "",
+        duration_id: subject.duration_id ?? null,
       });
     } else {
       form.reset({
@@ -138,6 +182,10 @@ export function SubjectsActionModal({
         technology_ids: [],
         profile_ids: [],
         description: "",
+        online_quiz_link: "",
+        online_meeting_link: "",
+        f2f_meeting_link: "",
+        duration_id: null,
       });
     }
   }, [subject, form]);
@@ -315,6 +363,109 @@ export function SubjectsActionModal({
                       disabled={isView}
                       {...field}
                     />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="online_quiz_link"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("online_quiz_link")}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder={t("placeholder_online_quiz_link")}
+                      className="col-span-4"
+                      autoComplete="off"
+                      disabled={isView}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="online_meeting_link"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("online_meeting_link")}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder={t("placeholder_online_meeting_link")}
+                      className="col-span-4"
+                      autoComplete="off"
+                      disabled={isView}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="f2f_meeting_link"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("f2f_meeting_link")}
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="url"
+                      placeholder={t("placeholder_f2f_meeting_link")}
+                      className="col-span-4"
+                      autoComplete="off"
+                      disabled={isView}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage className="col-span-4 col-start-3" />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="duration_id"
+              render={({ field }) => (
+                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                  <FormLabel className="col-span-2 text-right">
+                    {t("project_period")}
+                  </FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value ? String(field.value) : "none"}
+                      onValueChange={(val) =>
+                        form.setValue(
+                          "duration_id",
+                          val === "none" ? null : Number(val),
+                          { shouldValidate: true },
+                        )
+                      }
+                      disabled={isView}
+                    >
+                      <SelectTrigger className="col-span-4 w-full h-9">
+                        <SelectValue placeholder={t("select_project_period")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("no_project_period")}</SelectItem>
+                        {durations.map((d) => (
+                          <SelectItem key={d.id} value={String(d.id)}>
+                            {d.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                   <FormMessage className="col-span-4 col-start-3" />
                 </FormItem>

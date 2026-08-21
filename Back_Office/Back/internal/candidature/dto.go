@@ -1,6 +1,27 @@
 package candidature
 
-import "astro-backend/domain"
+import (
+	"astro-backend/domain"
+	"strconv"
+	"strings"
+)
+
+// FlexInt accepts a JSON number or a numeric string (e.g. from multipart form values).
+type FlexInt int
+
+func (f *FlexInt) UnmarshalJSON(data []byte) error {
+	trimmed := strings.Trim(string(data), `"`)
+	if trimmed == "null" || trimmed == "" {
+		*f = 0
+		return nil
+	}
+	v, err := strconv.Atoi(trimmed)
+	if err != nil {
+		return err
+	}
+	*f = FlexInt(v)
+	return nil
+}
 
 type CreateCandidatureRequest struct {
 	FullName              string `json:"full_name"`
@@ -52,11 +73,11 @@ type UpdateCandidatureRequest struct {
 	PathLettreMotivation2 string `json:"path_lettre_motivation2,omitempty"`
 	Status                string `json:"status,omitempty"`
 	Step                  string `json:"step,omitempty"`
-	ScoreCVScreening      *int   `json:"score_cv_screening,omitempty"`
-	ScoreOnlineQuiz       *int   `json:"score_online_quiz,omitempty"`
-	ScoreOnlineMeeting    *int   `json:"score_online_meeting,omitempty"`
-	ScoreF2FMeeting       *int   `json:"score_f2f_meeting,omitempty"`
-	ScoreFinalDecision    *int   `json:"score_final_decision,omitempty"`
+	ScoreCVScreening      *FlexInt `json:"score_cv_screening,omitempty"`
+	ScoreOnlineQuiz       *FlexInt `json:"score_online_quiz,omitempty"`
+	ScoreOnlineMeeting    *FlexInt `json:"score_online_meeting,omitempty"`
+	ScoreF2FMeeting       *FlexInt `json:"score_f2f_meeting,omitempty"`
+	ScoreFinalDecision    *FlexInt `json:"score_final_decision,omitempty"`
 	Notes                 string `json:"notes,omitempty"`
 }
 
@@ -108,9 +129,10 @@ type CandidatureParams struct {
 }
 
 type SendEmailRequest struct {
-	Type          string `json:"type" binding:"required"`
-	InterviewDate string `json:"interview_date"`
-	InterviewTime string `json:"interview_time"`
+	Type            string `json:"type" binding:"required"`
+	InterviewDate   string `json:"interview_date"`
+	InterviewTime   string `json:"interview_time"`
+	RejectionReason string `json:"rejection_reason"`
 }
 
 type EmailPreviewResponse struct {

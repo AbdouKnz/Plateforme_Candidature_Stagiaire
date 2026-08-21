@@ -52,6 +52,7 @@ export function OptionCards({
           <label
             key={option.value}
             htmlFor={id}
+            onClick={() => onValueChange(option.value)}
             className={cn(
               "flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3.5 transition-all duration-200",
               "hover:border-primary/40 hover:bg-primary/[0.02]",

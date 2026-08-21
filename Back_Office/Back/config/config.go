@@ -20,6 +20,7 @@ type ConfigMode struct {
 		ApiPrefix          string `env:"API_PREFIX,/backend"`
 		TZ                 string `env:"TZ,UTC"`
 		BackendUrl         string `env:"BACKEND_URL,http://localhost:8070"`
+		UploadsPath        string `env:"UPLOADS_PATH,./uploads"`
 	}
 
 	// ───────────── DATABASE ─────────────

@@ -3,6 +3,8 @@ package subject
 import (
 	"astro-backend/domain"
 	"astro-backend/pkg"
+	"astro-backend/pkg/export"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,9 +31,13 @@ func (h *SubjectHandler) CreateSubjectHandler(c *gin.Context) {
 	}
 
 	subject := &domain.Subject{
-		Code:        request.Code,
-		Name:        request.Name,
-		Description: request.Description,
+		Code:              request.Code,
+		Name:              request.Name,
+		Description:       request.Description,
+		OnlineQuizLink:    request.OnlineQuizLink,
+		OnlineMeetingLink: request.OnlineMeetingLink,
+		F2FMeetingLink:    request.F2FMeetingLink,
+		DurationID:        request.DurationID,
 	}
 
 	createdSubject, err := h.Service.CreateSubject(c.Request.Context(), subject, request.TechnologyIDs, request.ProfileIDs)
@@ -100,6 +106,34 @@ func (h *SubjectHandler) GetAllSubjectsHandler(c *gin.Context) {
 	}
 
 	pkg.OK(c, ToResponseList(subjects), nil)
+}
+
+func (h *SubjectHandler) ExportSubjectsHandler(c *gin.Context) {
+	statusStr := c.Query("status")
+	var status *bool
+	if statusStr != "" {
+		s := statusStr == "true"
+		status = &s
+	}
+
+	params := SubjectParams{
+		Search:   c.DefaultQuery("search", ""),
+		Status:   status,
+		FileType: c.DefaultQuery("file_type", "pdf"),
+	}
+
+	exportData, err := h.Service.ExportSubjects(c.Request.Context(), params)
+	if err != nil {
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	switch strings.ToLower(params.FileType) {
+	case "excel":
+		export.ExportToExcel(c, *exportData)
+	default:
+		export.ExportToPDF(c, *exportData)
+	}
 }
 
 func (h *SubjectHandler) DeleteSubjectHandler(c *gin.Context) {

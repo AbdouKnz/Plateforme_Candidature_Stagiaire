@@ -13,8 +13,11 @@ import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { useUpdateCandidature } from "@/hooks/use-candidatures";
+import { useAlertStore } from "@/stores/alert-store";
+import { AlertEnum } from "@/models/alert-model";
 import { nextPipelineStep } from "../pipeline";
 import { PipelineStepCell } from "../pipeline-step-cell";
+import { hasCurrentStepScore } from "../scoring";
 import { IconEye, IconCheck, IconX } from "@tabler/icons-react";
 
 const statusVariants: Record<string, string> = {
@@ -35,9 +38,23 @@ export function useCandidatureColumns(
 ): ColumnDef<Candidature>[] {
   const { t } = useTranslation();
   const updateMutation = useUpdateCandidature();
-  const { setOpenCandidature, setCurrentCandidatureId } = useCandidaturesStore();
+  const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
+  const { showAlert } = useAlertStore();
+
+  const requireStepScore = (candidature: Candidature, action: "advance" | "decline") => {
+    if (hasCurrentStepScore(candidature)) return true;
+    showAlert({
+      message:
+        action === "decline"
+          ? t("score_required_to_decline", { step: t(`pipeline_step_${candidature.step || "cv_screening"}`) })
+          : t("score_required_to_advance", { step: t(`pipeline_step_${candidature.step || "cv_screening"}`) }),
+      type: AlertEnum.WARNING,
+    });
+    return false;
+  };
 
   const handleAdvance = (candidature: Candidature) => {
+    if (!requireStepScore(candidature, "advance")) return;
     const next = nextPipelineStep(candidature.step);
     if (!next) {
       updateMutation.mutate({
@@ -53,9 +70,10 @@ export function useCandidatureColumns(
   };
 
   const handleReject = (candidature: Candidature) => {
-    updateMutation.mutate({
-      id: candidature.id,
-      data: { status: "rejected" },
+    if (!requireStepScore(candidature, "decline")) return;
+    setEmailModalData({
+      candidatureId: candidature.id,
+      templateType: "disapproval",
     });
   };
 
@@ -119,9 +137,14 @@ export function useCandidatureColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("full_name")} />
       ),
-      cell: ({ row }) => (
-        <LongText className="max-w-36">{row.original.full_name || "-"}</LongText>
-      ),
+      cell: ({ row }) => {
+        const c = row.original;
+        const name =
+          c.first_name || c.last_name
+            ? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim()
+            : c.full_name;
+        return <LongText className="max-w-36">{name || "-"}</LongText>;
+      },
       meta: {
         className: cn("sticky left-4 md:table-cell"),
         label: t("full_name"),
@@ -145,9 +168,14 @@ export function useCandidatureColumns(
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("full_name2")} />
       ),
-      cell: ({ row }) => (
-        <LongText className="max-w-36">{row.original.full_name2 || "-"}</LongText>
-      ),
+      cell: ({ row }) => {
+        const c = row.original;
+        const name =
+          c.first_name2 || c.last_name2
+            ? `${c.first_name2 ?? ""} ${c.last_name2 ?? ""}`.trim()
+            : c.full_name2;
+        return <LongText className="max-w-36">{name || "-"}</LongText>;
+      },
       meta: {
         label: t("full_name2"),
       },

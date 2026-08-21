@@ -100,11 +100,15 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 	}
 
 	candidature := &domain.Candidature{
+		FirstName:   c.PostForm("first_name"),
+		LastName:    c.PostForm("last_name"),
 		FullName:    c.PostForm("full_name"),
 		Email1:      c.PostForm("email1"),
 		Gender1:     c.PostForm("gender1"),
 		Phone1:      c.PostForm("phone1"),
 		Degree1:     c.PostForm("degree1"),
+		FirstName2:  c.PostForm("first_name2"),
+		LastName2:   c.PostForm("last_name2"),
 		FullName2:   c.PostForm("full_name2"),
 		Email2:      c.PostForm("email2"),
 		Gender2:     c.PostForm("gender2"),
@@ -116,6 +120,13 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 		StartDate:   c.PostForm("start_date"),
 		SubjectName: c.PostForm("subject_name"),
 		University:  c.PostForm("university"),
+	}
+
+	if strings.TrimSpace(candidature.FullName) == "" {
+		candidature.FullName = strings.TrimSpace(candidature.FirstName + " " + candidature.LastName)
+	}
+	if strings.TrimSpace(candidature.FullName2) == "" {
+		candidature.FullName2 = strings.TrimSpace(candidature.FirstName2 + " " + candidature.LastName2)
 	}
 
 	if candidature.FullName == "" || candidature.Email1 == "" || candidature.Gender1 == "" || candidature.Phone1 == "" {
@@ -135,20 +146,20 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 		return
 	}
 
-	cvPath, err := fileupload.SaveUploadedFile(c, "cv", "uploads/cvs", "cv")
+	cvPath, err := fileupload.SaveUploadedFile(c, "cv", "cvs", "cv", "cv_selected_at")
 	if err != nil {
 		log.Error().Err(err).Msg("CV upload failed")
 	} else {
 		candidature.PathCV = cvPath
 	}
 
-	if lettrePath, err := fileupload.SaveUploadedFile(c, "motivation_letter", "uploads/lettres", "lm"); err == nil {
+	if lettrePath, err := fileupload.SaveUploadedFile(c, "motivation_letter", "lettres", "lm", "motivation_letter_selected_at"); err == nil {
 		candidature.PathLettreMotivation = lettrePath
 	}
-	if cvPath2, err := fileupload.SaveUploadedFile(c, "cv2", "uploads/cvs", "cv"); err == nil {
+	if cvPath2, err := fileupload.SaveUploadedFile(c, "cv2", "cvs", "cv2", "cv2_selected_at"); err == nil {
 		candidature.PathCV2 = cvPath2
 	}
-	if lettrePath2, err := fileupload.SaveUploadedFile(c, "motivation_letter2", "uploads/lettres", "lm"); err == nil {
+	if lettrePath2, err := fileupload.SaveUploadedFile(c, "motivation_letter2", "lettres", "lm2", "motivation_letter2_selected_at"); err == nil {
 		candidature.PathLettreMotivation2 = lettrePath2
 	}
 

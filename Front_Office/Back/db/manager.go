@@ -39,6 +39,38 @@ func DatabaseManager(dsn string) (*bun.DB, error) {
 		}
 	}
 
+	if err := ensureCandidatureNameColumns(context.Background(), db); err != nil {
+		log.Warn().Err(err).Msg("Could not ensure candidature name columns (this is fine if migration runs from back office)")
+	}
+
 	log.Info().Msg("Database connected and tables synced")
 	return db, nil
+}
+
+func ensureCandidatureNameColumns(ctx context.Context, db *bun.DB) error {
+	_, err := db.ExecContext(ctx, `
+		ALTER TABLE candidature
+			ADD COLUMN IF NOT EXISTS first_name VARCHAR(255) DEFAULT '',
+			ADD COLUMN IF NOT EXISTS last_name VARCHAR(255) DEFAULT '',
+			ADD COLUMN IF NOT EXISTS first_name2 VARCHAR(255) DEFAULT '',
+			ADD COLUMN IF NOT EXISTS last_name2 VARCHAR(255) DEFAULT ''
+	`)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, `
+		UPDATE candidature
+		SET first_name = split_part(full_name, ' ', 1),
+		    last_name  = CASE
+				WHEN full_name LIKE '% %' THEN split_part(full_name, ' ', 2) || CASE WHEN full_name LIKE '% % %' THEN ' ' || substring(full_name from position(' ' in full_name) + 1) ELSE '' END
+				ELSE full_name
+			END
+		WHERE (first_name = '' OR last_name = '') AND full_name <> ''
+	`)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

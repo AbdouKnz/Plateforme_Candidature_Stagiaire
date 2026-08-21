@@ -75,6 +75,18 @@ export function useSubjectColumns(): ColumnDef<Subject>[] {
       meta: { label: t("profiles") },
     },
     {
+      id: "project_period",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t("project_period")} />
+      ),
+      cell: ({ row }) => (
+        <Badge variant="secondary" className="max-w-36 text-xs">
+          <LongText>{row.original.duration?.name || t("no_project_period")}</LongText>
+        </Badge>
+      ),
+      meta: { label: t("project_period") },
+    },
+    {
       accessorKey: "status",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("status")} />
