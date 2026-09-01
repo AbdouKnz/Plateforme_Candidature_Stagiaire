@@ -157,8 +157,12 @@ func (h *CandidatureHandler) GetEmailPreviewHandler(c *gin.Context) {
 	interviewDate := c.Query("interview_date")
 	interviewTime := c.Query("interview_time")
 	rejectionReason := c.Query("rejection_reason")
+	step := c.Query("step")
+	quizLink := c.Query("quiz_link")
+	meetingLink := c.Query("meeting_link")
+	startDate := c.Query("start_date")
 
-	preview, err := h.Service.GetEmailPreview(c.Request.Context(), id, templateType, interviewDate, interviewTime, rejectionReason)
+	preview, err := h.Service.GetEmailPreview(c.Request.Context(), id, templateType, step, interviewDate, interviewTime, rejectionReason, quizLink, meetingLink, startDate)
 	if err != nil {
 		log.Error().Err(err).Int("id", id).Str("type", templateType).Msg("GetEmailPreview failed")
 		pkg.InternalError(c, err.Error())

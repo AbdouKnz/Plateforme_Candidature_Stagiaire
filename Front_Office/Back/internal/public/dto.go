@@ -36,12 +36,19 @@ type SubjectTechnologyResponse struct {
 	Name string `json:"name"`
 }
 
+type SubjectProfileResponse struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 type SubjectResponse struct {
-	ID           int                       `json:"id"`
-	Code         string                    `json:"code"`
-	Name         string                    `json:"name"`
-	Description  string                    `json:"description"`
+	ID           int                         `json:"id"`
+	Code         string                      `json:"code"`
+	Name         string                      `json:"name"`
+	Description  string                      `json:"description"`
 	Technologies []SubjectTechnologyResponse `json:"technologies"`
+	Profiles     []SubjectProfileResponse    `json:"profiles"`
+	Duration     *DurationResponse           `json:"duration,omitempty"`
 }
 
 func degreeToResponse(d *domain.Degree) DegreeResponse {
@@ -97,12 +104,22 @@ func subjectToResponse(s *domain.Subject) SubjectResponse {
 	for _, t := range s.Technologies {
 		techs = append(techs, SubjectTechnologyResponse{ID: t.ID, Name: t.Name})
 	}
+	profs := make([]SubjectProfileResponse, 0)
+	for _, p := range s.Profiles {
+		profs = append(profs, SubjectProfileResponse{ID: p.ID, Name: p.Name})
+	}
+	var dur *DurationResponse
+	if s.Duration != nil {
+		dur = &DurationResponse{ID: s.Duration.ID, Name: s.Duration.Name}
+	}
 	return SubjectResponse{
 		ID:           s.ID,
 		Code:         s.Code,
 		Name:         s.Name,
 		Description:  s.Description,
 		Technologies: techs,
+		Profiles:     profs,
+		Duration:     dur,
 	}
 }
 

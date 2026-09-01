@@ -5,6 +5,7 @@ import { create } from "zustand";
 interface EmailModalData {
   candidatureId: number;
   templateType: "confirmation" | "acceptance" | "disapproval";
+  targetStep?: string;
 }
 
 interface CandidaturesState {

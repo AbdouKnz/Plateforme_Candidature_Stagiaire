@@ -55,21 +55,32 @@ export function Candidatures() {
   const { data: candidatures } = useCandidatures(queryParams);
   const allData = useMemo(() => candidatures ?? [], [candidatures]);
 
+  // FRONT-ONLY VIRTUAL: when a candidature is moved to next step as pending,
+  // also show it in previous step as accepted (same id, no DB duplication).
+  // Revert by restoring the two useMemo blocks below to their original simple filters.
   const stepCounts = useMemo(() => {
     const map: Record<string, number> = { all: allData.length };
     for (const step of PIPELINE_STEPS) {
-      map[step] = allData.filter((d) => (d.step || DEFAULT_STEP) === step).length;
+      const real = allData.filter((d) => (d.step || DEFAULT_STEP) === step).length;
+      const next = nextPipelineStep(step);
+      const virtual = next
+        ? allData.filter((d) => (d.step || DEFAULT_STEP) === next && (!d.status || d.status === "pending")).length
+        : 0;
+      map[step] = real + virtual;
     }
     return map;
   }, [allData]);
 
-  const stepData = useMemo(
-    () =>
-      stepFilter === "all"
-        ? allData
-        : allData.filter((d) => (d.step || DEFAULT_STEP) === stepFilter),
-    [allData, stepFilter]
-  );
+  const stepData = useMemo(() => {
+    if (stepFilter === "all") return allData;
+    const real = allData.filter((d) => (d.step || DEFAULT_STEP) === stepFilter);
+    const next = nextPipelineStep(stepFilter);
+    if (!next) return real;
+    const virtualAccepted = allData
+      .filter((d) => (d.step || DEFAULT_STEP) === next && (!d.status || d.status === "pending"))
+      .map((d) => ({ ...d, status: "accepted" as const, _virtualAccepted: true } as Candidature & { _virtualAccepted?: boolean }));
+    return [...real, ...virtualAccepted];
+  }, [allData, stepFilter]);
 
   const counts = useMemo(() => {
     const pending = stepData.filter((d) => !d.status || d.status === "pending").length;

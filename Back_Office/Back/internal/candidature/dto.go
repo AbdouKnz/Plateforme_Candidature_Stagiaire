@@ -130,9 +130,13 @@ type CandidatureParams struct {
 
 type SendEmailRequest struct {
 	Type            string `json:"type" binding:"required"`
+	Step            string `json:"step"`
 	InterviewDate   string `json:"interview_date"`
 	InterviewTime   string `json:"interview_time"`
 	RejectionReason string `json:"rejection_reason"`
+	QuizLink        string `json:"quiz_link"`
+	MeetingLink     string `json:"meeting_link"`
+	StartDate       string `json:"start_date"`
 }
 
 type EmailPreviewResponse struct {

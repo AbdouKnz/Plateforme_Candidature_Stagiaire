@@ -25,12 +25,19 @@ export interface Technology {
   name: string;
 }
 
+export interface Profile {
+  id: number;
+  name: string;
+}
+
 export interface Subject {
   id: number;
   code: string;
   name: string;
   description: string;
   technologies: Technology[];
+  profiles: Profile[];
+  duration?: Duration | null;
 }
 
 export interface CandidaturePayload {

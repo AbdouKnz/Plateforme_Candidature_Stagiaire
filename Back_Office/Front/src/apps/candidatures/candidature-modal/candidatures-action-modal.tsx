@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IconEye, IconFile, IconTrash, IconNote, IconCheck, IconLoader2, IconLock, IconChartBar } from "@tabler/icons-react";
+import { IconEye, IconFile, IconTrash, IconNote, IconCheck, IconLoader2, IconLock, IconChartBar, IconTrendingUp, IconFileText, IconListDetails, IconVideo, IconUsersGroup, IconAward, IconSparkles, IconDeviceFloppy } from "@tabler/icons-react";
 import { type Candidature } from "@/models/candidature-model";
 import { DialogEnum, type DialogType } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -99,7 +99,7 @@ export function CandidatureActionModal({
   );
   const [scoresSaved, setScoresSaved] = useState(false);
   const [prevScoresKey, setPrevScoresKey] = useState<string>();
-  const scoresKey = `${candidature?.id ?? "none"}`;
+  const scoresKey = `${candidature?.id ?? "none"}:${scoringFields.map(({ field }) => String(candidature?.[field] ?? "")).join("|")}`;
   if (scoresKey !== prevScoresKey) {
     setPrevScoresKey(scoresKey);
     setScoreDraft(
@@ -122,6 +122,7 @@ export function CandidatureActionModal({
         onSuccess: () => {
           setNotesSaved(true);
           queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+          queryClient.invalidateQueries({ queryKey: ["candidature"] });
           setTimeout(() => setNotesSaved(false), 2500);
         },
       }
@@ -142,6 +143,7 @@ export function CandidatureActionModal({
         onSuccess: () => {
           setScoresSaved(true);
           queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+          queryClient.invalidateQueries({ queryKey: ["candidature"] });
           setTimeout(() => setScoresSaved(false), 2500);
         },
       }
@@ -402,132 +404,130 @@ export function CandidatureActionModal({
         </div>
             </TabsContent>
             <TabsContent value="scoring" className="mt-3">
-              <div className="space-y-4 rounded-xl border p-4 bg-muted/20">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                    <IconChartBar className="size-4" />
-                    {t("scoring")}
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    {t("score_out_of_100")}
-                  </span>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {scoringFields.map(({ field, step }) => {
-                    const labelKey = `pipeline_step_${step}`;
-                    const locked = stepPosition(step) > currentStepPosition;
-                    const isCurrent = step === (candidature?.step || "cv_screening");
-                    const raw = scoreDraft[field] ?? "";
-                    const numeric = raw === "" ? 0 : Number(raw) || 0;
-                    return (
-                      <div
-                        key={field}
-                        className={cn(
-                          "relative flex flex-col gap-3 rounded-xl border bg-card p-4 transition-colors",
-                          isCurrent && !locked && "border-primary/40 ring-1 ring-primary/20",
-                          locked && "opacity-55"
-                        )}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span className={cn(
-                            "text-[11px] font-semibold uppercase tracking-wide rounded-md px-2 py-1",
-                            STEP_VARIANTS[step]
-                          )}>
-                            {t(labelKey)}
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            {isCurrent && !locked && (
-                              <span className="text-[10px] font-semibold uppercase tracking-wide rounded bg-primary/10 text-primary px-1.5 py-0.5">
-                                {t("current_step")}
-                              </span>
-                            )}
-                            {locked ? (
-                              <span className="flex items-center gap-1 text-[10px] font-medium text-muted-foreground uppercase">
-                                <IconLock className="size-3" />
-                                {t("locked_step")}
-                              </span>
-                            ) : numeric > 0 ? (
-                              <span className="flex items-center gap-1 text-[10px] font-medium text-green-600 dark:text-green-400 uppercase">
-                                <IconCheck className="size-3" />
-                                {t("scored")}
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 uppercase">
-                                {t("not_scored")}
-                              </span>
-                            )}
-                          </div>
+              {(() => {
+                const totalScore = Math.round(
+                  scoringFields.reduce((acc, { field }) => acc + (Number(scoreDraft[field]) || 0), 0) / scoringFields.length
+                );
+                const totalPct = Math.round((totalScore / 20) * 100);
+                const scoreMeta: Record<ScoreField, { titleKey: string; descKey: string; accent: string; iconWrap: string; iconColor: string; sliderClass: string }> = {
+                  score_cv_screening: { titleKey: "pipeline_step_cv_screening", descKey: "scoring_desc_cv_screening", accent: "border-l-violet-500", iconWrap: "bg-violet-500/10 border-violet-500/20", iconColor: "text-violet-600 dark:text-violet-400", sliderClass: "accent-violet-600" },
+                  score_online_quiz: { titleKey: "pipeline_step_online_quiz", descKey: "scoring_desc_online_quiz", accent: "border-l-sky-500", iconWrap: "bg-sky-500/10 border-sky-500/20", iconColor: "text-sky-600 dark:text-sky-400", sliderClass: "accent-sky-600" },
+                  score_online_meeting: { titleKey: "pipeline_step_online_meeting", descKey: "scoring_desc_online_meeting", accent: "border-l-violet-500", iconWrap: "bg-violet-500/10 border-violet-500/20", iconColor: "text-violet-600 dark:text-violet-400", sliderClass: "accent-violet-600" },
+                  score_f2f_meeting: { titleKey: "pipeline_step_f2f_meeting", descKey: "scoring_desc_f2f_meeting", accent: "border-l-amber-500", iconWrap: "bg-amber-500/10 border-amber-500/20", iconColor: "text-amber-600 dark:text-amber-400", sliderClass: "accent-amber-600" },
+                  score_final_decision: { titleKey: "pipeline_step_final_decision", descKey: "scoring_desc_final_decision", accent: "border-l-emerald-500", iconWrap: "bg-emerald-500/10 border-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", sliderClass: "accent-emerald-600" },
+                };
+                const IconMap: Record<ScoreField, any> = {
+                  score_cv_screening: IconFileText,
+                  score_online_quiz: IconListDetails,
+                  score_online_meeting: IconVideo,
+                  score_f2f_meeting: IconUsersGroup,
+                  score_final_decision: IconAward,
+                };
+                return (
+                  <div className="space-y-5">
+                    {/* Overview – light, soft gradient */}
+                    <div className="flex items-center justify-between gap-4 rounded-2xl border bg-gradient-to-br from-violet-500/[0.06] via-card to-card p-5 shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="flex size-11 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/15">
+                          <IconTrendingUp className="size-5 text-violet-600" />
                         </div>
-
-                        <div className="flex items-end gap-1">
-                          <span className="text-3xl font-bold tabular-nums leading-none">
-                            {numeric}
-                          </span>
-                          <span className="text-xs text-muted-foreground mb-0.5">/ 100</span>
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{t("scoring_overview")}</h3>
+                          <p className="text-xs text-muted-foreground mt-0.5">{t("scoring_overview_desc")}</p>
                         </div>
-
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          disabled={locked}
-                          value={numeric}
-                          onChange={(e) => {
-                            setScoreDraft((prev) => ({ ...prev, [field]: e.target.value }));
-                            setScoresSaved(false);
-                          }}
-                          className="h-2 w-full cursor-pointer accent-primary disabled:cursor-not-allowed"
-                        />
-
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          disabled={locked}
-                          value={raw}
-                          onChange={(e) => {
-                            setScoreDraft((prev) => ({ ...prev, [field]: e.target.value }));
-                            setScoresSaved(false);
-                          }}
-                          placeholder="—"
-                          title={t("score_editable")}
-                          className={cn(
-                            "h-9 w-full rounded-lg border border-input bg-transparent px-3 text-center text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-ring",
-                            raw === ""
-                              ? "text-muted-foreground placeholder:text-muted-foreground/50"
-                              : "text-foreground",
-                            locked && "cursor-not-allowed"
-                          )}
-                        />
                       </div>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-end gap-2 pt-1">
-                  {scoresSaved && (
-                    <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                      <IconCheck className="size-3.5" />
-                      {t("notes_saved")}
-                    </span>
-                  )}
-                  <Button
-                    size="sm"
-                    onClick={handleSaveScores}
-                    disabled={isSavingScores}
-                    className="gap-1.5"
-                  >
-                    {isSavingScores ? (
-                      <>
-                        <IconLoader2 className="size-3.5 animate-spin" />
-                        {t("saving")}
-                      </>
-                    ) : (
-                      t("save_scores")
-                    )}
-                  </Button>
-                </div>
-              </div>
+                      <div className="flex items-center gap-4 rounded-xl bg-muted/40 border px-4 py-3">
+                        <div className="text-right">
+                          <p className="text-[11px] font-medium text-muted-foreground">{t("total_score")}</p>
+                          <p className="text-xl font-bold leading-none mt-1"><span className="text-violet-600">{totalScore}</span><span className="text-muted-foreground font-medium"> / 20</span></p>
+                        </div>
+                        <div className="relative size-14 shrink-0">
+                          <svg className="size-14 -rotate-90" viewBox="0 0 44 44">
+                            <circle cx="22" cy="22" r="16" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" className="opacity-30" />
+                            <circle cx="22" cy="22" r="16" fill="none" stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(totalPct/100)*100.53} 100.53`} className="transition-all duration-500" />
+                          </svg>
+                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{totalPct}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {scoringFields.map(({ field, step }) => {
+                        const raw = scoreDraft[field] ?? "";
+                        const numeric = raw === "" ? 0 : Number(raw) || 0;
+                        const locked = stepPosition(step) > currentStepPosition;
+                        const isCurrent = step === (candidature?.step || "cv_screening");
+                        const meta = scoreMeta[field];
+                        const Icon = IconMap[field];
+                        const isHighlighted = isCurrent && !locked;
+                        return (
+                          <div
+                            key={field}
+                            className={cn(
+                              "group relative flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-md",
+                              isHighlighted ? "border-violet-500/30 ring-1 ring-violet-500/15 shadow-violet-500/10" : "border-border",
+                              locked && "opacity-60",
+                              `border-l-4 ${meta.accent}`
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-3">
+                                <div className={cn("flex size-10 items-center justify-center rounded-xl border", meta.iconWrap)}>
+                                  <Icon className={cn("size-5", meta.iconColor)} />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold leading-none">{t(meta.titleKey)}</p>
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{t(meta.descKey)}</p>
+                                </div>
+                              </div>
+                              {locked ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-muted border px-2.5 py-1 text-xs text-muted-foreground"><IconLock className="size-3" /> {t("locked_step")}</span>
+                              ) : isHighlighted ? (
+                                <span className="inline-flex items-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-2.5 py-1 text-[11px] font-medium">{t("current_step")}</span>
+                              ) : numeric > 0 ? (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-1 text-xs"><IconCheck className="size-3" /> {t("scored")}</span>
+                              ) : (
+                                <span className="inline-flex rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 px-2 py-1 text-xs">{t("not_scored")}</span>
+                              )}
+                            </div>
+
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-bold tabular-nums">{numeric}</span>
+                              <span className="text-sm text-muted-foreground">/ 20</span>
+                              <span className="ml-auto text-xs font-medium px-2 py-1 rounded-md bg-muted border text-muted-foreground">{raw === "" ? "0" : numeric} {t("pts")}</span>
+                            </div>
+
+                            <input
+                              type="range"
+                              min={0}
+                              max={20}
+                              step={1}
+                              disabled={locked}
+                              value={numeric}
+                              onChange={(e) => { setScoreDraft((prev) => ({ ...prev, [field]: e.target.value })); setScoresSaved(false); }}
+                              className={cn("h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted disabled:cursor-not-allowed", !locked && meta.sliderClass)}
+                            />
+                            <input type="number" min={0} max={20} disabled={locked} value={raw} onChange={(e) => { setScoreDraft((prev) => ({ ...prev, [field]: e.target.value })); setScoresSaved(false); }} placeholder="—" className="sr-only" />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 border-t pt-4">
+                      {scoresSaved && (
+                        <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                          <IconCheck className="size-3.5" />
+                          {t("notes_saved")}
+                        </span>
+                      )}
+                      <Button onClick={handleSaveScores} disabled={isSavingScores} className="rounded-xl px-6 gap-1.5">
+                        {isSavingScores ? <><IconLoader2 className="size-4 animate-spin" />{t("saving")}</> : <><IconDeviceFloppy className="size-4" />{t("save_scores")}</>}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </TabsContent>
           </Tabs>
         <DialogFooter>

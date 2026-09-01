@@ -57,7 +57,7 @@ export const deleteCandidature = async (id: number): Promise<CandidatureResponse
 
 export const sendEmail = async (
   id: number,
-  data: { type: string; interview_date?: string; interview_time?: string; rejection_reason?: string }
+  data: { type: string; step?: string; interview_date?: string; interview_time?: string; rejection_reason?: string; quiz_link?: string; meeting_link?: string; start_date?: string }
 ): Promise<CandidatureResponse> => {
   const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/${id}/send-email`, data);
   return response?.data;
@@ -66,12 +66,16 @@ export const sendEmail = async (
 export const getEmailPreview = async (
   id: number,
   type: string,
+  step?: string,
   interviewDate?: string,
   interviewTime?: string,
-  rejectionReason?: string
+  rejectionReason?: string,
+  quizLink?: string,
+  meetingLink?: string,
+  startDate?: string
 ): Promise<{ to: string; subject: string; body: string }> => {
   const response = await axiosApi.get(`${CANDIDATURE_ENDPOINT}/${id}/email-preview`, {
-    params: { type, interview_date: interviewDate, interview_time: interviewTime, rejection_reason: rejectionReason },
+    params: { type, step, interview_date: interviewDate, interview_time: interviewTime, rejection_reason: rejectionReason, quiz_link: quizLink, meeting_link: meetingLink, start_date: startDate },
   });
   return response?.data?.data;
 };

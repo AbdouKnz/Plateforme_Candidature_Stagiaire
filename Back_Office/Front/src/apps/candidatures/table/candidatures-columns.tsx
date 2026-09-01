@@ -12,7 +12,6 @@ import { DialogEnum } from "@/models/alert-model";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
-import { useUpdateCandidature } from "@/hooks/use-candidatures";
 import { useAlertStore } from "@/stores/alert-store";
 import { AlertEnum } from "@/models/alert-model";
 import { nextPipelineStep } from "../pipeline";
@@ -37,7 +36,6 @@ export function useCandidatureColumns(
   showStepActions = false
 ): ColumnDef<Candidature>[] {
   const { t } = useTranslation();
-  const updateMutation = useUpdateCandidature();
   const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
   const { showAlert } = useAlertStore();
 
@@ -56,16 +54,10 @@ export function useCandidatureColumns(
   const handleAdvance = (candidature: Candidature) => {
     if (!requireStepScore(candidature, "advance")) return;
     const next = nextPipelineStep(candidature.step);
-    if (!next) {
-      updateMutation.mutate({
-        id: candidature.id,
-        data: { status: "accepted" },
-      });
-      return;
-    }
-    updateMutation.mutate({
-      id: candidature.id,
-      data: { step: next, status: "pending" },
+    setEmailModalData({
+      candidatureId: candidature.id,
+      templateType: "acceptance",
+      targetStep: next || candidature.step || "final_decision",
     });
   };
 

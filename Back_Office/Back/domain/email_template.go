@@ -7,6 +7,7 @@ type EmailTemplate struct {
 
 	ID        int    `bun:"id,pk,autoincrement" json:"id"`
 	Type      string `bun:"type,notnull" json:"type"`
+	Step      string `bun:"step,notnull,default:''" json:"step"`
 	Subject   string `bun:"subject,notnull" json:"subject"`
 	Body      string `bun:"body,notnull" json:"body"`
 

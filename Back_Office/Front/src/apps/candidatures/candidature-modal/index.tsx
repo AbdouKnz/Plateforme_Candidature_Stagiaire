@@ -53,6 +53,7 @@ export function CandidatureModals() {
           }}
           candidature={emailCandidature}
           templateType={emailModalData.templateType}
+          targetStep={emailModalData.targetStep}
         />
       )}
     </>

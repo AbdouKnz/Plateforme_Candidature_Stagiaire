@@ -156,6 +156,33 @@ func (s *PublicService) GetActiveSubjects(ctx context.Context) ([]*domain.Subjec
 				log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load technologies")
 			}
 		}
+
+		if subj.DurationID != nil {
+			var dur domain.Duration
+			err := s.db.NewSelect().Model(&dur).Where("id = ?", *subj.DurationID).Scan(ctx)
+			if err == nil {
+				subj.Duration = &dur
+			} else if !errors.Is(err, sql.ErrNoRows) {
+				log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load duration")
+			}
+		}
+
+		var profIDs []int
+		err = s.db.NewSelect().Model((*domain.SubjectProfile)(nil)).
+			Column("profile_id").
+			Where("subject_id = ?", subj.ID).
+			Scan(ctx, &profIDs)
+		if err != nil {
+			log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load profile IDs")
+			continue
+		}
+		if len(profIDs) > 0 {
+			err = s.db.NewSelect().Model(&subj.Profiles).
+				Where("id IN (?)", bun.In(profIDs)).Scan(ctx)
+			if err != nil {
+				log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load profiles")
+			}
+		}
 	}
 
 	return subjects, nil

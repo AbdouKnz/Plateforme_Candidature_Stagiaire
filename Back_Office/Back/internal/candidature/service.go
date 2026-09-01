@@ -40,16 +40,54 @@ func currentStepScore(c *domain.Candidature) int {
 	}
 }
 
-func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string) (*domain.EmailTemplate, error) {
+func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string, step string) (*domain.EmailTemplate, error) {
 	var template domain.EmailTemplate
+	if step != "" {
+		err := s.db.NewSelect().Model(&template).
+			Where("type = ? AND step = ?", templateType, step).
+			Limit(1).
+			Scan(ctx)
+		if err == nil {
+			return &template, nil
+		}
+	}
 	err := s.db.NewSelect().Model(&template).
 		Where("type = ?", templateType).
+		Where("(step = '' OR step IS NULL)").
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &template, nil
+}
+
+func (s *CandidatureService) getSubjectQuizLink(ctx context.Context, subjectName string) string {
+	names := strings.Split(subjectName, ",")
+	if len(names) == 0 {
+		return ""
+	}
+	name := strings.TrimSpace(names[0])
+	if name == "" {
+		return ""
+	}
+	var link string
+	_ = s.db.NewSelect().Column("online_quiz_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
+	return link
+}
+
+func (s *CandidatureService) getSubjectMeetingLink(ctx context.Context, subjectName string) string {
+	names := strings.Split(subjectName, ",")
+	if len(names) == 0 {
+		return ""
+	}
+	name := strings.TrimSpace(names[0])
+	if name == "" {
+		return ""
+	}
+	var link string
+	_ = s.db.NewSelect().Column("online_meeting_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
+	return link
 }
 
 // replaceRejectionReasonPlaceholders replaces every supported rejection-reason
@@ -365,13 +403,30 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	return candidature, nil
 }
 
-func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, interviewDate string, interviewTime string, rejectionReason string) (*EmailPreviewResponse, error) {
+func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, step string, interviewDate string, interviewTime string, rejectionReason string, quizLink string, meetingLink string, startDate string) (*EmailPreviewResponse, error) {
 	candidature, err := s.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	template, err := s.GetEmailTemplateByType(ctx, templateType)
+	// For acceptance, use the provided step or candidature's current step to pick per-step fixed template
+	effectiveStep := step
+	if templateType == "acceptance" && effectiveStep == "" {
+		effectiveStep = candidature.Step
+	}
+	// Auto-fill fixed links from subject if not provided (for fixed per-step templates)
+	if (effectiveStep == "online_quiz" || templateType == "online_quiz") && quizLink == "" {
+		if ql := s.getSubjectQuizLink(ctx, candidature.SubjectName); ql != "" {
+			quizLink = ql
+		}
+	}
+	if (effectiveStep == "online_meeting" || templateType == "online_meeting") && meetingLink == "" {
+		if ml := s.getSubjectMeetingLink(ctx, candidature.SubjectName); ml != "" {
+			meetingLink = ml
+		}
+	}
+
+	template, err := s.GetEmailTemplateByType(ctx, templateType, effectiveStep)
 	if err != nil {
 		return nil, fmt.Errorf("no email template found for type %s", templateType)
 	}
@@ -402,6 +457,15 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", "Adresse")
 	body = strings.ReplaceAll(body, "[LienGoogleMaps]", "Adresse")
 	body = strings.ReplaceAll(body, "[Adresse]", "Adresse")
+	body = strings.ReplaceAll(body, "{{LienQuiz}}", quizLink)
+	body = strings.ReplaceAll(body, "[LienQuiz]", quizLink)
+	body = strings.ReplaceAll(body, "{{QuizLink}}", quizLink)
+	body = strings.ReplaceAll(body, "{{LienReunion}}", meetingLink)
+	body = strings.ReplaceAll(body, "{{LienMeeting}}", meetingLink)
+	body = strings.ReplaceAll(body, "[LienReunion]", meetingLink)
+	body = strings.ReplaceAll(body, "{{DateDebut}}", startDate)
+	body = strings.ReplaceAll(body, "{{DateStart}}", startDate)
+	body = strings.ReplaceAll(body, "[DateDebut]", startDate)
 
 	return &EmailPreviewResponse{
 		To:      to,
@@ -418,9 +482,23 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		return err
 	}
 
-	template, err := s.GetEmailTemplateByType(ctx, req.Type)
+	effectiveStep := req.Step
+	if req.Type == "acceptance" && effectiveStep == "" {
+		effectiveStep = candidature.Step
+	}
+	if (effectiveStep == "online_quiz" || req.Type == "online_quiz") && req.QuizLink == "" {
+		if ql := s.getSubjectQuizLink(ctx, candidature.SubjectName); ql != "" {
+			req.QuizLink = ql
+		}
+	}
+	if (effectiveStep == "online_meeting" || req.Type == "online_meeting") && req.MeetingLink == "" {
+		if ml := s.getSubjectMeetingLink(ctx, candidature.SubjectName); ml != "" {
+			req.MeetingLink = ml
+		}
+	}
+	template, err := s.GetEmailTemplateByType(ctx, req.Type, effectiveStep)
 	if err != nil {
-		return fmt.Errorf("no email template found for type %s", req.Type)
+		return fmt.Errorf("no email template found for type %s step %s", req.Type, effectiveStep)
 	}
 
 	to := candidature.Email1
@@ -457,6 +535,15 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Adresse")
 	subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Adresse")
 	subject = strings.ReplaceAll(subject, "[Adresse]", "Adresse")
+	subject = strings.ReplaceAll(subject, "{{LienQuiz}}", req.QuizLink)
+	subject = strings.ReplaceAll(subject, "[LienQuiz]", req.QuizLink)
+	subject = strings.ReplaceAll(subject, "{{QuizLink}}", req.QuizLink)
+	subject = strings.ReplaceAll(subject, "{{LienReunion}}", req.MeetingLink)
+	subject = strings.ReplaceAll(subject, "{{LienMeeting}}", req.MeetingLink)
+	subject = strings.ReplaceAll(subject, "[LienReunion]", req.MeetingLink)
+	subject = strings.ReplaceAll(subject, "{{DateDebut}}", req.StartDate)
+	subject = strings.ReplaceAll(subject, "{{DateStart}}", req.StartDate)
+	subject = strings.ReplaceAll(subject, "[DateDebut]", req.StartDate)
 
 	now := time.Now().Format("2006-01-02 15:04:05")
 

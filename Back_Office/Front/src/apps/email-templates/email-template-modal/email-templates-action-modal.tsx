@@ -48,22 +48,28 @@ import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/use-permissions";
 
 const typeLabelMap: Record<string, Record<string, string>> = {
-  fr: { confirmation: "Accusé de réception", acceptance: "Invitation", disapproval: "Refus", reopening: "Réouverture" },
-  en: { confirmation: "Confirmation", acceptance: "Acceptance", disapproval: "Disapproval", reopening: "Reopening" },
+  fr: { confirmation: "Accusé de réception", online_quiz: "Quiz en ligne", disapproval: "Refus", reopening: "Réouverture", online_meeting: "Réunion en ligne", f2f_meeting: "Entretien présentiel", final_decision: "Décision finale" },
+  en: { confirmation: "Confirmation", online_quiz: "Online Quiz", disapproval: "Disapproval", reopening: "Reopening", online_meeting: "Online Meeting", f2f_meeting: "F2F Meeting", final_decision: "Final Decision" },
 };
 
 const subjectOptions = [
   { label: "Accusé de réception", type: "confirmation", subject: "Accusé de réception" },
-  { label: "Invitation entretien", type: "acceptance", subject: "Invitation à un entretien" },
+  { label: "Online Quiz", type: "online_quiz", subject: "Online quiz" },
   { label: "Refus candidature", type: "disapproval", subject: "Refus de votre candidature" },
   { label: "Réouverture", type: "reopening", subject: "Réouverture des candidatures" },
+  { label: "Online Meeting", type: "online_meeting", subject: "Online meeting" },
+  { label: "F2F Meeting", type: "f2f_meeting", subject: "F2F meeting" },
+  { label: "Final Decision", type: "final_decision", subject: "Acceptation finale" },
 ] as const;
 
 const viewTypeVariants: Record<string, string> = {
   confirmation: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  acceptance: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  online_quiz: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   disapproval: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
   reopening: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  online_meeting: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+  f2f_meeting: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  final_decision: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
 };
 
 const formSchema = z.object({

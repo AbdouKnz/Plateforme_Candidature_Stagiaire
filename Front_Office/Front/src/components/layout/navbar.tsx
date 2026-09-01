@@ -16,11 +16,13 @@ function useNavLinks() {
     return [
       { to: "/", labelKey: "home.nav.home" },
       { to: "/about", labelKey: "home.nav.about" },
+      { to: "/pfe-book", labelKey: "pfeBook" },
     ]
   }
   return [
     { to: "/", labelKey: "home.nav.home" },
     { to: "/about", labelKey: "home.nav.about" },
+    { to: "/pfe-book", labelKey: "pfeBook" },
     { to: "/form", labelKey: "home.applyNow" },
   ]
 }
@@ -80,7 +82,7 @@ export function Navbar() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 )}
               >
-                {t(link.labelKey)}
+                {link.labelKey === "pfeBook" ? "PFE Book" : t(link.labelKey)}
                 {isActive && (
                   <motion.span
                     layoutId="nav-indicator"
@@ -127,7 +129,7 @@ export function Navbar() {
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   )}
                 >
-                  {t(link.labelKey)}
+                  {link.labelKey === "pfeBook" ? "PFE Book" : t(link.labelKey)}
                 </Link>
               )
             })}

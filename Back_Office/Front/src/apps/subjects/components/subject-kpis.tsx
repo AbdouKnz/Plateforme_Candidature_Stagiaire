@@ -133,12 +133,12 @@ export function SubjectKpis() {
   const isLoading = subjectsLoading || candidaturesLoading;
 
   const rows = useMemo<SubjectRow[]>(() => {
-    const allSubjects = subjects ?? [];
+    const activeSubjects = (subjects ?? []).filter((s) => !!s.status);
     const allCandidatures = candidatures ?? [];
-    const knownNames = new Set(allSubjects.map((s) => s.name));
+    const knownNames = new Set(activeSubjects.map((s) => s.name));
 
     const statsMap = new Map<string, RawStat>();
-    for (const subject of allSubjects) {
+    for (const subject of activeSubjects) {
       statsMap.set(subject.name, {
         code: subject.code,
         subjectName: subject.name,

@@ -71,40 +71,52 @@ export function KpiCards() {
 
   const foEnabled = foStatus?.is_enabled ?? true;
 
+  const total = stats?.total ?? 0;
   const cards = [
     {
       label: t("pending") || "Pending",
       value: stats?.pending ?? "-",
+      sub: total ? `${pct(stats?.pending ?? 0, total)}% ${t("of") || "of total"}` : undefined,
       icon: Clock,
       color: "amber",
+      pct: pct(stats?.pending ?? 0, total),
     },
     {
       label: t("accepted") || "Accepted",
       value: stats?.accepted ?? stats?.invited ?? "-",
+      sub: total ? `${pct(stats?.accepted ?? 0, total)}% ${t("of") || "of total"}` : undefined,
       icon: CheckCircle2,
       color: "emerald",
+      pct: pct(stats?.accepted ?? 0, total),
     },
     {
       label: t("rejected") || "Rejected",
       value: stats?.rejected ?? "-",
+      sub: total ? `${pct(stats?.rejected ?? 0, total)}% ${t("of") || "of total"}` : undefined,
       icon: XCircle,
       color: "red",
+      pct: pct(stats?.rejected ?? 0, total),
     },
     {
       label: t("today") || "Today",
       value: stats?.todayCount ?? "-",
+      sub: t("today") ? `${stats?.todayCount ?? 0} ${t("today").toLowerCase()}` : undefined,
       icon: Calendar,
       color: "sky",
+      pct: total ? pct(stats?.todayCount ?? 0, total) : 0,
     },
     {
       label: t("front_office_status") || "Front Office",
       value: foEnabled ? (t("enabled") || "Active") : (t("disabled") || "Closed"),
+      sub: foEnabled ? t("front_office_enabled_description") : t("front_office_disabled_description"),
       icon: PowerIcon,
       color: foEnabled ? "green" : "red",
+      pct: foEnabled ? 100 : 0,
+      isStatus: true,
     },
   ];
 
-  const colorMap: Record<string, { bg: string; text: string; ring: string; gradient: string; bar: string; glow: string }> = {
+  const colorMap: Record<string, { bg: string; text: string; ring: string; gradient: string; bar: string; glow: string; softBg: string }> = {
     violet: {
       bg: "bg-violet-100 dark:bg-violet-500/15",
       text: "text-violet-600 dark:text-violet-400",
@@ -112,6 +124,7 @@ export function KpiCards() {
       gradient: "from-violet-500 to-purple-600",
       bar: "bg-violet-500",
       glow: "shadow-violet-500/25",
+      softBg: "bg-violet-500/10",
     },
     amber: {
       bg: "bg-amber-100 dark:bg-amber-500/15",
@@ -120,6 +133,7 @@ export function KpiCards() {
       gradient: "from-amber-400 to-orange-500",
       bar: "bg-amber-500",
       glow: "shadow-amber-500/25",
+      softBg: "bg-amber-500/10",
     },
     emerald: {
       bg: "bg-emerald-100 dark:bg-emerald-500/15",
@@ -128,6 +142,7 @@ export function KpiCards() {
       gradient: "from-emerald-500 to-teal-600",
       bar: "bg-emerald-500",
       glow: "shadow-emerald-500/25",
+      softBg: "bg-emerald-500/10",
     },
     red: {
       bg: "bg-red-100 dark:bg-red-500/15",
@@ -136,6 +151,7 @@ export function KpiCards() {
       gradient: "from-red-500 to-rose-600",
       bar: "bg-red-500",
       glow: "shadow-red-500/25",
+      softBg: "bg-red-500/10",
     },
     sky: {
       bg: "bg-sky-100 dark:bg-sky-500/15",
@@ -144,6 +160,7 @@ export function KpiCards() {
       gradient: "from-sky-500 to-blue-600",
       bar: "bg-sky-500",
       glow: "shadow-sky-500/25",
+      softBg: "bg-sky-500/10",
     },
     green: {
       bg: "bg-green-100 dark:bg-green-500/15",
@@ -152,6 +169,7 @@ export function KpiCards() {
       gradient: "from-green-500 to-emerald-600",
       bar: "bg-green-500",
       glow: "shadow-green-500/25",
+      softBg: "bg-green-500/10",
     },
   };
 
@@ -194,13 +212,15 @@ export function KpiCards() {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {cards.map((card, i) => {
+        {cards.map((card: any, i) => {
           const colors = colorMap[card.color];
+          const isStatusCard = (card as any).isStatus;
           return (
             <div
               key={i}
               className={cn(
-                "group relative flex h-full flex-col overflow-hidden rounded-xl border border-border/50",
+                "group relative flex h-full flex-col overflow-hidden rounded-xl border",
+                isStatusCard ? "border-border" : "border-border/50",
                 "bg-card transition-all duration-200",
                 "hover:shadow-lg hover:-translate-y-0.5 hover:border-transparent",
                 "fade-in",
@@ -209,30 +229,55 @@ export function KpiCards() {
               style={{ animationDelay: `${i * 60}ms` }}
             >
               {/* Top accent line */}
-              <div className={cn("h-0.5 w-full bg-gradient-to-r", colors.gradient)} />
+              <div className={cn("h-1 w-full bg-gradient-to-r", colors.gradient)} />
 
               <div className="flex flex-1 flex-col p-4">
-                <div className="mb-3 flex items-center gap-2.5">
-                  <div className={cn(
-                    "flex size-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white shadow-sm",
-                    colors.gradient,
-                  )}>
-                    <card.icon className="size-4" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-xl border shadow-sm",
+                      colors.bg, colors.text, colors.ring, "ring-1"
+                    )}>
+                      <card.icon className="size-4" />
+                    </div>
+                    <span className="truncate text-[13px] font-semibold text-foreground">
+                      {card.label}
+                    </span>
                   </div>
-                  <span className="truncate text-[13px] font-semibold text-foreground">
-                    {card.label}
-                  </span>
+                  {!isStatusCard && (
+                    <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", colors.bg, colors.text, colors.ring)}>
+                      {card.pct}%
+                    </span>
+                  )}
+                  {isStatusCard && (
+                    <span className={cn("size-2.5 rounded-full animate-pulse", (card.color === "green" ? "bg-emerald-500 shadow-emerald-500/30" : "bg-red-500 shadow-red-500/30"), "shadow") } />
+                  )}
                 </div>
 
-                <div className="flex flex-1 items-center justify-center">
+                <div className="mt-3">
                   <p className={cn(
-                    "truncate font-bold tracking-tight",
-                    card.icon === PowerIcon ? colors.text : "text-foreground",
-                    card.icon === PowerIcon ? "text-2xl" : "text-4xl",
+                    "truncate font-bold tracking-tight leading-none",
+                    isStatusCard ? cn(colors.text, "text-xl") : "text-3xl text-foreground",
                   )}>
                     {card.value}
                   </p>
+                  {card.sub && (
+                    <p className="mt-1 truncate text-xs text-muted-foreground" title={card.sub}>
+                      {card.sub}
+                    </p>
+                  )}
                 </div>
+
+                {!isStatusCard ? (
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                    <div className={cn("h-full rounded-full transition-all duration-700", colors.bar)} style={{ width: `${Math.min(100, card.pct)}%` }} />
+                  </div>
+                ) : (
+                  <div className={cn("mt-3 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs", colors.softBg, colors.text, "border", colors.ring)}>
+                    <card.icon className="size-3.5 shrink-0" />
+                    <span className="truncate font-medium">{card.sub}</span>
+                  </div>
+                )}
               </div>
             </div>
           );
