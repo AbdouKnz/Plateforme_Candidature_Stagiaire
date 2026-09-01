@@ -909,12 +909,10 @@ export function PfeBookPage() {
             </span>
           </div>
           <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-4 overflow-hidden">
-            <div className="flex-1 flex flex-col justify-center w-full max-w-[1400px] mx-auto">
-              <div className="flex flex-col lg:flex-row gap-6 lg:gap-6 items-stretch">
-                {/* Photo — left */}
-                <div className="lg:w-[30%] relative rounded-2xl overflow-hidden border border-white/10 bg-black shrink-0">
-                  <img src="/Sheryl.png" alt="Sheryl Sandberg" className="w-full h-[380px] sm:h-[420px] lg:h-full min-h-[380px] object-cover object-top" loading="lazy" />
-                </div>
+            <div className="flex-1 flex flex-col justify-center w-full max-w-[1400px]">
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-stretch">
+                {/* Photo — left, no card */}
+                <img src="/Sheryl.png" alt="Sheryl Sandberg" className="w-full lg:w-[34%] h-[420px] sm:h-[460px] lg:h-auto min-h-[380px] shrink-0 object-contain object-center ml-1 sm:ml-2 lg:ml-4 -mr-1 sm:-mr-2 lg:-mr-4" loading="lazy" />
                 {/* Quote — center */}
                 <div className="lg:w-[42%] relative rounded-2xl border border-[#7C3AED]/30 bg-[#0f0a1f]/50 backdrop-blur p-7 sm:p-8 lg:p-8 xl:p-10 flex flex-col justify-center">
                   <QuoteIcon className="absolute top-5 left-6 size-8 text-[#7C3AED]/60" />
@@ -942,7 +940,7 @@ export function PfeBookPage() {
                     </a>
                     <a href="https://asteroidea.co" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2.5 rounded-xl border border-[#7C3AED]/30 bg-[#0f0a1f]/40 px-4 py-2.5 text-sm text-white/90 hover:bg-white/[0.06] transition-colors">
                       <GlobeIcon className="size-4 text-[#7C3AED]" />
-                      asteroidea.<span className="text-[#EF4444]">co</span>
+                      asteroidea.co
                     </a>
                     <a href="https://www.linkedin.com/company/asteroidea-co" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2.5 rounded-xl border border-[#7C3AED]/30 bg-[#0f0a1f]/40 px-4 py-2.5 text-sm text-white/90 hover:bg-white/[0.06] transition-colors">
                       <LinkedinIcon className="size-4 text-[#7C3AED]" />
@@ -950,11 +948,6 @@ export function PfeBookPage() {
                     </a>
                   </div>
                 </div>
-              </div>
-              {/* Navigation buttons — below, centered */}
-              <div className="mt-8 flex items-center justify-center gap-3">
-                <Button variant="outline" onClick={() => goTo(0)} className="rounded-xl border border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white h-10 px-6 text-sm font-medium">Back to cover</Button>
-                <Button onClick={() => goTo(4)} className="rounded-xl bg-[#7C3AED] text-white hover:bg-[#6D28D9] h-10 px-6 text-sm font-medium shadow-[0_4px_20px_rgba(124,58,237,0.3)]">Browse subjects</Button>
               </div>
             </div>
           </div>
