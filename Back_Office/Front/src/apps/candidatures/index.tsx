@@ -11,7 +11,7 @@ import { useCandidatureColumns } from "./table/candidatures-columns";
 import { CandidatureModals } from "./candidature-modal";
 import { SendEmailModal } from "./candidature-modal/send-email-modal";
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useCandidatureToolbarProps } from "./table/data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ interface BulkState {
   templateType: BulkTemplateType;
 }
 
-import { PIPELINE_STEPS, DEFAULT_STEP, nextPipelineStep } from "./pipeline";
+import { PIPELINE_STEPS, DEFAULT_STEP } from "./pipeline";
 import { hasCurrentStepScore } from "./scoring";
 import { PipelineNav } from "./pipeline-nav";
 
@@ -55,46 +55,61 @@ export function Candidatures() {
   const { data: candidatures } = useCandidatures(queryParams);
   const allData = useMemo(() => candidatures ?? [], [candidatures]);
 
-  // FRONT-ONLY VIRTUAL: when a candidature is moved to next step as pending,
-  // also show it in previous step as accepted (same id, no DB duplication).
-  // Revert by restoring the two useMemo blocks below to their original simple filters.
+  // Statuts par étape réels (colonnes step1..step5_status) : une ligne apparaît
+  // dans chaque étape qu'elle a atteinte (NULL = pas encore atteinte).
+  const stepStatusCol = (step: string): keyof Candidature => {
+    const idx = PIPELINE_STEPS.indexOf(step as (typeof PIPELINE_STEPS)[number]);
+    return `step${idx === -1 ? 1 : idx + 1}_status` as keyof Candidature;
+  };
+
   const stepCounts = useMemo(() => {
     const map: Record<string, number> = { all: allData.length };
     for (const step of PIPELINE_STEPS) {
-      const real = allData.filter((d) => (d.step || DEFAULT_STEP) === step).length;
-      const next = nextPipelineStep(step);
-      const virtual = next
-        ? allData.filter((d) => (d.step || DEFAULT_STEP) === next && (!d.status || d.status === "pending")).length
-        : 0;
-      map[step] = real + virtual;
+      const col = stepStatusCol(step);
+      map[step] = allData.filter((d) => d[col] != null).length;
     }
     return map;
   }, [allData]);
 
   const stepData = useMemo(() => {
     if (stepFilter === "all") return allData;
-    const real = allData.filter((d) => (d.step || DEFAULT_STEP) === stepFilter);
-    const next = nextPipelineStep(stepFilter);
-    if (!next) return real;
-    const virtualAccepted = allData
-      .filter((d) => (d.step || DEFAULT_STEP) === next && (!d.status || d.status === "pending"))
-      .map((d) => ({ ...d, status: "accepted" as const, _virtualAccepted: true } as Candidature & { _virtualAccepted?: boolean }));
-    return [...real, ...virtualAccepted];
+    const col = stepStatusCol(stepFilter);
+    return allData.filter((d) => d[col] != null);
   }, [allData, stepFilter]);
 
+  // Statut affiché : celui de l'étape consultée (stepN_status), pas celui de
+  // l'étape courante. Une candidature acceptée en CV puis passée au quiz
+  // affiche donc "accepted" dans l'onglet CV et "pending" dans l'onglet quiz.
+  const displayStatus = useCallback(
+    (d: Candidature): string => {
+      if (stepFilter === "all") return d.status || "pending";
+      const col = stepStatusCol(stepFilter);
+      const v = d[col] as unknown as string | null | undefined;
+      return v || d.status || "pending";
+    },
+    [stepFilter]
+  );
+
   const counts = useMemo(() => {
-    const pending = stepData.filter((d) => !d.status || d.status === "pending").length;
-    const accepted = stepData.filter((d) => d.status === "accepted" || d.status === "invited").length;
-    const rejected = stepData.filter((d) => d.status === "rejected").length;
+    const pending = stepData.filter((d) => displayStatus(d) === "pending").length;
+    const accepted = stepData.filter((d) => {
+      const s = displayStatus(d);
+      return s === "accepted" || s === "invited";
+    }).length;
+    const rejected = stepData.filter((d) => displayStatus(d) === "rejected").length;
     return { all: stepData.length, pending, accepted, rejected };
-  }, [stepData]);
+  }, [stepData, displayStatus]);
 
   const data = useMemo(() => {
     if (statusFilter === "all") return stepData;
-    if (statusFilter === "pending") return stepData.filter((d) => !d.status || d.status === "pending");
-    if (statusFilter === "accepted") return stepData.filter((d) => d.status === "accepted" || d.status === "invited");
-    return stepData.filter((d) => d.status === statusFilter);
-  }, [stepData, statusFilter]);
+    if (statusFilter === "pending") return stepData.filter((d) => displayStatus(d) === "pending");
+    if (statusFilter === "accepted")
+      return stepData.filter((d) => {
+        const s = displayStatus(d);
+        return s === "accepted" || s === "invited";
+      });
+    return stepData.filter((d) => displayStatus(d) === statusFilter);
+  }, [stepData, statusFilter, displayStatus]);
 
   const selectedRows = useMemo(
     () => data.filter((c) => rowSelection[String(c.id)]),
@@ -105,7 +120,7 @@ export function Candidatures() {
 
   const handleBulkAdvance = () => {
     const queue = selectedRows.filter(
-      (c) => !c.status || c.status === "pending"
+      (c) => displayStatus(c) === "pending"
     );
     if (queue.length === 0) {
       showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
@@ -115,18 +130,11 @@ export function Candidatures() {
       showAlert({ message: t("score_required_bulk"), type: AlertEnum.WARNING });
       return;
     }
+    // Le backend marque l'étape courante accepted et crée l'étape suivante en pending.
     queue.forEach((candidature) => {
-      const next = nextPipelineStep(candidature.step);
-      if (!next) {
-        updateMutation.mutate({
-          id: candidature.id,
-          data: { status: "accepted" },
-        });
-        return;
-      }
       updateMutation.mutate({
         id: candidature.id,
-        data: { step: next, status: "pending" },
+        data: { status: "accepted" },
       });
     });
     setRowSelection({});
@@ -134,7 +142,7 @@ export function Candidatures() {
 
   const startBulk = (templateType: BulkTemplateType) => {
     const queue = selectedRows.filter(
-      (c) => !c.status || c.status === "pending"
+      (c) => displayStatus(c) === "pending"
     );
     if (queue.length === 0) {
       showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
@@ -167,7 +175,8 @@ export function Candidatures() {
     (candidature) => {
       setStepFilter(candidature.step || DEFAULT_STEP);
     },
-    stepFilter !== "all"
+    stepFilter !== "all",
+    displayStatus
   );
   const toolbarProps = useCandidatureToolbarProps();
 

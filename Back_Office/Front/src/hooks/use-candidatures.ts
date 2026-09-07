@@ -13,6 +13,8 @@ import {
   createCandidature,
   updateCandidature,
   deleteCandidature,
+  getPipeline,
+  type PipelineStage,
 } from "@/service/candidatures";
 import { Candidature, CandidatureResponse, CandidatureQueryParams } from "@/models/candidature-model";
 import { AxiosError } from "axios";
@@ -56,6 +58,7 @@ export function useCreateCandidature() {
     mutationFn: createCandidature,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+      queryClient.invalidateQueries({ queryKey: ["candidatures", "pipeline"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -78,6 +81,7 @@ export function useUpdateCandidature() {
     mutationFn: ({ id, data }) => updateCandidature(id, data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+      queryClient.invalidateQueries({ queryKey: ["candidatures", "pipeline"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -100,6 +104,7 @@ export function useDeleteCandidature() {
     mutationFn: (id) => deleteCandidature(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+      queryClient.invalidateQueries({ queryKey: ["candidatures", "pipeline"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -112,4 +117,13 @@ export function useDeleteCandidature() {
       });
     },
   });
+}
+
+export function usePipeline() {
+  return useQuery<PipelineStage[], Error>({
+    queryKey: ["candidatures", "pipeline"],
+    queryFn: () => getPipeline(),
+    retry: 1,
+    refetchInterval: 5000,
+  } as UseQueryOptions<PipelineStage[], Error>);
 }

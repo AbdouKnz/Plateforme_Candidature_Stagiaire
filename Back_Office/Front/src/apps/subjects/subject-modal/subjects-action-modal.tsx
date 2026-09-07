@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +61,7 @@ const formSchema = z.object({
   online_meeting_link: z.string(),
   f2f_meeting_link: z.string(),
   duration_id: z.number().nullable(),
+  image_path: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -101,7 +102,15 @@ export function SubjectsActionModal({
 
   const handleClose = () => {
     form.reset();
+    setImageFile(null);
+    setImagePreview(null);
     onClose();
+  };
+
+  const imageUrl = (path?: string | null) => {
+    if (!path) return null;
+    if (path.startsWith("http") || path.startsWith("/")) return path;
+    return `/api/${path}`;
   };
 
   const form = useForm<FormData>({
@@ -151,14 +160,18 @@ export function SubjectsActionModal({
     return options;
   }, [profiles, subject]);
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   function onSubmit(data: FormData) {
+    const payload = { ...data, image: imageFile } as typeof data & { image: File | null };
     if (isEdit && subject) {
       updateSubject(
-        { id: subject.id, data },
+        { id: subject.id, data: payload },
         { onSuccess: handleClose },
       );
     } else if (isAdd) {
-      createSubject(data, { onSuccess: handleClose });
+      createSubject(payload, { onSuccess: handleClose });
     }
   }
 
@@ -174,7 +187,10 @@ export function SubjectsActionModal({
         online_meeting_link: subject.online_meeting_link || "",
         f2f_meeting_link: subject.f2f_meeting_link || "",
         duration_id: subject.duration_id ?? null,
+        image_path: subject.image_path || "",
       });
+      setImageFile(null);
+      setImagePreview(imageUrl(subject.image_path));
     } else {
       form.reset({
         code: "",
@@ -186,7 +202,10 @@ export function SubjectsActionModal({
         online_meeting_link: "",
         f2f_meeting_link: "",
         duration_id: null,
+        image_path: "",
       });
+      setImageFile(null);
+      setImagePreview(null);
     }
   }, [subject, form]);
 
@@ -235,8 +254,8 @@ export function SubjectsActionModal({
         onClose();
       }}
     >
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader className="border-b pb-3">
+      <DialogContent className="sm:max-w-5xl lg:max-w-6xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl">
+        <DialogHeader className="border-b pb-4">
           <DialogTitle className="flex items-center gap-2">
             <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
               {isEdit ? (
@@ -259,220 +278,275 @@ export function SubjectsActionModal({
           <form
             id="subject-form"
             onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 mt-2 p-0.5"
+            className="mt-3 p-1"
           >
-            <FormField
-              control={form.control}
-              name="code"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("subject_code")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("placeholder_subject_code")}
-                      className="col-span-4"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("subject_name")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t("placeholder_subject_name")}
-                      className="col-span-4"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="technology_ids"
-              render={() => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("technologies")}
-                  </FormLabel>
-                  <FormControl>
-                    <MultiSelect
-                      options={technologyOptions}
-                      selected={form.watch("technology_ids").map(String)}
-                      onChange={(vals) => form.setValue("technology_ids", vals.map(Number), { shouldValidate: true })}
-                      placeholder={t("select_technologies")}
-                      disabled={isView}
-                      className="col-span-4 h-8 py-1"
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="profile_ids"
-              render={() => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("profiles")}
-                  </FormLabel>
-                  <FormControl>
-                    <MultiSelect
-                      options={profileOptions}
-                      selected={form.watch("profile_ids").map(String)}
-                      onChange={(vals) => form.setValue("profile_ids", vals.map(Number), { shouldValidate: true })}
-                      placeholder={t("select_profiles")}
-                      disabled={isView}
-                      className="col-span-4 h-8 py-1"
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right pt-2">
-                    {t("subject_description")}
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder={t("placeholder_subject_description")}
-                      className="col-span-4 min-h-24"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="online_quiz_link"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("online_quiz_link")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder={t("placeholder_online_quiz_link")}
-                      className="col-span-4"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="online_meeting_link"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("online_meeting_link")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder={t("placeholder_online_meeting_link")}
-                      className="col-span-4"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="f2f_meeting_link"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("f2f_meeting_link")}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="url"
-                      placeholder={t("placeholder_f2f_meeting_link")}
-                      className="col-span-4"
-                      autoComplete="off"
-                      disabled={isView}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="duration_id"
-              render={({ field }) => (
-                <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
-                  <FormLabel className="col-span-2 text-right">
-                    {t("project_period")}
-                  </FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value ? String(field.value) : "none"}
-                      onValueChange={(val) =>
-                        form.setValue(
-                          "duration_id",
-                          val === "none" ? null : Number(val),
-                          { shouldValidate: true },
-                        )
-                      }
-                      disabled={isView}
-                    >
-                      <SelectTrigger className="col-span-4 w-full h-9">
-                        <SelectValue placeholder={t("select_project_period")} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">{t("no_project_period")}</SelectItem>
-                        {durations.map((d) => (
-                          <SelectItem key={d.id} value={String(d.id)}>
-                            {d.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage className="col-span-4 col-start-3" />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr]">
+              {/* LEFT — Code / Name / Technologies / Profiles */}
+              <div className="rounded-xl border border-border/60 p-4 space-y-4">
+                <FormField
+                  control={form.control}
+                  name="code"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>
+                        {t("subject_code")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("placeholder_subject_code")}
+                          autoComplete="off"
+                          disabled={isView}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>
+                        {t("subject_name")}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={t("placeholder_subject_name")}
+                          autoComplete="off"
+                          disabled={isView}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="technology_ids"
+                  render={() => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>
+                        {t("technologies")}
+                      </FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={technologyOptions}
+                          selected={form.watch("technology_ids").map(String)}
+                          onChange={(vals) => form.setValue("technology_ids", vals.map(Number), { shouldValidate: true })}
+                          placeholder={t("select_technologies")}
+                          disabled={isView}
+                          className="min-h-9 h-auto py-1.5"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="profile_ids"
+                  render={() => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>
+                        {t("profiles")}
+                      </FormLabel>
+                      <FormControl>
+                        <MultiSelect
+                          options={profileOptions}
+                          selected={form.watch("profile_ids").map(String)}
+                          onChange={(vals) => form.setValue("profile_ids", vals.map(Number), { shouldValidate: true })}
+                          placeholder={t("select_profiles")}
+                          disabled={isView}
+                          className="min-h-9 h-auto py-1.5"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            <DialogFooter>
+              {/* RIGHT */}
+              <div className="flex flex-col gap-4 min-w-0">
+                <div className="rounded-xl border border-border/60 p-4">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel>
+                          {t("subject_description")}
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder={t("placeholder_subject_description")}
+                            className="min-h-48"
+                            autoComplete="off"
+                            disabled={isView}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="rounded-xl border border-border/60 p-4 space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="online_quiz_link"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel>
+                          {t("online_quiz_link")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={t("placeholder_online_quiz_link")}
+                            autoComplete="off"
+                            disabled={isView}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="online_meeting_link"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel>
+                          {t("online_meeting_link")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={t("placeholder_online_meeting_link")}
+                            autoComplete="off"
+                            disabled={isView}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="f2f_meeting_link"
+                    render={({ field }) => (
+                      <FormItem className="space-y-1.5">
+                        <FormLabel>
+                          {t("f2f_meeting_link")}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="url"
+                            placeholder={t("placeholder_f2f_meeting_link")}
+                            autoComplete="off"
+                            disabled={isView}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_3fr]">
+                  <div className="rounded-xl border border-border/60 p-4">
+                    <FormField
+                      control={form.control}
+                      name="duration_id"
+                      render={({ field }) => (
+                        <FormItem className="space-y-1.5">
+                          <FormLabel>
+                            {t("project_period")}
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value ? String(field.value) : "none"}
+                              onValueChange={(val) =>
+                                form.setValue(
+                                  "duration_id",
+                                  val === "none" ? null : Number(val),
+                                  { shouldValidate: true },
+                                )
+                              }
+                              disabled={isView}
+                            >
+                              <SelectTrigger className="w-full h-9">
+                                <SelectValue placeholder={t("select_project_period")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">{t("no_project_period")}</SelectItem>
+                                {durations.map((d) => (
+                                  <SelectItem key={d.id} value={String(d.id)}>
+                                    {d.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="rounded-xl border border-border/60 p-4">
+                    <FormLabel>
+                      {t("subject_image")}
+                    </FormLabel>
+                    <div className="mt-1.5 flex items-center gap-3">
+                      {!isView ? (
+                        <>
+                          <label
+                            htmlFor="subject-image-input"
+                            className="inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+                          >
+                            {t("browse")}
+                          </label>
+                          <Input
+                            id="subject-image-input"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] ?? null;
+                              setImageFile(file);
+                              setImagePreview(null);
+                            }}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+                            {imageFile
+                              ? imageFile.name
+                              : subject?.image_path
+                                ? subject.image_path.split("/").pop()
+                                : t("no_file_chosen")}
+                          </span>
+                        </>
+                      ) : subject?.image_path ? (
+                        <span className="truncate text-sm text-muted-foreground">
+                          {subject.image_path.split("/").pop()}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2">
               <Button variant="outline" type="button" onClick={handleClose}>
                 {t("cancel")}
               </Button>

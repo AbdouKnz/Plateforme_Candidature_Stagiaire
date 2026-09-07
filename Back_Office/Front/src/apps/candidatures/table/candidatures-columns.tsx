@@ -33,7 +33,8 @@ const typeVariants: Record<string, string> = {
 
 export function useCandidatureColumns(
   onView?: (candidature: Candidature) => void,
-  showStepActions = false
+  showStepActions = false,
+  getDisplayStatus?: (candidature: Candidature) => string
 ): ColumnDef<Candidature>[] {
   const { t } = useTranslation();
   const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
@@ -76,7 +77,7 @@ export function useCandidatureColumns(
         <DataTableColumnHeader column={column} title={t("status")} />
       ),
       cell: ({ row }) => {
-        const status = row.original.status || "pending";
+        const status = (getDisplayStatus ? getDisplayStatus(row.original) : row.original.status) || "pending";
         return (
           <span className={cn(
             "text-[10px] font-medium px-1.5 py-0.5 rounded uppercase leading-none inline-block ml-4",
@@ -208,7 +209,7 @@ export function useCandidatureColumns(
         />
       ),
       cell: ({ row }) => {
-        const status = row.original.status || "pending";
+        const status = (getDisplayStatus ? getDisplayStatus(row.original) : row.original.status) || "pending";
         const isPending = status === "pending";
 
         return (

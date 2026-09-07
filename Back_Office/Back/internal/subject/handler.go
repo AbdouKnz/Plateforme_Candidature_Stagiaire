@@ -1,13 +1,44 @@
 package subject
 
 import (
+	"astro-backend/config"
 	"astro-backend/domain"
 	"astro-backend/pkg"
 	"astro-backend/pkg/export"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+func saveSubjectImage(c *gin.Context) (string, error) {
+	file, err := c.FormFile("image")
+	if err != nil {
+		return "", err
+	}
+	if file.Size > 10<<20 {
+		return "", fmt.Errorf("image too large (max 10MB)")
+	}
+	root := config.Configvar.Server.UploadsPath
+	if root == "" {
+		root = "./uploads"
+	}
+	dir := filepath.Join(root, "subjects")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create upload directory: %w", err)
+	}
+	ext := filepath.Ext(file.Filename)
+	filename := fmt.Sprintf("subject_%s%d%s", time.Now().UTC().Format("20060102T150405.000000000"), time.Now().UnixNano(), ext)
+	savePath := filepath.Join(dir, filename)
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		return "", fmt.Errorf("failed to save image: %w", err)
+	}
+	rel := filepath.Join("uploads", "subjects", filename)
+	return strings.ReplaceAll(rel, "\\", "/"), nil
+}
 
 type SubjectHandler struct {
 	Service *SubjectService
@@ -20,9 +51,37 @@ func NewSubjectHandler(service *SubjectService) *SubjectHandler {
 func (h *SubjectHandler) CreateSubjectHandler(c *gin.Context) {
 	var request CreateSubjectRequest
 
-	if err := pkg.BindJSON(c, &request); err != nil {
-		pkg.BadRequest(c, pkg.ErrInvalidInput+" "+err.Error())
-		return
+	if strings.Contains(c.ContentType(), "multipart/form-data") {
+		c.Request.ParseMultipartForm(32 << 20)
+		request.Code = c.PostForm("code")
+		request.Name = c.PostForm("name")
+		request.Description = c.PostForm("description")
+		request.ImagePath = c.PostForm("image_path")
+		request.OnlineQuizLink = c.PostForm("online_quiz_link")
+		request.OnlineMeetingLink = c.PostForm("online_meeting_link")
+		request.F2FMeetingLink = c.PostForm("f2f_meeting_link")
+		// technology_ids / profile_ids may come as comma-separated or repeated fields
+		request.TechnologyIDs = parseIDs(c.PostForm("technology_ids"))
+		request.ProfileIDs = parseIDs(c.PostForm("profile_ids"))
+		if dur := c.PostForm("duration_id"); dur != "" && dur != "null" {
+			var id int
+			if _, err := fmt.Sscanf(dur, "%d", &id); err == nil {
+				request.DurationID = &id
+			}
+		}
+		if _, err := c.FormFile("image"); err == nil {
+			if rel, err := saveSubjectImage(c); err == nil {
+				request.ImagePath = rel
+			} else {
+				pkg.BadRequest(c, err.Error())
+				return
+			}
+		}
+	} else {
+		if err := pkg.BindJSON(c, &request); err != nil {
+			pkg.BadRequest(c, pkg.ErrInvalidInput+" "+err.Error())
+			return
+		}
 	}
 
 	if err := pkg.ValidateStruct(c, &request); err != nil {
@@ -34,6 +93,7 @@ func (h *SubjectHandler) CreateSubjectHandler(c *gin.Context) {
 		Code:              request.Code,
 		Name:              request.Name,
 		Description:       request.Description,
+		ImagePath:         request.ImagePath,
 		OnlineQuizLink:    request.OnlineQuizLink,
 		OnlineMeetingLink: request.OnlineMeetingLink,
 		F2FMeetingLink:    request.F2FMeetingLink,
@@ -49,6 +109,22 @@ func (h *SubjectHandler) CreateSubjectHandler(c *gin.Context) {
 	pkg.CreatedL(c, "subject_created_successfully", ToResponse(createdSubject))
 }
 
+func parseIDs(raw string) []int {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil
+	}
+	parts := strings.FieldsFunc(raw, func(r rune) bool { return r == ',' || r == ';' || r == ' ' })
+	var out []int
+	for _, p := range parts {
+		var v int
+		if _, err := fmt.Sscanf(strings.TrimSpace(p), "%d", &v); err == nil {
+			out = append(out, v)
+		}
+	}
+	return out
+}
+
 func (h *SubjectHandler) UpdateSubjectHandler(c *gin.Context) {
 	id, ok := pkg.ParseID(c, "id")
 	if !ok {
@@ -57,9 +133,60 @@ func (h *SubjectHandler) UpdateSubjectHandler(c *gin.Context) {
 
 	var request UpdateSubjectRequest
 
-	if err := pkg.BindJSON(c, &request); err != nil {
-		pkg.BadRequest(c, pkg.ErrInvalidInput+" "+err.Error())
-		return
+	if strings.Contains(c.ContentType(), "multipart/form-data") {
+		c.Request.ParseMultipartForm(32 << 20)
+		if v := c.PostForm("code"); v != "" {
+			request.Code = v
+		}
+		if v := c.PostForm("name"); v != "" {
+			request.Name = v
+		}
+		if v := c.PostForm("description"); v != "" {
+			request.Description = v
+		}
+		if v := c.PostForm("image_path"); v != "" {
+			request.ImagePath = &v
+		}
+		if _, err := c.FormFile("image"); err == nil {
+			if rel, err := saveSubjectImage(c); err == nil {
+				request.ImagePath = &rel
+			} else {
+				pkg.BadRequest(c, err.Error())
+				return
+			}
+		}
+		if v := c.PostForm("technology_ids"); v != "" {
+			ids := parseIDs(v)
+			request.TechnologyIDs = ids
+		}
+		if v := c.PostForm("profile_ids"); v != "" {
+			ids := parseIDs(v)
+			request.ProfileIDs = ids
+		}
+		if v := c.PostForm("status"); v != "" {
+			b := v == "true" || v == "1"
+			request.Status = &b
+		}
+		if v := c.PostForm("online_quiz_link"); v != "" {
+			request.OnlineQuizLink = &v
+		}
+		if v := c.PostForm("online_meeting_link"); v != "" {
+			request.OnlineMeetingLink = &v
+		}
+		if v := c.PostForm("f2f_meeting_link"); v != "" {
+			request.F2FMeetingLink = &v
+		}
+		if v := c.PostForm("duration_id"); v != "" && v != "null" && v != "undefined" {
+			var did int
+			if _, err := fmt.Sscanf(v, "%d", &did); err == nil {
+				request.DurationID = &did
+			}
+		}
+	} else {
+		if err := pkg.BindJSON(c, &request); err != nil {
+			pkg.BadRequest(c, pkg.ErrInvalidInput+" "+err.Error())
+			return
+		}
 	}
 
 	updatedSubject, err := h.Service.UpdateSubject(c.Request.Context(), id, request)

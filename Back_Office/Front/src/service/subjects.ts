@@ -15,12 +15,43 @@ export const getSubjectById = async (id: number): Promise<Subject> => {
   return response?.data?.data;
 };
 
-export const createSubject = async (subjectData: Partial<Subject>): Promise<SubjectResponse> => {
+function toSubjectFormData(subjectData: Partial<Subject> & { image?: File | null }): FormData {
+  const formData = new FormData();
+  Object.entries(subjectData).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (key === "image") return;
+    if (Array.isArray(value)) {
+      formData.append(key, (value as unknown[]).join(","));
+    } else if (typeof value === "boolean") {
+      formData.append(key, value ? "true" : "false");
+    } else {
+      formData.append(key, String(value));
+    }
+  });
+  if (subjectData.image instanceof File) {
+    formData.append("image", subjectData.image);
+  }
+  return formData;
+}
+
+export const createSubject = async (subjectData: Partial<Subject> & { image?: File | null }): Promise<SubjectResponse> => {
+  if (subjectData.image instanceof File) {
+    const response = await axiosApi.post(SUBJECT_ENDPOINT + "/", toSubjectFormData(subjectData), {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response?.data;
+  }
   const response = await axiosApi.post(SUBJECT_ENDPOINT + "/", subjectData);
   return response?.data;
 };
 
-export const updateSubject = async (subjectId: number, subjectData: Partial<Subject>): Promise<SubjectResponse> => {
+export const updateSubject = async (subjectId: number, subjectData: Partial<Subject> & { image?: File | null }): Promise<SubjectResponse> => {
+  if (subjectData.image instanceof File) {
+    const response = await axiosApi.put(`${SUBJECT_ENDPOINT}/${subjectId}`, toSubjectFormData(subjectData), {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response?.data;
+  }
   const response = await axiosApi.put(`${SUBJECT_ENDPOINT}/${subjectId}`, subjectData);
   return response?.data;
 };

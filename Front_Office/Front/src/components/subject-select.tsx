@@ -37,10 +37,9 @@ export function SubjectSelect({
   useOnClickOutside(ref, () => setOpen(false))
 
   const toggle = (id: string) => {
-    const next = selected.includes(id)
-      ? selected.filter((s) => s !== id)
-      : [...selected, id]
+    const next = selected.includes(id) ? [] : [id]
     onChange(next)
+    setOpen(false)
   }
 
   const getTitle = (id: string) => {
@@ -61,14 +60,15 @@ export function SubjectSelect({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex h-10 w-full items-center justify-between rounded-xl border bg-card px-3.5 py-2 text-sm transition-all",
-          "hover:border-primary/40",
-          open && "border-primary ring-1 ring-primary/20",
-          invalid ? "border-destructive/60" : "border-border",
+          "flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border-2 bg-gradient-to-br from-primary/[0.06] to-primary/[0.02] px-4 py-3 text-sm transition-all",
+          "hover:border-primary/60 hover:shadow-md hover:shadow-primary/10 hover:-translate-y-0.5",
+          open && "border-primary shadow-md shadow-primary/15 ring-2 ring-primary/20",
+          invalid ? "border-destructive/60" : selected.length > 0 ? "border-primary/50 shadow-sm shadow-primary/10" : "border-primary/30 shadow-sm",
         )}
       >
         <span
           className={cn(
+            "truncate font-semibold",
             selected.length === 0 ? "text-muted-foreground" : "text-foreground",
           )}
         >
@@ -76,14 +76,14 @@ export function SubjectSelect({
         </span>
         <ChevronDownIcon
           className={cn(
-            "size-4 text-muted-foreground transition-transform duration-200",
+            "size-5 shrink-0 text-primary transition-transform duration-200",
             open && "rotate-180",
           )}
         />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-border bg-card p-1.5 shadow-lg max-h-72 overflow-y-auto">
+        <div className="absolute z-50 mt-2 w-full rounded-2xl border-2 border-primary/20 bg-card p-2 shadow-xl shadow-primary/10 max-h-72 overflow-y-auto">
           {options.map((option) => {
             const isSelected = selected.includes(option.id)
             return (
@@ -92,27 +92,15 @@ export function SubjectSelect({
                 type="button"
                 onClick={() => toggle(option.id)}
                 className={cn(
-                  "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
-                  "hover:bg-primary/[0.04]",
-                  isSelected && "bg-primary/[0.04]",
+                  "flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-all border",
+                  "hover:bg-primary/[0.06] hover:border-primary/30",
+                  isSelected ? "bg-primary/[0.08] border-primary/40 shadow-sm" : "border-transparent",
                 )}
               >
-                <Checkbox checked={isSelected} className="pointer-events-none shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-medium text-foreground text-sm leading-tight">
-                    {option.title}
-                  </span>
-                  {option.description && (
-                    <span className="line-clamp-2 text-xs text-muted-foreground leading-tight">
-                      {option.description}
-                    </span>
-                  )}
-                  {option.department && (
-                    <span className="text-[11px] text-muted-foreground/70 leading-tight">
-                      {option.department}
-                    </span>
-                  )}
-                </div>
+                <Checkbox checked={isSelected} className="pointer-events-none shrink-0" />
+                <span className={cn("font-semibold text-[15px] leading-tight flex-1", isSelected ? "text-primary" : "text-foreground")}>
+                  {option.title}
+                </span>
               </button>
             )
           })}

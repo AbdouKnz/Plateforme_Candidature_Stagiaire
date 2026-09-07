@@ -90,21 +90,6 @@ export function ApplicationForm() {
   const [types, setTypes] = React.useState<Type_[]>([])
   const [loadingOptions, setLoadingOptions] = React.useState(true)
 
-  React.useEffect(() => {
-    Promise.all([fetchDegrees(), fetchDurations(), fetchSubjects(), fetchTypes()])
-      .then(([deg, dur, subj, typ]) => {
-        setDegrees(deg)
-        setDurations(dur)
-        setSubjects(subj)
-        setTypes(typ)
-      })
-      .catch((err) => {
-        console.error("Failed to load form options:", err)
-        toast.error("Failed to load form options")
-      })
-      .finally(() => setLoadingOptions(false))
-  }, [])
-
   const {
     control,
     register,
@@ -139,6 +124,38 @@ export function ApplicationForm() {
       motivationLetter2: undefined,
     },
   })
+
+  React.useEffect(() => {
+    Promise.all([fetchDegrees(), fetchDurations(), fetchSubjects(), fetchTypes()])
+      .then(([deg, dur, subj, typ]) => {
+        setDegrees(deg)
+        setDurations(dur)
+        setSubjects(subj)
+        setTypes(typ)
+        // Prefill subjects from PFE Book shortlist (stored as codes)
+        try {
+          const raw = localStorage.getItem("pfe-book-shortlist")
+          if (raw) {
+            const codes: string[] = JSON.parse(raw)
+            if (Array.isArray(codes) && codes.length > 0) {
+              const names = subj
+                .filter((s) => codes.includes(s.code))
+                .map((s) => s.name)
+              if (names.length > 0) {
+                setValue("subjects", names, { shouldValidate: true })
+              }
+            }
+          }
+        } catch {
+          // ignore shortlist parse errors
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load form options:", err)
+        toast.error("Failed to load form options")
+      })
+      .finally(() => setLoadingOptions(false))
+  }, [setValue])
 
   // After a failed step validation, acknowledge edits immediately instead of
   // keeping the required-field message visible until the whole rule is valid.
@@ -639,8 +656,6 @@ export function ApplicationForm() {
                                   options={subjects.map((s) => ({
                                     id: s.name,
                                     title: s.name,
-                                    description: s.description,
-                                    department: s.technologies?.map((t) => t.name).join(", "),
                                   }))}
                                   selected={field.value ?? []}
                                   onChange={field.onChange}
@@ -659,24 +674,6 @@ export function ApplicationForm() {
                                         <p className="text-sm font-semibold text-foreground">
                                           {subj.name}
                                         </p>
-                                        {subj.description && (
-                                          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                                            {subj.description}
-                                          </p>
-                                        )}
-                                        {subj.technologies &&
-                                          subj.technologies.length > 0 && (
-                                            <div className="mt-2 flex flex-wrap gap-1.5">
-                                              {subj.technologies.map((tech) => (
-                                                <span
-                                                  key={tech.id}
-                                                  className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary"
-                                                >
-                                                  {tech.name}
-                                                </span>
-                                              ))}
-                                            </div>
-                                          )}
                                       </div>
                                     ))}
                                   </div>

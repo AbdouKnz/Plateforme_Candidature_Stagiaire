@@ -10,6 +10,13 @@ export const getRecentCandidatures = async (): Promise<Candidature[]> => {
   return response?.data?.data;
 };
 
+export type PipelineCounts = { pending: number; accepted: number; rejected: number };
+export type PipelineStage = { id: string; index: string; name: string; short: string; final?: boolean; counts: PipelineCounts };
+export const getPipeline = async (): Promise<PipelineStage[]> => {
+  const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/pipeline");
+  return response?.data?.data;
+};
+
 export const getCandidatures = async (params?: CandidatureQueryParams): Promise<Candidature[]> => {
   const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/", { params });
   return response?.data?.data;

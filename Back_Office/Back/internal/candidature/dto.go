@@ -104,8 +104,14 @@ type CandidatureResponse struct {
 	PathLettreMotivation  string `json:"path_lettre_motivation"`
 	PathCV2               string `json:"path_cv2"`
 	PathLettreMotivation2 string `json:"path_lettre_motivation2"`
-	Status                string `json:"status"`
-	Step                  string `json:"step"`
+	Status                string  `json:"status"`
+	Step                  string  `json:"step"`
+	CurrentStep           int     `json:"current_step"`
+	Step1Status           *string `json:"step1_status"`
+	Step2Status           *string `json:"step2_status"`
+	Step3Status           *string `json:"step3_status"`
+	Step4Status           *string `json:"step4_status"`
+	Step5Status           *string `json:"step5_status"`
 	ScoreCVScreening      int    `json:"score_cv_screening"`
 	ScoreOnlineQuiz       int    `json:"score_online_quiz"`
 	ScoreOnlineMeeting    int    `json:"score_online_meeting"`
@@ -145,6 +151,35 @@ type EmailPreviewResponse struct {
 	Body    string `json:"body"`
 }
 
+// resolveResponseStatus retourne le statut de l'étape ACTUELLE de la ligne.
+// Le frontend reçoit un seul champ `status` déjà correct.
+func resolveResponseStatus(c *domain.Candidature) string {
+	n := c.CurrentStep
+	if n < 1 || n > 5 {
+		n = 1
+	}
+	var v *string
+	switch n {
+	case 1:
+		v = c.Step1Status
+	case 2:
+		v = c.Step2Status
+	case 3:
+		v = c.Step3Status
+	case 4:
+		v = c.Step4Status
+	default:
+		v = c.Step5Status
+	}
+	if v != nil && *v != "" {
+		return *v
+	}
+	if c.Status != "" {
+		return c.Status
+	}
+	return "pending"
+}
+
 func ToResponse(c *domain.Candidature) CandidatureResponse {
 	return CandidatureResponse{
 		ID:                    c.ID,
@@ -169,8 +204,14 @@ func ToResponse(c *domain.Candidature) CandidatureResponse {
 		PathLettreMotivation:  c.PathLettreMotivation,
 		PathCV2:               c.PathCV2,
 		PathLettreMotivation2: c.PathLettreMotivation2,
-		Status:                c.Status,
+		Status:                resolveResponseStatus(c),
 		Step:                  c.Step,
+		CurrentStep:           c.CurrentStep,
+		Step1Status:           c.Step1Status,
+		Step2Status:           c.Step2Status,
+		Step3Status:           c.Step3Status,
+		Step4Status:           c.Step4Status,
+		Step5Status:           c.Step5Status,
 		ScoreCVScreening:      c.ScoreCVScreening,
 		ScoreOnlineQuiz:       c.ScoreOnlineQuiz,
 		ScoreOnlineMeeting:    c.ScoreOnlineMeeting,
@@ -188,4 +229,20 @@ func ToResponseList(candidatures []*domain.Candidature) []CandidatureResponse {
 		result[i] = ToResponse(c)
 	}
 	return result
+}
+
+// ── Internship Pipeline ──
+type PipelineCounts struct {
+	Pending  int `json:"pending"`
+	Accepted int `json:"accepted"`
+	Rejected int `json:"rejected"`
+}
+
+type PipelineStage struct {
+	ID     string         `json:"id"`
+	Index  string         `json:"index"`
+	Name   string         `json:"name"`
+	Short  string         `json:"short"`
+	Final  bool           `json:"final,omitempty"`
+	Counts PipelineCounts `json:"counts"`
 }

@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
@@ -57,6 +58,10 @@ func (s *MailConfigService) Get(ctx context.Context) (*MailConfigResponse, error
 
 func (s *MailConfigService) Update(ctx context.Context, req UpdateMailConfigRequest) (*MailConfigResponse, error) {
 	log.Info().Msg("Updating mail config...")
+	req.Host = strings.TrimSpace(req.Host)
+	req.Username = strings.TrimSpace(req.Username)
+	req.From = strings.TrimSpace(req.From)
+	req.FromName = strings.TrimSpace(req.FromName)
 	fields := map[string]string{
 		"host":      req.Host,
 		"port":      strconv.Itoa(req.Port),
@@ -97,13 +102,27 @@ type SMTPConfig struct {
 
 // TestConnection tries to connect to the given SMTP server.
 // If successful, it saves the config to DB and returns nil.
+// NOTE: a successful Dial only proves host/port/auth work. It does NOT prove
+// the From address will be accepted at send time (many providers reject a
+// From that differs from the authenticated account). Send failures caused by
+// a rejected From/relay policy surface in SendEmail with the SMTP reason.
 func (s *MailConfigService) TestConnection(ctx context.Context, req UpdateMailConfigRequest) error {
-	dialer := gomail.NewDialer(req.Host, req.Port, req.Username, req.Password)
-	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	host := strings.TrimSpace(req.Host)
+	if host == "" {
+		return fmt.Errorf("SMTP connection failed: host is empty")
+	}
+	if req.Port <= 0 || req.Port > 65535 {
+		return fmt.Errorf("SMTP connection failed: port %d is invalid", req.Port)
+	}
+	if strings.TrimSpace(req.From) == "" {
+		return fmt.Errorf("SMTP connection failed: from address is empty")
+	}
+	dialer := gomail.NewDialer(host, req.Port, strings.TrimSpace(req.Username), req.Password)
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true, ServerName: host}
 
 	conn, err := dialer.Dial()
 	if err != nil {
-		return fmt.Errorf("SMTP connection failed: %w", err)
+		return fmt.Errorf("SMTP connection failed (%s:%d): %w", host, req.Port, err)
 	}
 	conn.Close()
 
@@ -126,17 +145,17 @@ func GetSMTPConfig(ctx context.Context, db *bun.DB) (*SMTPConfig, error) {
 	for _, s := range settings {
 		switch s.Key {
 		case "host":
-			cfg.Host = s.Value
+			cfg.Host = strings.TrimSpace(s.Value)
 		case "port":
-			cfg.Port, _ = strconv.Atoi(s.Value)
+			cfg.Port, _ = strconv.Atoi(strings.TrimSpace(s.Value))
 		case "username":
-			cfg.Username = s.Value
+			cfg.Username = strings.TrimSpace(s.Value)
 		case "password":
 			cfg.Password = s.Value
 		case "from":
-			cfg.From = s.Value
+			cfg.From = strings.TrimSpace(s.Value)
 		case "from_name":
-			cfg.FromName = s.Value
+			cfg.FromName = strings.TrimSpace(s.Value)
 		}
 	}
 	if cfg.Port == 0 {
@@ -144,6 +163,9 @@ func GetSMTPConfig(ctx context.Context, db *bun.DB) (*SMTPConfig, error) {
 	}
 	if cfg.Host == "" {
 		return nil, fmt.Errorf("SMTP not configured")
+	}
+	if cfg.From == "" {
+		return nil, fmt.Errorf("SMTP configured but from address is empty")
 	}
 	return cfg, nil
 }

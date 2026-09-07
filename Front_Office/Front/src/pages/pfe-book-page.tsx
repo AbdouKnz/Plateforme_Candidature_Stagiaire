@@ -1,4 +1,5 @@
 import * as React from "react"
+import { motion } from "motion/react"
 import { useNavigate } from "react-router-dom"
 import { fetchSubjects } from "@/service/front-office"
 import type { Subject } from "@/models/api"
@@ -73,7 +74,7 @@ function useShortlist() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(ids))
   }, [ids])
   const toggle = React.useCallback((code: string) => {
-    setIds((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]))
+    setIds((prev) => (prev.includes(code) ? [] : [code]))
   }, [])
   const clear = React.useCallback(() => setIds([]), [])
   return { ids, toggle, clear, has: (code: string) => ids.includes(code) }
@@ -90,6 +91,15 @@ const SUBJECT_IMAGES = [
 
 function subjectImage(index: number) {
   return SUBJECT_IMAGES[index % SUBJECT_IMAGES.length]
+}
+
+function subjectImageUrl(s: Subject, index: number) {
+  const path = s.image_path?.trim()
+  if (path) {
+    if (path.startsWith("http") || path.startsWith("/")) return path
+    return `/api/${path}`
+  }
+  return subjectImage(index)
 }
 
 function AuroraLayer({ dark = false }: { dark?: boolean }) {
@@ -119,7 +129,7 @@ function AuroraLayer({ dark = false }: { dark?: boolean }) {
           opacity={isDark ? 0.68 : 0.58}
         />
       </div>
-      {dark && <div className="absolute inset-0 bg-black/55" />}
+      {dark && <div className="absolute inset-0 bg-white dark:bg-black/55" />}
     </div>
   )
 }
@@ -188,8 +198,23 @@ export function PfeBookPage() {
     (idx: number) => {
       const clamped = Math.max(0, Math.min(totalPages - 1, idx))
       const container = containerRef.current
-      const target = container?.querySelector<HTMLElement>(`[data-page="${clamped}"]`)
-      target?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" })
+      if (!container) return
+      const target = container.querySelector<HTMLElement>(`[data-page="${clamped}"]`)
+      if (!target) return
+      const prevSnap = container.style.scrollSnapType
+      container.style.scrollSnapType = "none"
+      // offsetLeft is relative to offsetParent — subtract container's own offset for exact position
+      const left = target.offsetLeft - container.offsetLeft
+      const onEnd = () => {
+        container.style.scrollSnapType = prevSnap
+        container.removeEventListener("scrollend", onEnd)
+      }
+      container.addEventListener("scrollend", onEnd, { once: true } as any)
+      container.scrollTo({ left, behavior: "smooth" })
+      window.setTimeout(() => {
+        container.style.scrollSnapType = prevSnap
+        container.removeEventListener("scrollend", onEnd as any)
+      }, 500)
     },
     [totalPages]
   )
@@ -211,78 +236,123 @@ export function PfeBookPage() {
   const progress = ((activePage + 1) / totalPages) * 100
 
   return (
-    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#0a0a1f] text-white selection:bg-primary/20">
+    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#140a2e] text-white selection:bg-primary/20">
       <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
 
       {/* ── horizontally scrollable book ── */}
       <div
         ref={containerRef}
-        className="flex min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden snap-x snap-mandatory scroll-smooth scrollbar-hide"
+        className="flex min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden snap-x snap-proximity scroll-smooth scrollbar-hide"
       >
         {/* ── COVER: PFE BOOK 2026 ── GLASS */}
         <section
           data-page={0}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate overflow-hidden bg-[#0a0a1f] text-white"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate overflow-hidden bg-[#140a2e] text-white dark:text-white"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
 
           <div className="relative z-10 flex items-center justify-between px-6 sm:px-8 lg:px-12 py-2">
             <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-xl" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/15 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/35 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
               01 / {String(totalPages).padStart(2, "0")}
             </span>
           </div>
 
-          <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center py-6">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/15 px-4 py-1.5 shadow-sm">
-              <span className="size-1.5 rounded-full bg-white animate-pulse" />
-              <span className="text-[11px] font-bold tracking-[0.2em] text-white uppercase">Internship Program</span>
-              <span className="hidden sm:inline text-[10px] font-mono text-white/60">• 2026 Edition</span>
-            </div>
+          <div className="relative z-10 flex flex-1 flex-col lg:flex-row items-center justify-center px-6 sm:px-8 lg:px-12 py-8 gap-10 lg:gap-14 max-w-[1280px] mx-auto w-full">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left"
+            >
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#7C3AED]/40 bg-[#7C3AED]/10 backdrop-blur px-4 py-1.5">
+                <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[11px] font-bold tracking-[0.18em] text-white uppercase">Internship Program 2027</span>
+              </div>
 
-            <h1 className="mt-6 text-5xl sm:text-7xl lg:text-[6.5rem] font-extralight tracking-[0.14em] text-white leading-[0.9] drop-shadow-2xl">
-              PFE BOOK
-            </h1>
-            <div className="mt-3 text-4xl sm:text-6xl lg:text-[5rem] font-black tracking-[0.16em] leading-none">
-              <span className="bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">2026</span>
-            </div>
+              <h1 className="mt-6 text-5xl sm:text-6xl lg:text-[4.5rem] xl:text-[5.5rem] font-black tracking-tight text-white leading-[0.95]">
+                PFE <span className="font-extralight text-white/85">BOOK</span>
+                <span className="ml-3 align-middle text-2xl sm:text-3xl lg:text-4xl font-light tracking-[0.2em] text-[#C4B5FD]">2027</span>
+              </h1>
 
-            <div className="mt-6 h-px w-20 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+              <p className="mt-5 max-w-xl text-sm sm:text-[15px] leading-relaxed text-white/65">
+                Shape the future with us — <span className="text-white font-semibold">your path begins here.</span> Explore curated subjects, global impact, and a team that invests in you.
+              </p>
 
-            <p className="mt-6 max-w-2xl text-xs sm:text-sm font-medium tracking-[0.14em] leading-relaxed text-white/80 uppercase">
-              Shape the future with us
-              <br className="hidden sm:block" />
-              <span className="text-white font-bold tracking-[0.12em]">Your path begins here</span>
-            </p>
+              <div className="mt-7 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 w-full">
+                <Button onClick={() => goTo(1)} size="lg" className="w-full sm:w-auto rounded-2xl bg-white text-[#140a2e] hover:bg-white/90 px-8 h-12 text-sm font-bold tracking-wide shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all">
+                  Explore Book <ArrowRightIcon className="size-4" />
+                </Button>
+                <Button onClick={() => goTo(4)} variant="outline" size="lg" className="w-full sm:w-auto rounded-2xl border-white/15 bg-white/5 backdrop-blur text-white hover:bg-white/10 hover:text-white px-8 h-12 text-sm font-medium">
+                  View Subjects ({subjects.length})
+                </Button>
+              </div>
 
-            <a href="mailto:careers@asteroidea.co" className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/20 px-4 py-2 text-xs font-mono tracking-wide text-white/80 hover:bg-white/15 hover:text-white transition-colors">
-              <MailIcon className="size-3.5" /> careers@asteroidea.co
-            </a>
+              <div className="mt-8 flex items-center gap-5 text-xs text-white/50">
+                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#7C3AED]" /> {subjects.length} subjects</span>
+                <span className="size-1 rounded-full bg-white/15" />
+                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-emerald-400" /> 12 countries</span>
+                <span className="size-1 rounded-full bg-white/15" />
+                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-white" /> 30+ projects</span>
+              </div>
+            </motion.div>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-md">
-              <Button onClick={() => goTo(1)} size="lg" className="w-full sm:w-auto rounded-full bg-white text-primary hover:bg-white/90 px-8 py-6 text-sm font-bold tracking-wide shadow-xl">
-                Explore Book <ArrowRightIcon className="size-4" />
-              </Button>
-              <Button onClick={() => goTo(4)} variant="outline" size="lg" className="w-full sm:w-auto rounded-full bg-transparent backdrop-blur border-white/30 text-white hover:bg-white/10 hover:text-white px-8 py-6 text-sm font-semibold">
-                View Subjects ({subjects.length})
-              </Button>
-            </div>
-
+            <motion.div
+              initial={{ opacity: 0, x: 20, scale: 0.96 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              transition={{ delay: 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 hidden lg:flex items-center justify-center"
+            >
+              <div className="relative w-full max-w-[420px]">
+                <div className="absolute -inset-8 bg-gradient-to-br from-[#7C3AED]/25 to-transparent blur-3xl rounded-full pointer-events-none" />
+                <div className="relative rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-8 shadow-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] shadow-lg">
+                      <GraduationCapIcon className="size-6 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-white">PFE 2027</p>
+                      <p className="text-xs text-white/55">Asteroidea • Tunisia</p>
+                    </div>
+                    <span className="ml-auto inline-flex items-center rounded-full bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300">Open</span>
+                  </div>
+                  <div className="my-5 h-px bg-white/10" />
+                  <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                      <p className="text-2xl font-black text-white tabular-nums">{subjects.length}</p>
+                      <p className="mt-1 text-[10px] font-bold tracking-widest text-white/50 uppercase">Subjects</p>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                      <p className="text-2xl font-black text-white tabular-nums">12</p>
+                      <p className="mt-1 text-[10px] font-bold tracking-widest text-white/50 uppercase">Countries</p>
+                    </div>
+                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                      <p className="text-2xl font-black text-white tabular-nums">30+</p>
+                      <p className="mt-1 text-[10px] font-bold tracking-widest text-white/50 uppercase">Projects</p>
+                    </div>
+                  </div>
+                  <div className="mt-5 rounded-2xl bg-[#7C3AED]/10 border border-[#7C3AED]/30 p-4 text-left">
+                    <p className="text-xs font-semibold text-white">Your path begins here</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/60">Browse the book, pre-select one subject, then apply in one click.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </section>
 
         {/* ── WHO ARE WE - PDF 01 ── DARK DESIGN COPY */}
         <section
           data-page={1}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
             <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-sm" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/10 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
               01 / {String(totalPages).padStart(2, "0")}
             </span>
           </div>
@@ -290,14 +360,14 @@ export function PfeBookPage() {
             {/* left - dark cards */}
             <div className="flex w-full lg:w-[46%] flex-col justify-center px-5 sm:px-7 lg:px-8 xl:px-10 py-4 gap-3 overflow-hidden">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#7C3AED]/20 border border-[#7C3AED]/30 px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-[#C4B5FD] uppercase">
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#7C3AED]/20 border border-[#7C3AED]/40 px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-[#C4B5FD] uppercase">
                   <BuildingIcon className="size-3" /> 01 — Introduction
                 </div>
                 <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white leading-none">Who are we?</h2>
                 <p className="mt-1.5 text-xs tracking-[0.16em] text-[#C4B5FD] uppercase font-medium">Introduction to our company</p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur p-4 shadow-sm">
+              <div className="rounded-2xl border border-[#7C3AED]/40 bg-white/[0.04] backdrop-blur p-4 shadow-sm">
                 <div className="flex items-center gap-2.5">
                   <div className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] text-white shadow-sm">
                     <BuildingIcon className="size-4" />
@@ -310,7 +380,7 @@ export function PfeBookPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur p-4 shadow-sm flex flex-col">
+                <div className="rounded-2xl border border-[#7C3AED]/40 bg-white/[0.04] backdrop-blur p-4 shadow-sm flex flex-col">
                   <div className="flex items-center gap-2">
                     <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] text-white shadow-sm">
                       <AwardIcon className="size-3.5" />
@@ -325,14 +395,14 @@ export function PfeBookPage() {
                       <div className="text-xl font-bold leading-none tracking-tight">30+</div>
                       <div className="mt-1 text-[10px] font-semibold tracking-widest uppercase opacity-80">Projects</div>
                     </div>
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-3 text-center">
+                    <div className="rounded-xl bg-violet-50 dark:bg-white/5 border border-[#7C3AED]/40 p-3 text-center">
                       <div className="text-xl font-bold leading-none tracking-tight text-white">12</div>
                       <div className="mt-1 text-[10px] font-semibold tracking-widest text-white/60 uppercase">Countries</div>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur p-4 shadow-sm flex flex-col">
+                <div className="rounded-2xl border border-[#7C3AED]/40 bg-white/[0.04] backdrop-blur p-4 shadow-sm flex flex-col">
                   <div className="flex items-center gap-2">
                     <div className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] text-white shadow-sm">
                       <HeartHandshakeIcon className="size-3.5" />
@@ -356,10 +426,10 @@ export function PfeBookPage() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur p-5 shadow-sm">
+              <div className="rounded-2xl border border-[#7C3AED]/40 bg-white/[0.03] backdrop-blur p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold tracking-widest text-white uppercase">Trusted & Backed By</p>
-                  <span className="rounded-full bg-white/10 border border-white/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white/60">6 partners</span>
+                  <span className="rounded-full bg-white/10 border border-[#7C3AED]/40 px-2 py-0.5 text-[10px] font-bold tracking-wide text-white/60">6 partners</span>
                 </div>
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-5 lg:gap-6">
                   {[
@@ -378,7 +448,7 @@ export function PfeBookPage() {
 
             {/* right map - dark card */}
             <div className="w-full lg:w-[54%] relative overflow-hidden shrink-0 h-[280px] sm:h-[320px] lg:h-auto p-3 sm:p-4 lg:p-6 flex items-center justify-center">
-              <div className="relative w-full h-full rounded-2xl border border-white/10 bg-black shadow-2xl overflow-hidden">
+              <div className="relative w-full h-full rounded-2xl border border-[#7C3AED]/40 bg-white dark:bg-black shadow-2xl overflow-hidden">
                 <img
                   src="/world-map-dotted.png?v=black"
                   alt="Asteroidea global footprint - dotted world map with 12 countries and 30+ projects"
@@ -390,10 +460,10 @@ export function PfeBookPage() {
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white px-3 py-1.5 shadow-md text-slate-900">
                     <span className="size-1.5 rounded-full bg-[#7C3AED]" /> 12 countries
                   </span>
+                  
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white px-3 py-1.5 shadow-md text-slate-900">
                     <span className="size-1.5 rounded-full bg-[#7C3AED]" /> 30+ projects
                   </span>
-                  <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white px-3 py-1.5 shadow-md text-slate-900">EMEA coverage</span>
                 </div>
               </div>
             </div>
@@ -403,9 +473,9 @@ export function PfeBookPage() {
         {/* ── OUR CULTURE - PDF 02 ── VERTICAL CARDS (photo layout + your dark template colors) */}
         <section
           data-page={2}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={2} total={totalPages} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-3 sm:px-4 lg:px-8 xl:px-10 py-2 sm:py-3 overflow-hidden">
@@ -453,7 +523,7 @@ export function PfeBookPage() {
                 ].map((c) => (
                   <div
                     key={c.title}
-                    className="group relative flex flex-col rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur p-5 sm:p-5 lg:px-5 lg:py-6 min-h-[310px] sm:min-h-[340px] lg:min-h-[440px] lg:h-[440px] shadow-sm hover:bg-white/[0.09] hover:border-white/15 transition-all"
+                    className="group relative flex flex-col rounded-2xl border border-[#7C3AED]/40 bg-white dark:bg-white/[0.06] backdrop-blur p-5 sm:p-5 lg:px-5 lg:py-6 min-h-[310px] sm:min-h-[340px] lg:min-h-[440px] lg:h-[440px] shadow-sm hover:bg-white/[0.09] hover:border-[#7C3AED]/35 transition-all"
                   >
                     {/* title - enlarged again */}
                     <h3 className="text-center text-[16px] sm:text-[17px] lg:text-[17.5px] font-bold leading-tight tracking-tight text-white min-h-[50px] flex items-center justify-center text-balance">{c.title}</h3>
@@ -488,9 +558,9 @@ export function PfeBookPage() {
         {/* ── WHY INTERN - PDF 03 ── GLASS */}
         <section
           data-page={3}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={3} total={totalPages} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
@@ -509,7 +579,7 @@ export function PfeBookPage() {
                 <div className="relative hidden md:grid grid-cols-4 gap-x-8 lg:gap-x-10 xl:gap-x-14">
                   {WHY_STEPS.map((c) => (
                     <div key={c.n} className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
+                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
                         <c.icon className="size-9 xl:size-12 text-white" strokeWidth={1.6} />
                       </div>
                       <span className="relative mt-4 xl:mt-5 text-[13.5px] xl:text-[14px] font-bold text-[#8B5CF6]">{c.n}</span>
@@ -525,7 +595,7 @@ export function PfeBookPage() {
                   <div className="flex flex-col gap-14">
                     {WHY_STEPS.map((c) => (
                       <div key={c.n} className="relative flex flex-col items-center text-center">
-                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
+                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
                           <c.icon className="size-11 text-white" strokeWidth={1.6} />
                         </div>
                         <span className="relative mt-4 text-[14px] sm:text-[15px] font-bold text-[#8B5CF6]">{c.n}</span>
@@ -544,10 +614,10 @@ export function PfeBookPage() {
         {/* ── INDEX - PDF 05 ── GLASS */}
         <section
           data-page={4}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
           {/* plum/charcoal base + subtle radial violet glow */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#180a26] via-[#0d0a14] to-[#13091f]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute -top-1/3 left-1/2 h-[70vh] w-[110vw] -translate-x-1/2 rounded-full bg-[#7C3AED]/20 blur-[160px]" />
           <div className="absolute -right-[10%] bottom-0 h-[50vh] w-[60vw] rounded-full bg-[#4C1D95]/15 blur-[140px]" />
           <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
@@ -564,7 +634,7 @@ export function PfeBookPage() {
                 <div className="flex-1 min-h-0 overflow-auto scrollbar-thin">
                   <table className="w-full min-w-[900px] text-left text-sm xl:text-[15px] border-collapse">
                     <thead className="sticky top-0 z-10">
-                      <tr className="border-b border-white/10 bg-[#0d0b14]/95 backdrop-blur-xl">
+                      <tr className="border-b border-white/10 bg-[#2a0a4a]/60 backdrop-blur-xl">
                         <th scope="col" className="px-4 py-4 font-bold uppercase tracking-[0.14em] text-white whitespace-nowrap w-[11%] min-w-[130px] text-sm">REFERENCE</th>
                         <th scope="col" className="px-4 py-4 w-[38%] min-w-[340px] font-bold uppercase tracking-[0.14em] text-white text-sm text-center">PROJECT TITLE</th>
                         <th scope="col" className="px-4 py-4 w-[16%] min-w-[160px] font-bold uppercase tracking-[0.14em] text-white text-sm text-center">PROFILE</th>
@@ -577,18 +647,18 @@ export function PfeBookPage() {
                         const pageNum = 6 + idx
                         const profile = s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"
                         return (
-                          <tr key={s.id} onClick={() => scrollToSubject(s.code)} className="cursor-pointer group transition-colors hover:bg-white/[0.04]">
-                            <td className="px-4 py-5 whitespace-nowrap text-sm font-mono font-bold tracking-wide text-white/90">
-                              {s.code}
+                          <tr key={s.id} onClick={() => scrollToSubject(s.code)} className="cursor-pointer group transition-colors hover:bg-white/[0.04] h-[84px]">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-mono font-bold tracking-wide text-white/90 h-[84px] align-middle">
+                              <div className="flex h-full items-center">{s.code}</div>
                             </td>
-                            <td className="px-4 py-5 text-[15px] font-semibold leading-snug text-white group-hover:text-white">
-                              {s.name}
+                            <td className="px-4 py-3 text-[15px] font-semibold leading-snug text-white h-[84px] align-middle">
+                              <div className="flex h-full items-center">{s.name}</div>
                             </td>
-                            <td className="px-4 py-5 text-[15px] font-semibold leading-snug text-white">
-                              {profile}
+                            <td className="px-4 py-3 text-[15px] font-semibold leading-snug text-white h-[84px] align-middle">
+                              <div className="flex h-full items-center">{profile}</div>
                             </td>
-                            <td className="px-4 py-5">
-                              <div className="flex flex-wrap items-center justify-start gap-2">
+                            <td className="px-4 py-3 h-[84px] align-middle">
+                              <div className="flex h-full flex-wrap items-center content-center justify-start gap-2">
                                 {s.technologies?.length ? (
                                   <>
                                     {s.technologies.slice(0, 5).map((t) => (
@@ -605,8 +675,8 @@ export function PfeBookPage() {
                                 ) : <span className="text-white/40 text-sm">—</span>}
                               </div>
                             </td>
-                            <td className="px-4 py-5 text-[15px] font-bold text-center tabular-nums text-white">
-                              {String(pageNum).padStart(2, "0")}
+                            <td className="px-4 py-3 text-[15px] font-bold text-center tabular-nums text-white h-[84px] align-middle">
+                              <div className="flex h-full items-center justify-center">{String(pageNum).padStart(2, "0")}</div>
                             </td>
                           </tr>
                         )
@@ -632,13 +702,13 @@ export function PfeBookPage() {
             <section
               key={s.id}
               data-page={5 + idx}
-              className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+              className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+              <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
 
               {/* page indicator — top right like before but muted to match image */}
               <div className="relative z-10 flex shrink-0 items-center justify-end px-6 sm:px-8 lg:px-10 py-3">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] backdrop-blur border border-white/10 px-3 py-1.5 text-[11px] font-mono tracking-[0.18em] text-white/50">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-white/[0.06] backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.18em] text-violet-400 dark:text-white/50">
                   {String(pageNo).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
                 </span>
               </div>
@@ -660,14 +730,14 @@ export function PfeBookPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid lg:grid-cols-[1.05fr_1.35fr] gap-8 lg:gap-10 lg:items-start">
+                  <div className="mt-6 grid lg:grid-cols-[1.05fr_1.35fr] gap-8 lg:gap-10 lg:items-stretch">
                     {/* left: world map + Profile/Period under photo — no cards */}
                     <div className="flex flex-col gap-6">
-                      <div className="rounded-2xl overflow-hidden flex items-center justify-center">
+                      <div className="relative rounded-2xl overflow-hidden flex-1 min-h-[420px]">
                         <img
-                          src={subjectImage(idx)}
+                          src={subjectImageUrl(s, idx)}
                           alt={s.name}
-                          className="h-[420px] lg:h-[500px] xl:h-[540px] w-full object-cover rounded-2xl"
+                          className="absolute inset-0 h-full w-full object-cover rounded-2xl"
                           loading="eager"
                           onError={(e) => {
                             const t = e.currentTarget as HTMLImageElement
@@ -679,21 +749,29 @@ export function PfeBookPage() {
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-6">
-                        <div className="relative py-1">
-                          <div className="flex items-center gap-2">
-                            <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
-                            <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Profile</p>
+                        <div className="flex gap-3 py-1">
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                            <UserIcon className="size-4 text-white/80" strokeWidth={1.8} />
                           </div>
-                          <p className="mt-3 text-sm font-bold text-white">{s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"}</p>
-                          <UserIcon className="absolute bottom-1 right-2 size-9 text-white" strokeWidth={1.6} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
+                              <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Profile</p>
+                            </div>
+                            <p className="mt-2 text-sm font-bold text-white">{s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"}</p>
+                          </div>
                         </div>
-                        <div className="relative py-1">
-                          <div className="flex items-center gap-2">
-                            <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
-                            <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Period</p>
+                        <div className="flex gap-3 py-1">
+                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+                            <CalendarIcon className="size-4 text-white/80" strokeWidth={1.8} />
                           </div>
-                          <p className="mt-3 text-sm font-bold text-white">{s.duration?.name || "6 Mois"}</p>
-                          <CalendarIcon className="absolute bottom-1 right-2 size-9 text-white" strokeWidth={1.6} />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
+                              <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Period</p>
+                            </div>
+                            <p className="mt-2 text-sm font-bold text-white">{s.duration?.name || "6 Mois"}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -723,12 +801,12 @@ export function PfeBookPage() {
                         <div className="mt-3 flex flex-wrap gap-2 content-start max-h-[140px] overflow-y-auto pr-1 scrollbar-thin">
                           {s.technologies && s.technologies.length > 0 ? (
                             s.technologies.map((t) => (
-                              <span key={t.id} className="inline-flex items-center rounded-full bg-[#2B1B6B] border border-[#7C3AED]/30 text-white px-3.5 py-1.5 text-xs font-semibold shadow-sm shrink-0">
+                              <span key={t.id} className="inline-flex items-center rounded-full bg-[#2B1B6B] border border-[#7C3AED]/40 text-white px-3.5 py-1.5 text-xs font-semibold shadow-sm shrink-0">
                                 {t.name}
                               </span>
                             ))
                           ) : (
-                            <span className="text-sm text-white/50">—</span>
+                            <span className="text-sm text-violet-400 dark:text-white/50">—</span>
                           )}
                         </div>
                       </div>
@@ -743,19 +821,18 @@ export function PfeBookPage() {
                       {isSelected ? "Selected ✓" : "Pre-select this subject"}
                     </Button>
                   </div>
-                </div>
-              </div>
-
-            </section>
+            </div>
+          </div>
+        </section>
           )
         })}
 
         {/* ── WE WILL CHALLENGE YOU - PDF 13 ── GLASS */}
         <section
           data-page={5 + subjects.length}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={6 + subjects.length} total={totalPages} />
           {/* stepped cards — same content/colors, layout like Why Intern With Us */}
@@ -774,7 +851,7 @@ export function PfeBookPage() {
                 <div className="relative hidden md:grid grid-cols-3 gap-x-8 lg:gap-x-10 xl:gap-x-14">
                   {MINDSET_STEPS.map((c) => (
                     <div key={c.n} className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
+                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
                         <c.icon className="size-9 xl:size-12 text-white" strokeWidth={1.6} />
                       </div>
                       <span className="relative mt-4 xl:mt-5 text-[13.5px] xl:text-[14px] font-bold text-[#8B5CF6]">{c.n}</span>
@@ -790,7 +867,7 @@ export function PfeBookPage() {
                   <div className="flex flex-col gap-14">
                     {MINDSET_STEPS.map((c) => (
                       <div key={c.n} className="relative flex flex-col items-center text-center">
-                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
+                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
                           <c.icon className="size-11 text-white" strokeWidth={1.6} />
                         </div>
                         <span className="relative mt-4 text-[14px] sm:text-[15px] font-bold text-[#8B5CF6]">{c.n}</span>
@@ -809,9 +886,9 @@ export function PfeBookPage() {
         {/* ── RECRUITMENT PROCESS - PDF 15 ── GLASS */}
         <section
           data-page={6 + subjects.length}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={7 + subjects.length} total={totalPages} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
@@ -847,7 +924,7 @@ export function PfeBookPage() {
                     { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture." },
                   ].map((s) => (
                     <div key={s.step} className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
+                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
                         <span className="text-sm xl:text-base font-black tracking-wide text-white">Step {Number(s.step)}</span>
                       </div>
                       <h3 className="relative mt-4 xl:mt-5 text-[16px] sm:text-[17px] lg:text-[17.5px] font-bold leading-tight tracking-tight text-white text-balance">{s.title}</h3>
@@ -880,7 +957,7 @@ export function PfeBookPage() {
                       { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture." },
                     ].map((s) => (
                       <div key={s.step} className="relative flex flex-col items-center text-center">
-                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
+                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
                           <span className="text-sm font-black tracking-wide text-white">Step {Number(s.step)}</span>
                         </div>
                         <h3 className="relative mt-4 text-[16px] sm:text-[17px] font-bold leading-tight tracking-tight text-white text-balance">{s.title}</h3>
@@ -898,56 +975,52 @@ export function PfeBookPage() {
         {/* ── CLOSING - PDF 16 ── GLASS */}
         <section
           data-page={7 + subjects.length}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
             <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-sm" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/10 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
               {String(8 + subjects.length).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
             </span>
           </div>
-          <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-4 overflow-hidden">
-            <div className="flex-1 flex flex-col justify-center w-full max-w-[1400px]">
-              <div className="flex flex-col lg:flex-row gap-4 lg:gap-4 items-stretch">
-                {/* Photo — left, no card */}
-                <img src="/Sheryl.png" alt="Sheryl Sandberg" className="w-full lg:w-[34%] h-[420px] sm:h-[460px] lg:h-auto min-h-[380px] shrink-0 object-contain object-center ml-1 sm:ml-2 lg:ml-4 -mr-1 sm:-mr-2 lg:-mr-4" loading="lazy" />
-                {/* Quote — center */}
-                <div className="lg:w-[42%] relative rounded-2xl border border-[#7C3AED]/30 bg-[#0f0a1f]/50 backdrop-blur p-7 sm:p-8 lg:p-8 xl:p-10 flex flex-col justify-center">
-                  <QuoteIcon className="absolute top-5 left-6 size-8 text-[#7C3AED]/60" />
-                  <div className="hidden lg:block absolute top-1/2 -right-2 -translate-y-1/2 size-3.5 rotate-45 border-t border-r border-[#7C3AED]/30 bg-[#0f0a1f]" />
-                  <div className="hidden lg:block absolute -right-[9px] top-1/2 -translate-y-1/2 size-2 rotate-45 bg-[#7C3AED]/60" />
-                  <div className="space-y-2.5 mt-2">
-                    <p className="inline-block rounded-lg bg-[#7C3AED]/25 border border-[#7C3AED]/20 px-3 py-1.5 text-lg sm:text-xl lg:text-[20px] font-medium leading-relaxed text-white">“If you&apos;re offered a seat</p>
-                    <p className="inline-block rounded-lg bg-[#7C3AED]/25 border border-[#7C3AED]/20 px-3 py-1.5 text-lg sm:text-xl lg:text-[20px] font-medium leading-relaxed text-white">on a rocket ship, don’t ask</p>
-                    <p className="inline-block rounded-lg bg-[#7C3AED]/25 border border-[#7C3AED]/20 px-3 py-1.5 text-lg sm:text-xl lg:text-[20px] font-medium leading-relaxed text-white">what seat. Just get on.”</p>
+          <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-6 overflow-hidden">
+            <div className="flex-1 flex flex-col justify-center w-full max-w-[1300px] mx-auto gap-8">
+              {/* Top row: photo + quote — layout from reference */}
+              <div className="flex flex-col lg:flex-row gap-6 lg:gap-6 items-stretch">
+                {/* Photo — left, large, integrated card */}
+                <div className="lg:w-[52%] relative rounded-2xl overflow-hidden border border-[#7C3AED]/30 bg-[#0f0a1f]/30 backdrop-blur">
+                  <div className="absolute -bottom-10 -right-10 size-64 rounded-full bg-[#7C3AED]/20 blur-3xl pointer-events-none" />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[60%] rounded-full border border-[#7C3AED]/10 pointer-events-none" />
+                  <img src="/Sheryl.png" alt="Sheryl Sandberg" className="relative z-10 w-full h-[380px] sm:h-[420px] lg:h-[440px] object-cover object-top object-[center_18%]" loading="lazy" />
+                </div>
+                {/* Quote — right, speech bubble */}
+                <div className="lg:w-[48%] relative rounded-2xl border border-[#7C3AED]/40 bg-[#0f0a1f]/60 backdrop-blur p-8 sm:p-10 lg:p-10 xl:p-12 flex flex-col justify-center shadow-[0_0_40px_rgba(124,58,237,0.15)]">
+                  <div className="hidden lg:block absolute top-1/2 -left-3 -translate-y-1/2 size-6 rotate-45 border-l border-b border-[#7C3AED]/40 bg-[#0f0a1f]" />
+                  <div className="hidden lg:block absolute top-1/2 -left-3 -translate-y-1/2 size-6 rotate-45 border-l border-b border-[#7C3AED]/40 bg-[#140a2e] blur-[1px] -z-10" />
+                  <div className="space-y-2 mt-3">
+                    <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-white">“If you&apos;re offered a seat on a rocket ship,</p>
+                    <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-white">don’t ask what seat. Just get on.”</p>
                   </div>
+                  <div className="mt-8 h-px w-12 bg-[#7C3AED]/50" />
                   <p className="mt-6 text-xs font-bold tracking-widest text-[#8B5CF6] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
-                  {/* speech bubble tail bottom right */}
-                  <div className="hidden lg:block absolute -bottom-1 -right-1 size-3 rotate-45 border-b border-r border-[#7C3AED]/30 bg-[#0f0a1f]" />
                 </div>
-                {/* Contact — right */}
-                <div className="lg:w-[28%] flex flex-col justify-center gap-5 lg:border-l lg:border-white/10 lg:pl-6 xl:pl-8 py-2">
-                  <div className="flex items-start gap-2.5">
-                    <MapPinIcon className="size-5 text-[#7C3AED] mt-0.5 shrink-0" />
-                    <p className="text-sm leading-relaxed text-white/80">87 rue de la république,<br/>Mégrine - 2033, Ben Arous,<br/>Tunisia</p>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <a href="mailto:careers@asteroidea.co" className="inline-flex items-center gap-2.5 rounded-xl border border-[#7C3AED]/30 bg-[#0f0a1f]/40 px-4 py-2.5 text-sm text-white/90 hover:bg-white/[0.06] transition-colors">
-                      <MailIcon className="size-4 text-[#7C3AED]" />
-                      careers@asteroidea.co
-                    </a>
-                    <a href="https://asteroidea.co" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2.5 rounded-xl border border-[#7C3AED]/30 bg-[#0f0a1f]/40 px-4 py-2.5 text-sm text-white/90 hover:bg-white/[0.06] transition-colors">
-                      <GlobeIcon className="size-4 text-[#7C3AED]" />
-                      asteroidea.co
-                    </a>
-                    <a href="https://www.linkedin.com/company/asteroidea-co" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2.5 rounded-xl border border-[#7C3AED]/30 bg-[#0f0a1f]/40 px-4 py-2.5 text-sm text-white/90 hover:bg-white/[0.06] transition-colors">
-                      <LinkedinIcon className="size-4 text-[#7C3AED]" />
-                      Asteroidea
-                    </a>
-                  </div>
-                </div>
+              </div>
+              {/* Bottom row: footer image icons, icon-only, no card */}
+              <div className="flex items-center justify-center gap-8">
+                <a href="https://www.google.com/maps/place/Asteroidea/@36.7683782,10.2420193,909m/data=!3m2!1e3!4b1!4m6!3m5!1s0x12fd370003d7b35b:0xba18eae5e43a8557!8m2!3d36.7683739!4d10.2445942!16s%2Fg%2F11vy5k2_b2?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noreferrer" aria-label="Address" className="hover:opacity-80 hover:scale-105 transition-all">
+                  <img src="/adress.png" alt="" className="size-7 object-contain" loading="lazy" />
+                </a>
+                <a href="mailto:careers@asteroidea.co" aria-label="Email" className="hover:opacity-80 hover:scale-105 transition-all">
+                  <img src="/email.png" alt="" className="size-7 object-contain" loading="lazy" />
+                </a>
+                <a href="https://www.linkedin.com/company/asteroidea-co" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="hover:opacity-80 hover:scale-105 transition-all">
+                  <img src="/linkedin.png" alt="" className="size-7 object-contain" loading="lazy" />
+                </a>
+                <a href="https://asteroidea.co" target="_blank" rel="noreferrer" aria-label="Website" className="hover:opacity-80 hover:scale-105 transition-all">
+                  <img src="/website.png" alt="" className="size-7 object-contain" loading="lazy" />
+                </a>
               </div>
             </div>
           </div>
@@ -956,64 +1029,59 @@ export function PfeBookPage() {
         {/* ── SHORTLIST ── GLASS */}
         <section
           data-page={8 + subjects.length}
-          className="relative flex h-full w-screen shrink-0 snap-start snap-always flex-col isolate bg-[#0a0a1f] text-white overflow-hidden"
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a2e] via-[#0f0a1a] to-[#150a2e]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={9 + subjects.length} total={totalPages} />
-          <div className="relative z-10 flex flex-1 min-h-0 flex-col overflow-y-auto px-4 sm:px-8 lg:px-12 py-6 scrollbar-thin">
-            <div className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col">
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] text-white shadow">
-                  <BookmarkCheckIcon className="size-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">Your Shortlist</h2>
-                  <p className="text-sm text-white/60">{shortlist.length === 0 ? "No subjects pre-selected yet — bookmark your favorites." : `${shortlist.length} subject${shortlist.length > 1 ? "s" : ""} pre-selected • Ready to apply`}</p>
-                </div>
-                {shortlist.length > 0 && <Button variant="outline" size="sm" className="ml-auto rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white" onClick={clear}>Clear all</Button>}
+          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-4 overflow-hidden">
+            <div className="mx-auto flex w-full max-w-[900px] flex-1 min-h-0 flex-col justify-center">
+              <div className="text-center max-w-2xl mx-auto shrink-0">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#7C3AED] px-3.5 py-1 text-[10px] font-bold tracking-widest text-white uppercase shadow">
+                  <BookmarkCheckIcon className="size-3" /> Your choice
+                </span>
+                <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white leading-none">
+                  This is the <span className="text-[#8B5CF6]">subject</span> you selected
+                </h2>
+                <p className="mt-2.5 text-sm font-light tracking-wide text-white/60">{shortlist.length === 0 ? "No subject selected yet — pick one from the list." : "Ready? Apply now or go back to choose another one."}</p>
               </div>
 
-              <div className="mt-6 flex flex-1 min-h-[200px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur shadow-sm">
-                <div className="flex-1 overflow-auto scrollbar-thin">
-                  {shortlist.length === 0 ? (
-                    <div className="flex h-full min-h-[260px] flex-col items-center justify-center gap-3 py-12 text-center px-6">
-                      <div className="flex size-14 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white/40">
-                        <BookmarkIcon className="size-6" />
-                      </div>
-                      <p className="text-sm font-medium text-white">Your shortlist is empty.</p>
-                      <p className="text-xs text-white/60 max-w-sm">Tap the bookmark on any subject page or in the index to save it here. You can apply with your selection in one click.</p>
-                      <Button variant="outline" size="sm" onClick={() => goTo(4)} className="rounded-full mt-2 border-white/20 bg-white/5 text-white hover:bg-white/10">Browse subjects</Button>
+              <div className="mt-8 flex flex-1 min-h-0 flex-col items-center justify-center">
+                {shortlist.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-10 text-center px-6">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-white/40">
+                      <BookmarkIcon className="size-5" />
                     </div>
-                  ) : (
-                    <div className="divide-y divide-white/10">
-                      {shortlist.map((code) => subjects.find((s) => s.code === code)).filter(Boolean).map((s) => (
-                        <div key={s!.code} className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors">
-                          <span className="hidden sm:inline-flex font-mono text-xs font-bold tracking-widest text-white bg-white/10 border border-white/10 px-2 py-1 rounded-full">{s!.code}</span>
-                          <span className="sm:hidden font-mono text-[11px] font-bold text-white">{s!.code}</span>
-                          <span className="flex-1 text-sm font-medium truncate pr-2 text-white">{s!.name}</span>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <Button variant="outline" size="sm" className="h-7 text-xs rounded-full hidden sm:inline-flex border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={() => scrollToSubject(s!.code)}>View</Button>
-                            <Button variant="ghost" size="sm" className="h-7 text-xs rounded-full text-white/70 hover:text-white hover:bg-white/10" onClick={() => toggle(s!.code)}>Remove</Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {shortlist.length > 0 && (
-                  <div className="border-t border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-white/60 flex items-center gap-2">
-                    <CheckIcon className="size-3.5 text-[#C4B5FD]" /> You can modify your selection on the application form as well.
+                    <p className="text-sm font-semibold text-white">No subject selected.</p>
+                    <p className="text-xs text-white/55 max-w-sm leading-relaxed">Go back to the subjects list and pre-select the one you want.</p>
+                    <Button variant="outline" size="lg" onClick={() => goTo(4)} className="rounded-full mt-2 h-11 px-6 text-sm border-white/20 bg-white/5 text-white hover:bg-white/10">Back to subjects list</Button>
                   </div>
+                ) : (
+                  (() => {
+                    const s = subjects.find((sub) => sub.code === shortlist[0])
+                    if (!s) return null
+                    return (
+                      <div className="w-full max-w-2xl rounded-2xl border border-[#7C3AED]/40 bg-white/[0.04] backdrop-blur p-6 sm:p-8 text-center shadow-lg">
+                        <span className="inline-flex items-center rounded-full bg-white/10 border border-white/10 px-3 py-1 font-mono text-xs font-bold tracking-widest text-white/80">{s.code}</span>
+                        <h3 className="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-white">{s.name}</h3>
+                        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                          <Button size="lg" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 font-bold shadow-lg bg-[#7C3AED] text-white hover:bg-[#6D28D9] text-sm" onClick={() => navigate("/form")}>
+                            <CheckIcon className="size-4" /> Apply now
+                          </Button>
+                          <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl px-8 h-11 text-sm border-white/20 bg-white/5 text-white hover:bg-white/10" onClick={() => goTo(4)}>Choose another subject</Button>
+                        </div>
+                      </div>
+                    )
+                  })()
                 )}
               </div>
 
-              <div className="mt-6 flex flex-col sm:flex-row items-center gap-3">
-                <Button disabled={shortlist.length === 0} size="lg" className="w-full sm:w-auto gap-2 rounded-xl px-8 font-semibold shadow bg-[#7C3AED] text-white hover:bg-[#6D28D9] disabled:bg-white/10 disabled:text-white/40" onClick={() => navigate("/form")}>
-                  <CheckIcon className="size-4" /> Apply with {shortlist.length || "selection"}
+              {/* Mobile CTA */}
+              <div className="mt-4 hidden md:hidden flex-col items-center gap-2">
+                <Button disabled={shortlist.length === 0} size="lg" className="w-full gap-2 rounded-xl px-8 h-11 font-bold shadow bg-[#7C3AED] text-white hover:bg-[#6D28D9] disabled:bg-white/10 disabled:text-white/40 text-sm" onClick={() => navigate("/form")}>
+                  <CheckIcon className="size-4" /> Apply now
                 </Button>
-                <span className="text-xs text-white/60 text-center">You’ll confirm subjects and fill details on the next step.</span>
-                <Button variant="ghost" size="sm" className="sm:ml-auto rounded-full text-white/70 hover:text-white hover:bg-white/10" onClick={() => goTo(4)}>Back to index</Button>
+                <Button variant="ghost" size="sm" className="rounded-full text-white/60 hover:text-white hover:bg-white/10" onClick={() => goTo(4)}>Back to index</Button>
               </div>
             </div>
           </div>
@@ -1021,7 +1089,7 @@ export function PfeBookPage() {
       </div>
 
       {/* ── NEW BOTTOM NAV : non-overlay, progress + dots + controls — GLASS */}
-      <footer className="relative z-20 shrink-0 border-t border-white/10 bg-[#0a0a1f]/90 backdrop-blur-xl">
+      <footer className="relative z-20 shrink-0 border-t border-[#7C3AED]/40 bg-[#140a2e]/90 backdrop-blur-xl">
         {/* progress line */}
         <div className="absolute inset-x-0 top-0 h-[2px] bg-white/10">
           <div className="h-full bg-[#7C3AED] transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
@@ -1033,7 +1101,7 @@ export function PfeBookPage() {
             <Button
               variant="outline"
               size="icon"
-              className="size-8 sm:size-9 rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              className="size-8 sm:size-9 rounded-full border-white/20 bg-violet-50 dark:bg-white/5 text-white hover:bg-white/10 hover:text-white"
               onClick={() => goTo(activePage - 1)}
               disabled={activePage === 0}
               aria-label="Previous page"
@@ -1043,7 +1111,7 @@ export function PfeBookPage() {
             <Button
               variant="outline"
               size="icon"
-              className="size-8 sm:size-9 rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              className="size-8 sm:size-9 rounded-full border-white/20 bg-violet-50 dark:bg-white/5 text-white hover:bg-white/10 hover:text-white"
               onClick={() => goTo(activePage + 1)}
               disabled={activePage === totalPages - 1}
               aria-label="Next page"
@@ -1051,7 +1119,7 @@ export function PfeBookPage() {
               <ChevronRightIcon className="size-4" />
             </Button>
             <span className="hidden lg:inline-flex items-center gap-1 ml-1 text-xs text-white/60">
-              <span className="hidden xl:inline">Use</span> <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/60">←</kbd><kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/60">→</kbd> <span className="hidden xl:inline">to navigate</span>
+              <span className="hidden xl:inline">Use</span> <kbd className="rounded border border-[#7C3AED]/40 bg-violet-50 dark:bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/60">←</kbd><kbd className="rounded border border-[#7C3AED]/40 bg-violet-50 dark:bg-white/5 px-1.5 py-0.5 font-mono text-[10px] text-white/60">→</kbd> <span className="hidden xl:inline">to navigate</span>
             </span>
           </div>
 
@@ -1110,13 +1178,13 @@ export function PfeBookPage() {
             </span>
             <button
               onClick={() => goTo(totalPages - 1)}
-              className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs font-semibold shadow-sm border transition-colors ${shortlist.length > 0 ? "bg-[#7C3AED] text-white border-[#7C3AED]" : "bg-white/5 border-white/10 text-white hover:border-white/20 hover:bg-white/10"}`}
+              className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs font-semibold shadow-sm border transition-colors ${shortlist.length > 0 ? "bg-[#7C3AED] text-white border-[#7C3AED]" : "bg-violet-50 dark:bg-white/5 border-[#7C3AED]/40 text-white hover:border-white/20 hover:bg-white/10"}`}
             >
               <BookmarkCheckIcon className="size-3.5" />
               <span className="hidden sm:inline">Shortlist</span>
               <span className={`inline-flex size-5 items-center justify-center rounded-full text-[11px] font-bold ${shortlist.length > 0 ? "bg-white text-[#7C3AED]" : "bg-[#7C3AED] text-white"}`}>{shortlist.length}</span>
             </button>
-            <div className="hidden sm:flex items-center gap-1 ml-1 border-l border-white/10 pl-2">
+            <div className="hidden sm:flex items-center gap-1 ml-1 border-l border-[#7C3AED]/40 pl-2">
               <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs text-white/60 hover:text-white hover:bg-white/10" onClick={() => goTo(0)}>Cover</Button>
               <Button variant="ghost" size="sm" className="h-8 rounded-full text-xs text-white/60 hover:text-white hover:bg-white/10" onClick={() => navigate("/")}>Home</Button>
             </div>
@@ -1144,9 +1212,9 @@ function PageHeader({ number, total }: { number: number; total: number }) {
   return (
     <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
       <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-sm" />
-      <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-white/10 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
-        {String(number).padStart(2, "0")} / {String(total).padStart(2, "0")}
-      </span>
+      <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
+          {String(number).padStart(2, "0")} / {String(total).padStart(2, "0")}
+        </span>
     </div>
   )
 }

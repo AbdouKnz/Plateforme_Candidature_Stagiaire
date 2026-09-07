@@ -169,14 +169,19 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 				log.Warn().Err(sendErr).Str("email", sub.Email).Int("attempt", attempt+1).Msg("retrying email send")
 			}
 
-			now := time.Now().Format("2006-01-02 15:04:05")
-			emailStatus := "sent"
-			subscriberStatus := "notified"
-			if sendErr != nil {
-				log.Error().Err(sendErr).Str("email", sub.Email).Msg("failed to send waitlist notification after retries")
-				emailStatus = "failed"
-				subscriberStatus = "failed"
+		now := time.Now().Format("2006-01-02 15:04:05")
+		emailStatus := "sent"
+		subscriberStatus := "notified"
+		errMsg := ""
+		if sendErr != nil {
+			log.Error().Err(sendErr).Str("email", sub.Email).Msg("failed to send waitlist notification after retries")
+			emailStatus = "failed"
+			subscriberStatus = "failed"
+			errMsg = strings.TrimSpace(sendErr.Error())
+			if len(errMsg) > 2000 {
+				errMsg = errMsg[:2000]
 			}
+		}
 
 			_, updateErr := s.db.NewUpdate().Model((*domain.WaitlistSubscriber)(nil)).
 				Set("status = ?", subscriberStatus).
@@ -187,17 +192,18 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 				log.Error().Err(updateErr).Int("id", sub.ID).Msg("failed to mark waitlist subscriber as "+subscriberStatus)
 			}
 
-			emailLog := &domain.EmailLog{
-				CandidatureID: 0,
-				Recipient:     sub.Email,
-				Subject:       template.Subject,
-				Body:          body,
-				TemplateType:  "reopening",
-				CandidatName:  sub.Email,
-				SubjectName:   "Waitlist",
-				Status:        emailStatus,
-				SentAt:        now,
-			}
+		emailLog := &domain.EmailLog{
+			CandidatureID: 0,
+			Recipient:     sub.Email,
+			Subject:       template.Subject,
+			Body:          body,
+			TemplateType:  "reopening",
+			CandidatName:  sub.Email,
+			SubjectName:   "Waitlist",
+			Status:        emailStatus,
+			SentAt:        now,
+			ErrorMessage:  errMsg,
+		}
 			if _, logErr := s.db.NewInsert().Model(emailLog).Exec(ctx); logErr != nil {
 				log.Error().Err(logErr).Str("email", sub.Email).Msg("failed to log waitlist email")
 			}

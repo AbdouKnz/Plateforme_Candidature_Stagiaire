@@ -17,6 +17,7 @@ func CandidatureRoutes(r *gin.RouterGroup, db *bun.DB) {
 	{
 		candidatureGroup.GET("/", handler.GetAllHandler)
 		candidatureGroup.GET("/recent", handler.GetRecentHandler)
+		candidatureGroup.GET("/pipeline", handler.GetPipelineHandler)
 		candidatureGroup.GET("/rejection-reasons", handler.GetRejectionReasonsHandler)
 
 		candidatureGroup.Use(middleware.PermissionMiddleware(pkg.CANDIDATURES_PERMISSIONS))

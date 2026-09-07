@@ -29,6 +29,12 @@ export interface Candidature {
   path_lettre_motivation2: string;
   status?: string;
   step?: string;
+  current_step?: number;
+  step1_status?: string | null;
+  step2_status?: string | null;
+  step3_status?: string | null;
+  step4_status?: string | null;
+  step5_status?: string | null;
   score_cv_screening?: number;
   score_online_quiz?: number;
   score_online_meeting?: number;

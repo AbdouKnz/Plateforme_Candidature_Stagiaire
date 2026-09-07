@@ -268,6 +268,9 @@ func (s *SubjectService) UpdateSubject(ctx context.Context, id int, request Upda
 	if request.Description != "" {
 		subject.Description = request.Description
 	}
+	if request.ImagePath != nil {
+		subject.ImagePath = *request.ImagePath
+	}
 	if request.Status != nil {
 		subject.Status = *request.Status
 	}

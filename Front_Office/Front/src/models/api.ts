@@ -35,6 +35,7 @@ export interface Subject {
   code: string;
   name: string;
   description: string;
+  image_path?: string;
   technologies: Technology[];
   profiles: Profile[];
   duration?: Duration | null;

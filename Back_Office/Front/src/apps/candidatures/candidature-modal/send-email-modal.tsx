@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/date-picker";
 import { format, nextMonday } from 'date-fns'
-import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent, IconLink, IconClipboardCheck } from "@tabler/icons-react";
+import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent, IconLink } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Candidature, RejectionReason } from "@/models/candidature-model";
 import { getEmailPreview, getRejectionReasons, sendEmail } from "@/service/candidatures";
@@ -96,11 +96,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     return nextStep;
   }, [isAcceptance, nextStep]);
   const updateCandidatureMutation = useUpdateCandidature();
-
-  const quizOptions = useMemo(() => {
-    if (!subjects) return [];
-    return subjects.filter(s => s.online_quiz_link && s.online_quiz_link.trim() !== "").map(s => ({ label: `${s.name} — ${s.online_quiz_link}`, value: s.online_quiz_link, name: s.name }));
-  }, [subjects]);
 
   const interviewTime = useMemo(() => {
     if (!interviewHour || !interviewMinute) return "";
@@ -181,12 +176,35 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     };
   }, [open, templateType, candidature.id, candidature.step]);
 
+  // Auto-fill the quiz link from the candidate's chosen subject so HR only
+  // has to press Send. Falls back to manual selection when the subject has
+  // no quiz link (the dropdown stays available as an override).
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    setMeetingLink("");
+    if (!isQuiz) {
       setQuizLink("");
-      setMeetingLink("");
+      return;
     }
-  }, [open, nextStep]);
+    const names = (candidature.subject_name || "")
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    let auto = "";
+    if (subjects) {
+      const findByName = (n: string) =>
+        subjects.find((s) => s.name === n) ??
+        subjects.find((s) => (s.name || "").toLowerCase() === n.toLowerCase());
+      for (const n of names) {
+        const link = findByName(n)?.online_quiz_link?.trim();
+        if (link) {
+          auto = link;
+          break;
+        }
+      }
+    }
+    setQuizLink(auto);
+  }, [open, nextStep, isQuiz, subjects, candidature.subject_name]);
 
   const handleSend = async () => {
     setSending(true);
@@ -330,31 +348,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                     </SelectContent>
                   </Select>
                 )}
-              </div>
-            )}
-            {isQuiz && (
-              <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
-                <Label className="flex items-center gap-1">
-                  <IconClipboardCheck className="size-4" />
-                  {t("quiz_link")}
-                </Label>
-                {quizOptions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{t("no_quiz_links")}</p>
-                ) : (
-                  <Select value={quizLink} onValueChange={setQuizLink}>
-                    <SelectTrigger className="h-9 w-full text-sm">
-                      <SelectValue placeholder={t("select_quiz_link")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <ScrollArea className="h-48">
-                        {quizOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </ScrollArea>
-                    </SelectContent>
-                  </Select>
-                )}
-                {quizLink && <p className="text-xs text-muted-foreground break-all">{quizLink}</p>}
               </div>
             )}
             {isOnlineMeeting && (

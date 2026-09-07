@@ -25,19 +25,176 @@ type CandidatureService struct {
 
 const defaultStep = "cv_screening"
 
+// Listes fixes (whitelist) : l'index 1..5 est la seule entrée variable,
+// les noms de colonnes ne sont JAMAIS construits depuis une entrée utilisateur.
+var pipelineStageIDs = [5]string{"cv", "quiz", "online", "f2f", "final"}
+var pipelineDBSteps = [5]string{"cv_screening", "online_quiz", "online_meeting", "f2f_meeting", "final_decision"}
+
 func currentStepScore(c *domain.Candidature) int {
-	switch c.Step {
-	case "online_quiz":
+	return scoreForStep(c, currentIndex(c))
+}
+
+// stageIndex convertit un step (string) en index d'étape 1..5.
+func stageIndex(step string) int {
+	switch normalizeStage(step) {
+	case "quiz":
+		return 2
+	case "online":
+		return 3
+	case "f2f":
+		return 4
+	case "final":
+		return 5
+	default:
+		return 1
+	}
+}
+
+func normalizeStage(step string) string {
+	s := strings.TrimSpace(strings.ToLower(step))
+	if s == "" {
+		return "cv"
+	}
+	if s == "cv" || s == "cv_screening" || strings.Contains(s, "cv_screening") {
+		return "cv"
+	}
+	if s == "quiz" || s == "online_quiz" || strings.Contains(s, "quiz") {
+		return "quiz"
+	}
+	if s == "online" || s == "online_meeting" || strings.Contains(s, "online_meeting") {
+		return "online"
+	}
+	if s == "f2f" || s == "f2f_meeting" || strings.Contains(s, "f2f") {
+		return "f2f"
+	}
+	if s == "final" || s == "final_decision" || strings.Contains(s, "final") {
+		return "final"
+	}
+	return "cv"
+}
+
+func normalizeStatus(status string) string {
+	s := strings.TrimSpace(strings.ToLower(status))
+	if s == "accepted" || s == "invited" || s == "approved" {
+		return "accepted"
+	}
+	if s == "rejected" || s == "refused" || s == "declined" || s == "failed" {
+		return "rejected"
+	}
+	return "pending"
+}
+
+func clampStep(n int) int {
+	if n < 1 {
+		return 1
+	}
+	if n > 5 {
+		return 5
+	}
+	return n
+}
+
+// currentIndex retourne l'étape courante 1..5 (repli sur step si current_step invalide).
+func currentIndex(c *domain.Candidature) int {
+	if c.CurrentStep >= 1 && c.CurrentStep <= 5 {
+		return c.CurrentStep
+	}
+	return stageIndex(c.Step)
+}
+
+func getStepStatus(c *domain.Candidature, n int) string {
+	var v *string
+	switch clampStep(n) {
+	case 1:
+		v = c.Step1Status
+	case 2:
+		v = c.Step2Status
+	case 3:
+		v = c.Step3Status
+	case 4:
+		v = c.Step4Status
+	default:
+		v = c.Step5Status
+	}
+	if v == nil {
+		return ""
+	}
+	return *v
+}
+
+func setStepStatus(c *domain.Candidature, n int, v string) {
+	switch clampStep(n) {
+	case 1:
+		c.Step1Status = &v
+	case 2:
+		c.Step2Status = &v
+	case 3:
+		c.Step3Status = &v
+	case 4:
+		c.Step4Status = &v
+	default:
+		c.Step5Status = &v
+	}
+}
+
+func scoreForStep(c *domain.Candidature, n int) int {
+	switch clampStep(n) {
+	case 2:
 		return c.ScoreOnlineQuiz
-	case "online_meeting":
+	case 3:
 		return c.ScoreOnlineMeeting
-	case "f2f_meeting":
+	case 4:
 		return c.ScoreF2FMeeting
-	case "final_decision":
+	case 5:
 		return c.ScoreFinalDecision
 	default:
 		return c.ScoreCVScreening
 	}
+}
+
+// resolveStatus retourne le statut de l'étape ACTUELLE (jamais une autre étape).
+func resolveStatus(c *domain.Candidature) string {
+	if s := getStepStatus(c, currentIndex(c)); s != "" {
+		return s
+	}
+	if c.Status != "" {
+		return c.Status
+	}
+	return "pending"
+}
+
+// applyDecision applique accept/reject à l'étape courante N, en UN SEUL update
+// sur la ligne existante (jamais de nouvelle ligne ni de nouvelle table).
+// Accept N : stepN=accepted ; si N<5 stepN+1=pending + current=N+1, si N==5 statut global accepted.
+// Reject N : stepN=rejected + statut global rejected (flow email de rejet inchangé).
+func applyDecisionToRow(c *domain.Candidature, decision string) error {
+	n := currentIndex(c)
+	if decision == "accepted" || decision == "rejected" {
+		if scoreForStep(c, n) <= 0 {
+			return fmt.Errorf("cannot set status to %s: a score is required for the current step (%s)", decision, pipelineDBSteps[n-1])
+		}
+	}
+	now := time.Now().Format("2006-01-02 15:04:05")
+	switch decision {
+	case "accepted":
+		setStepStatus(c, n, "accepted")
+		if n < 5 {
+			setStepStatus(c, n+1, "pending")
+			c.CurrentStep = n + 1
+			c.Step = pipelineDBSteps[n]
+			c.Status = "pending"
+		} else {
+			c.Status = "accepted"
+		}
+	case "rejected":
+		setStepStatus(c, n, "rejected")
+		c.Status = "rejected"
+	case "pending":
+		setStepStatus(c, n, "pending")
+		c.Status = "pending"
+	}
+	c.UpdatedAt = now
+	return nil
 }
 
 func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string, step string) (*domain.EmailTemplate, error) {
@@ -88,6 +245,15 @@ func (s *CandidatureService) getSubjectMeetingLink(ctx context.Context, subjectN
 	var link string
 	_ = s.db.NewSelect().Column("online_meeting_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
 	return link
+}
+
+// truncateError caps stored SMTP errors so email_logs stays readable.
+func truncateError(s string, max int) string {
+	s = strings.TrimSpace(s)
+	if len(s) <= max {
+		return s
+	}
+	return s[:max]
 }
 
 // replaceRejectionReasonPlaceholders replaces every supported rejection-reason
@@ -253,6 +419,14 @@ func (s *CandidatureService) Create(ctx context.Context, candidature *domain.Can
 	if candidature.Status == "" {
 		candidature.Status = "pending"
 	}
+	// Nouvelle candidature : étape 1 en pending, le reste NULL (pas encore atteinte).
+	candidature.CurrentStep = 1
+	pending := "pending"
+	candidature.Step1Status = &pending
+	candidature.Step2Status = nil
+	candidature.Step3Status = nil
+	candidature.Step4Status = nil
+	candidature.Step5Status = nil
 	candidature.DateApplication = time.Now().Format("2006-01-02")
 	candidature.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
@@ -348,12 +522,6 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	if request.PathLettreMotivation2 != "" {
 		candidature.PathLettreMotivation2 = request.PathLettreMotivation2
 	}
-	if request.Status != "" {
-		candidature.Status = request.Status
-	}
-	if request.Step != "" {
-		candidature.Step = request.Step
-	}
 	if request.ScoreCVScreening != nil {
 		candidature.ScoreCVScreening = int(*request.ScoreCVScreening)
 	}
@@ -372,10 +540,28 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	// Notes is always synced so users can also clear an existing note
 	candidature.Notes = request.Notes
 
-	if request.Status == "accepted" || request.Status == "rejected" {
-		if currentStepScore(candidature) <= 0 {
-			return nil, fmt.Errorf("cannot set status to %s: a score is required for the current step (%s)", request.Status, candidature.Step)
+	// Déplacement manuel explicite (sans décision) : resynchronise current_step
+	// sur le step demandé, sans toucher aux statuts par étape.
+	if request.Step != "" && request.Status == "" {
+		if idx := stageIndex(request.Step); pipelineDBSteps[idx-1] != candidature.Step {
+			candidature.Step = pipelineDBSteps[idx-1]
+			candidature.CurrentStep = idx
+			if getStepStatus(candidature, idx) == "" {
+				setStepStatus(candidature, idx, "pending")
+			}
+			candidature.Status = resolveStatus(candidature)
 		}
+	}
+
+	// Décision accept/reject => transition par étape (UN SEUL update, même ligne).
+	if reqStatus := normalizeStatus(request.Status); request.Status != "" && reqStatus != "pending" {
+		if err := applyDecisionToRow(candidature, reqStatus); err != nil {
+			return nil, err
+		}
+	} else if request.Status != "" {
+		// Réouverture manuelle : repasse l'étape courante en pending.
+		setStepStatus(candidature, currentIndex(candidature), "pending")
+		candidature.Status = "pending"
 	}
 
 	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
@@ -431,7 +617,17 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 		return nil, fmt.Errorf("no email template found for type %s", templateType)
 	}
 
-	to := candidature.Email1
+	to := strings.TrimSpace(candidature.Email1)
+	// Pair application (binôme) : preview the recipients exactly as SendEmail
+	// will send them — both members, deduplicated.
+	recipients := []string{}
+	if to != "" {
+		recipients = append(recipients, to)
+	}
+	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" && !strings.EqualFold(email2, to) {
+		recipients = append(recipients, email2)
+	}
+	to = strings.Join(recipients, ", ")
 	subject := template.Subject
 	subject = strings.ReplaceAll(subject, "{{NomCandidat}}", candidature.FullName)
 	subject = strings.ReplaceAll(subject, "[Nom du candidat]", candidature.FullName)
@@ -501,10 +697,17 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		return fmt.Errorf("no email template found for type %s step %s", req.Type, effectiveStep)
 	}
 
-	to := candidature.Email1
+	to := strings.TrimSpace(candidature.Email1)
 	if to == "" {
 		return fmt.Errorf("candidature has no email address")
 	}
+	// Pair application (binôme) : notify both members. The pipeline
+	// transition below still applies once to the whole application.
+	recipients := []string{to}
+	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" && !strings.EqualFold(email2, to) {
+		recipients = append(recipients, email2)
+	}
+	to = strings.Join(recipients, ", ")
 
 	subject := template.Subject
 	subject = strings.ReplaceAll(subject, "{{NomCandidat}}", candidature.FullName)
@@ -532,6 +735,15 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", googleMapsLink)
 	body = strings.ReplaceAll(body, "[LienGoogleMaps]", googleMapsLink)
 	body = strings.ReplaceAll(body, "[Adresse]", googleMapsLink)
+	body = strings.ReplaceAll(body, "{{LienQuiz}}", req.QuizLink)
+	body = strings.ReplaceAll(body, "[LienQuiz]", req.QuizLink)
+	body = strings.ReplaceAll(body, "{{QuizLink}}", req.QuizLink)
+	body = strings.ReplaceAll(body, "{{LienReunion}}", req.MeetingLink)
+	body = strings.ReplaceAll(body, "{{LienMeeting}}", req.MeetingLink)
+	body = strings.ReplaceAll(body, "[LienReunion]", req.MeetingLink)
+	body = strings.ReplaceAll(body, "{{DateDebut}}", req.StartDate)
+	body = strings.ReplaceAll(body, "{{DateStart}}", req.StartDate)
+	body = strings.ReplaceAll(body, "[DateDebut]", req.StartDate)
 	subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Adresse")
 	subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Adresse")
 	subject = strings.ReplaceAll(subject, "[Adresse]", "Adresse")
@@ -571,23 +783,25 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
 
 	email := mailPkg.Email{
-		To:      []string{to},
+		To:      recipients,
 		Subject: subject,
 		Body:    body,
 	}
 
 	sendErr := mailer.Send(email)
 	if sendErr != nil {
-		log.Error().Err(sendErr).Int("id", id).Msg("Failed to send email")
+		log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
 		emailLog.Status = "failed"
-		if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+		emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
+		if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
 			log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
 		}
 		return fmt.Errorf("failed to send email: %w", sendErr)
 	}
 
 	emailLog.Status = "sent"
-	if _, err := s.db.NewUpdate().Model(emailLog).Column("status").Where("id = ?", emailLog.ID).Exec(ctx); err != nil {
+	emailLog.ErrorMessage = ""
+	if _, err := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); err != nil {
 		log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
 	}
 
@@ -596,14 +810,10 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		status = "rejected"
 	}
 
-	if req.Type == "disapproval" {
-		if currentStepScore(candidature) <= 0 {
-			return fmt.Errorf("cannot reject: a score is required for the current step (%s)", candidature.Step)
-		}
+	// Transition par étape sur la même ligne (le flow d'email de rejet est réutilisé tel quel).
+	if err := applyDecisionToRow(candidature, status); err != nil {
+		return err
 	}
-
-	candidature.Status = status
-	candidature.UpdatedAt = now
 
 	_, err = s.db.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx)
 	if err != nil {
@@ -612,6 +822,59 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 
 	log.Info().Int("id", id).Str("status", status).Msg("Email sent and candidature status updated")
 	return nil
+}
+
+// GetPipeline retourne, pour chacune des 5 étapes, les compteurs
+// pending / accepted / rejected en dépivotant les 5 colonnes
+// (LATERAL VALUES, NULL exclus : étape pas encore atteinte).
+func (s *CandidatureService) GetPipeline(ctx context.Context) ([]PipelineStage, error) {
+	type row struct {
+		Stage  string `bun:"stage"`
+		Status string `bun:"status"`
+		Cnt    int    `bun:"cnt"`
+	}
+	var rows []row
+	err := s.db.NewRaw(`
+		SELECT v.stage AS stage, v.status AS status, COUNT(*) AS cnt
+		FROM candidature, LATERAL (VALUES
+			('cv', step1_status),
+			('quiz', step2_status),
+			('online', step3_status),
+			('f2f', step4_status),
+			('final', step5_status)
+		) AS v(stage, status)
+		WHERE v.status IS NOT NULL
+		GROUP BY v.stage, v.status
+	`).Scan(ctx, &rows)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("pipeline query failed: %w", err)
+	}
+
+	counts := map[string]map[string]int{
+		"cv":     {"pending": 0, "accepted": 0, "rejected": 0},
+		"quiz":   {"pending": 0, "accepted": 0, "rejected": 0},
+		"online": {"pending": 0, "accepted": 0, "rejected": 0},
+		"f2f":    {"pending": 0, "accepted": 0, "rejected": 0},
+		"final":  {"pending": 0, "accepted": 0, "rejected": 0},
+	}
+	for _, r := range rows {
+		if _, ok := counts[r.Stage]; !ok {
+			continue
+		}
+		if _, ok := counts[r.Stage][r.Status]; !ok {
+			continue
+		}
+		counts[r.Stage][r.Status] = r.Cnt
+	}
+
+	stages := []PipelineStage{
+		{ID: "cv", Index: "01", Name: "CV Screening", Short: "CV", Counts: PipelineCounts{Pending: counts["cv"]["pending"], Accepted: counts["cv"]["accepted"], Rejected: counts["cv"]["rejected"]}},
+		{ID: "quiz", Index: "02", Name: "Online Quiz", Short: "Quiz", Counts: PipelineCounts{Pending: counts["quiz"]["pending"], Accepted: counts["quiz"]["accepted"], Rejected: counts["quiz"]["rejected"]}},
+		{ID: "online", Index: "03", Name: "Online Meeting", Short: "Online", Counts: PipelineCounts{Pending: counts["online"]["pending"], Accepted: counts["online"]["accepted"], Rejected: counts["online"]["rejected"]}},
+		{ID: "f2f", Index: "04", Name: "F2F Meeting", Short: "F2F", Counts: PipelineCounts{Pending: counts["f2f"]["pending"], Accepted: counts["f2f"]["accepted"], Rejected: counts["f2f"]["rejected"]}},
+		{ID: "final", Index: "05", Name: "Final Decision", Short: "Final", Final: true, Counts: PipelineCounts{Pending: counts["final"]["pending"], Accepted: counts["final"]["accepted"], Rejected: counts["final"]["rejected"]}},
+	}
+	return stages, nil
 }
 
 func (s *CandidatureService) Export(ctx context.Context, params CandidatureParams) (*export.ExportOptions, error) {

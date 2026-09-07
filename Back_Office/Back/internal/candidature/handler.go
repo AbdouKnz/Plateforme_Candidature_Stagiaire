@@ -236,6 +236,15 @@ func (h *CandidatureHandler) GetRecentHandler(c *gin.Context) {
 	pkg.OK(c, ToResponseList(candidatures), nil)
 }
 
+func (h *CandidatureHandler) GetPipelineHandler(c *gin.Context) {
+	stages, err := h.Service.GetPipeline(c.Request.Context())
+	if err != nil {
+		pkg.InternalError(c, err.Error())
+		return
+	}
+	pkg.OK(c, stages, nil)
+}
+
 func (h *CandidatureHandler) GetAllHandler(c *gin.Context) {
 	params := h.ParseCandidatureParams(c)
 

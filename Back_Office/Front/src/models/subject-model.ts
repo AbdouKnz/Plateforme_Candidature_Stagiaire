@@ -9,6 +9,7 @@ export interface Subject {
   profile_ids: number[];
   profile_names: string[];
   description: string;
+  image_path?: string;
   status: boolean;
   online_quiz_link: string;
   online_meeting_link: string;

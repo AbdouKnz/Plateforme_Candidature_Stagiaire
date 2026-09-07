@@ -16,7 +16,6 @@ function useNavLinks() {
     return [
       { to: "/", labelKey: "home.nav.home" },
       { to: "/about", labelKey: "home.nav.about" },
-      { to: "/pfe-book", labelKey: "pfeBook" },
     ]
   }
   return [

@@ -9,6 +9,7 @@ type Subject struct {
 	Code             string  `bun:"code,notnull" json:"code" binding:"required"`
 	Name             string  `bun:"name,notnull" json:"name" binding:"required,min=3,max=100"`
 	Description      string  `bun:"description,notnull" json:"description" binding:"required"`
+	ImagePath        string  `bun:"image_path,default:''" json:"image_path"`
 	Status           bool    `bun:"status,notnull,default:true" json:"status"`
 	OnlineQuizLink   string  `bun:"online_quiz_link,default:''" json:"online_quiz_link"`
 	OnlineMeetingLink string `bun:"online_meeting_link,default:''" json:"online_meeting_link"`

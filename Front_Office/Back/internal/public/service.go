@@ -205,14 +205,14 @@ func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candida
 			duration, methode, start_date, subject_name, university, university2,
 			date_application, path_cv, path_lettre_motivation,
 			path_cv2, path_lettre_motivation2,
-			status, created_at, updated_at
+			status, current_step, step1_status, created_at, updated_at
 		) VALUES (
 			?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?,
 			?, ?, ?,
 			?, ?,
-			?, ?, ?
+			?, 1, 'pending', ?, ?
 		)
 		RETURNING id
 	`,

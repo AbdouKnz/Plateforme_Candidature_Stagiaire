@@ -46,6 +46,7 @@ type SubjectResponse struct {
 	Code         string                      `json:"code"`
 	Name         string                      `json:"name"`
 	Description  string                      `json:"description"`
+	ImagePath    string                      `json:"image_path"`
 	Technologies []SubjectTechnologyResponse `json:"technologies"`
 	Profiles     []SubjectProfileResponse    `json:"profiles"`
 	Duration     *DurationResponse           `json:"duration,omitempty"`
@@ -117,6 +118,7 @@ func subjectToResponse(s *domain.Subject) SubjectResponse {
 		Code:         s.Code,
 		Name:         s.Name,
 		Description:  s.Description,
+		ImagePath:    s.ImagePath,
 		Technologies: techs,
 		Profiles:     profs,
 		Duration:     dur,

@@ -33,6 +33,13 @@ type Candidature struct {
 	PathLettreMotivation2 string `bun:"path_lettre_motivation2" json:"path_lettre_motivation2"`
 	Status                string `bun:"status,notnull,default:'pending'" json:"status"`
 	Step                  string `bun:"step,notnull,default:'cv_screening'" json:"step"`
+	// Suivi de statut PAR ÉTAPE (NULL = étape pas encore atteinte, jamais compté dans les KPI)
+	CurrentStep           int     `bun:"current_step,notnull,default:1" json:"current_step"`
+	Step1Status           *string `bun:"step1_status" json:"step1_status"`
+	Step2Status           *string `bun:"step2_status" json:"step2_status"`
+	Step3Status           *string `bun:"step3_status" json:"step3_status"`
+	Step4Status           *string `bun:"step4_status" json:"step4_status"`
+	Step5Status           *string `bun:"step5_status" json:"step5_status"`
 	ScoreCVScreening      int    `bun:"score_cv_screening,notnull,default:0" json:"score_cv_screening"`
 	ScoreOnlineQuiz       int    `bun:"score_online_quiz,notnull,default:0" json:"score_online_quiz"`
 	ScoreOnlineMeeting    int    `bun:"score_online_meeting,notnull,default:0" json:"score_online_meeting"`

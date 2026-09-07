@@ -35,6 +35,14 @@ export function EmailLogModal({
         return "blue";
       case "acceptance":
         return "success";
+      case "online_quiz":
+        return "success";
+      case "online_meeting":
+        return "update";
+      case "f2f_meeting":
+        return "warning";
+      case "final_decision":
+        return "success";
       case "disapproval":
         return "destructive";
       case "reopening":
@@ -91,10 +99,14 @@ export function EmailLogModal({
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   Type:
                 </span>
-                <Badge variant={getTypeBadgeColor(emailLog.template_type) as "blue" | "success" | "destructive" | "info" | "secondary"}>
+                <Badge variant={getTypeBadgeColor(emailLog.template_type) as "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary"}>
                   {({
                     confirmation: t("email_template_type_confirmation"),
                     acceptance: t("email_template_type_acceptance"),
+                    online_quiz: t("email_template_type_online_quiz"),
+                    online_meeting: t("email_template_type_online_meeting"),
+                    f2f_meeting: t("email_template_type_f2f_meeting"),
+                    final_decision: t("email_template_type_final_decision"),
                     disapproval: t("email_template_type_disapproval"),
                     reopening: t("email_template_type_reopening"),
                   } as Record<string, string>)[emailLog.template_type] ?? emailLog.template_type}

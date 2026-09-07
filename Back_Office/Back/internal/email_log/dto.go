@@ -13,6 +13,7 @@ type EmailLogResponse struct {
 	SubjectName   string `json:"subject_name"`
 	Status        string `json:"status"`
 	SentAt        string `json:"sent_at"`
+	ErrorMessage  string `json:"error_message"`
 }
 
 type EmailLogParams struct {
@@ -50,6 +51,7 @@ func ToResponse(el *domain.EmailLog) EmailLogResponse {
 		SubjectName:   el.SubjectName,
 		Status:        el.Status,
 		SentAt:        el.SentAt,
+		ErrorMessage:  el.ErrorMessage,
 	}
 }
 

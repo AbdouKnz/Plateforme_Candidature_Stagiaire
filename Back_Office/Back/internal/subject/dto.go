@@ -8,6 +8,7 @@ type CreateSubjectRequest struct {
 	TechnologyIDs     []int  `json:"technology_ids"`
 	ProfileIDs        []int  `json:"profile_ids"`
 	Description       string `json:"description"`
+	ImagePath         string `json:"image_path"`
 	OnlineQuizLink    string `json:"online_quiz_link"`
 	OnlineMeetingLink string `json:"online_meeting_link"`
 	F2FMeetingLink    string `json:"f2f_meeting_link"`
@@ -23,6 +24,7 @@ type SubjectResponse struct {
 	ProfileIDs        []int            `json:"profile_ids"`
 	ProfileNames      []string         `json:"profile_names"`
 	Description       string           `json:"description"`
+	ImagePath         string           `json:"image_path"`
 	Status            bool             `json:"status"`
 	OnlineQuizLink    string           `json:"online_quiz_link"`
 	OnlineMeetingLink string           `json:"online_meeting_link"`
@@ -44,6 +46,7 @@ type UpdateSubjectRequest struct {
 	TechnologyIDs     []int   `json:"technology_ids,omitempty"`
 	ProfileIDs        []int   `json:"profile_ids,omitempty"`
 	Description       string  `json:"description,omitempty"`
+	ImagePath         *string `json:"image_path,omitempty"`
 	Status            *bool   `json:"status,omitempty"`
 	OnlineQuizLink    *string `json:"online_quiz_link,omitempty"`
 	OnlineMeetingLink *string `json:"online_meeting_link,omitempty"`
@@ -86,6 +89,7 @@ func ToResponse(s *domain.Subject) SubjectResponse {
 		ProfileIDs:        profIDs,
 		ProfileNames:      profNames,
 		Description:       s.Description,
+		ImagePath:         s.ImagePath,
 		Status:            s.Status,
 		OnlineQuizLink:    s.OnlineQuizLink,
 		OnlineMeetingLink: s.OnlineMeetingLink,

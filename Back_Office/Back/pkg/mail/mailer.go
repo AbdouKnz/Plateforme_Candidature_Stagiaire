@@ -3,9 +3,11 @@ package mail
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	gomail "gopkg.in/gomail.v2"
 )
@@ -36,19 +38,57 @@ func NewMailer(host string, port int, username, password, from, fromName string)
 	}
 }
 
+func (m *Mailer) dialer() *gomail.Dialer {
+	host := strings.TrimSpace(m.Host)
+	username := strings.TrimSpace(m.Username)
+	dialer := gomail.NewDialer(host, m.Port, username, m.Password)
+	// Keep previous behaviour (self-signed / private CA compat) but set
+	// ServerName so STARTTLS / implicit-TLS handshakes succeed.
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true, ServerName: host}
+	return dialer
+}
+
+func (m *Mailer) validate(e Email) error {
+	if strings.TrimSpace(m.Host) == "" {
+		return fmt.Errorf("smtp host is empty")
+	}
+	if m.Port <= 0 || m.Port > 65535 {
+		return fmt.Errorf("smtp port %d is invalid", m.Port)
+	}
+	if strings.TrimSpace(m.From) == "" {
+		return fmt.Errorf("smtp from address is empty")
+	}
+	if len(e.To) == 0 || strings.TrimSpace(e.To[0]) == "" {
+		return fmt.Errorf("recipient address is empty")
+	}
+	for _, to := range e.To {
+		if strings.TrimSpace(to) == "" || !strings.Contains(to, "@") {
+			return fmt.Errorf("recipient address %q is invalid", to)
+		}
+	}
+	return nil
+}
+
 func (m *Mailer) Send(e Email) error {
-	raw, err := m.buildMessage(e)
-	if err != nil {
+	if err := m.validate(e); err != nil {
 		return err
 	}
 
-	dialer := gomail.NewDialer(m.Host, m.Port, m.Username, m.Password)
-	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	raw, err := m.buildMessage(e)
+	if err != nil {
+		return fmt.Errorf("build email message: %w", err)
+	}
+
+	dialer := m.dialer()
 	sender, err := dialer.Dial()
 	if err != nil {
-		return err
+		return fmt.Errorf("smtp dial %s:%d: %w", strings.TrimSpace(m.Host), m.Port, err)
 	}
-	return sender.Send(m.From, e.To, raw)
+	defer sender.Close()
+	if err := sender.Send(strings.TrimSpace(m.From), e.To, raw); err != nil {
+		return fmt.Errorf("smtp send from %q to %q: %w", strings.TrimSpace(m.From), strings.Join(e.To, ","), err)
+	}
+	return nil
 }
 
 type rawMessage struct {
@@ -63,11 +103,18 @@ func (r rawMessage) WriteTo(w io.Writer) (int64, error) {
 func (m *Mailer) buildMessage(e Email) (rawMessage, error) {
 	var buf bytes.Buffer
 
-	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.FormatAddress(m.From, m.FromName)))
-	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(e.To, ", ")))
-	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", e.Subject))
+	from := strings.TrimSpace(m.From)
+	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.FormatAddress(from, strings.TrimSpace(m.FromName))))
+	to := make([]string, 0, len(e.To))
+	for _, t := range e.To {
+		to = append(to, strings.TrimSpace(t))
+	}
+	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(to, ", ")))
+	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", encodeSubject(strings.TrimSpace(e.Subject))))
+	buf.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123Z)))
 	buf.WriteString("MIME-Version: 1.0\r\n")
-	buf.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n\r\n")
+	buf.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
+	buf.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
 
 	htmlContent := strings.ReplaceAll(e.Body, "\n", "<br>")
 	buf.WriteString(buildHTML(htmlContent))
@@ -76,10 +123,67 @@ func (m *Mailer) buildMessage(e Email) (rawMessage, error) {
 }
 
 func (m *Mailer) FormatAddress(email, name string) string {
+	email = strings.TrimSpace(email)
+	name = strings.TrimSpace(name)
 	if name == "" {
 		return email
 	}
+	// Quote the display name when it contains specials (comma, semicolon,
+	// angle brackets, quotes, non-ASCII) so the From header stays valid.
+	needsQuote := false
+	for _, r := range name {
+		if r < 32 || r >= 127 || strings.ContainsRune(",;:<>@\"()[]", r) {
+			needsQuote = true
+			break
+		}
+	}
+	if needsQuote {
+		escaped := strings.ReplaceAll(name, "\\", "\\\\")
+		escaped = strings.ReplaceAll(escaped, "\"", "\\\"")
+		return fmt.Sprintf("\"%s\" <%s>", encodeSubject(escaped), email)
+	}
 	return fmt.Sprintf("%s <%s>", name, email)
+}
+
+// encodeSubject RFC2047-encodes non-ASCII subjects (French accents, ...).
+// Pure-ASCII subjects are returned untouched.
+func encodeSubject(s string) string {
+	isASCII := true
+	for i := 0; i < len(s); i++ {
+		if s[i] >= 128 {
+			isASCII = false
+			break
+		}
+	}
+	if isASCII {
+		return s
+	}
+	var buf bytes.Buffer
+	maxLen := 40
+	for len(s) > 0 {
+		n := len(s)
+		if n > maxLen {
+			n = maxLen
+			for n > 0 && s[n-1] >= 0x80 && s[n-1] < 0xC0 {
+				n--
+			}
+			if n == 0 {
+				n = len(s)
+				if n > maxLen {
+					n = maxLen
+				}
+			}
+		}
+		chunk := s[:n]
+		s = s[n:]
+		if buf.Len() > 0 {
+			buf.WriteString("\r\n ")
+		}
+		buf.WriteString("=?UTF-8?B?")
+		buf.WriteString(base64.StdEncoding.EncodeToString([]byte(chunk)))
+		buf.WriteString("?=")
+	}
+	return buf.String()
 }
 
 func buildHTML(body string) string {

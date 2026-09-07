@@ -112,6 +112,7 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 				code VARCHAR(255) NOT NULL UNIQUE,
 				name VARCHAR(255) NOT NULL,
 				description TEXT NOT NULL,
+				image_path TEXT DEFAULT '',
 				status BOOLEAN NOT NULL DEFAULT true,
 				online_quiz_link TEXT DEFAULT '',
 				online_meeting_link TEXT DEFAULT '',
@@ -129,9 +130,10 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 	} else {
 		log.Info().Msg("Subject table exists, ensuring schema is up to date...")
 		_, err = db.ExecContext(ctx, `
-			ALTER TABLE subject 
+			ALTER TABLE subject
 				ADD COLUMN IF NOT EXISTS code VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '',
+				ADD COLUMN IF NOT EXISTS image_path TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status BOOLEAN NOT NULL DEFAULT true,
 				ADD COLUMN IF NOT EXISTS online_quiz_link TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS online_meeting_link TEXT DEFAULT '',
@@ -182,6 +184,9 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 	log.Info().Msg("Checking candidature table schema...")
 
+	// Enum des statuts par étape (créé une seule fois)
+	_, _ = db.ExecContext(ctx, `DO $$ BEGIN CREATE TYPE step_status AS ENUM ('pending','accepted','rejected'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`)
+
 	exists, err := db.NewSelect().Model((*domain.Candidature)(nil)).Exists(ctx)
 	if err != nil {
 		log.Warn().Err(err).Msg("Could not check if candidature table exists, trying CREATE TABLE IF NOT EXISTS")
@@ -219,6 +224,12 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				path_lettre_motivation2 TEXT DEFAULT '',
 				status VARCHAR(50) NOT NULL DEFAULT 'pending',
 				step VARCHAR(50) NOT NULL DEFAULT 'cv_screening',
+				current_step INT NOT NULL DEFAULT 1,
+				step1_status step_status DEFAULT NULL,
+				step2_status step_status DEFAULT NULL,
+				step3_status step_status DEFAULT NULL,
+				step4_status step_status DEFAULT NULL,
+				step5_status step_status DEFAULT NULL,
 				score_cv_screening INT NOT NULL DEFAULT 0,
 				score_online_quiz INT NOT NULL DEFAULT 0,
 				score_online_meeting INT NOT NULL DEFAULT 0,
@@ -264,6 +275,12 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS path_lettre_motivation2 TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'pending',
 				ADD COLUMN IF NOT EXISTS step VARCHAR(50) NOT NULL DEFAULT 'cv_screening',
+				ADD COLUMN IF NOT EXISTS current_step INT NOT NULL DEFAULT 1,
+				ADD COLUMN IF NOT EXISTS step1_status step_status DEFAULT NULL,
+				ADD COLUMN IF NOT EXISTS step2_status step_status DEFAULT NULL,
+				ADD COLUMN IF NOT EXISTS step3_status step_status DEFAULT NULL,
+				ADD COLUMN IF NOT EXISTS step4_status step_status DEFAULT NULL,
+				ADD COLUMN IF NOT EXISTS step5_status step_status DEFAULT NULL,
 				ADD COLUMN IF NOT EXISTS score_cv_screening INT NOT NULL DEFAULT 0,
 				ADD COLUMN IF NOT EXISTS score_online_quiz INT NOT NULL DEFAULT 0,
 				ADD COLUMN IF NOT EXISTS score_online_meeting INT NOT NULL DEFAULT 0,
@@ -276,6 +293,19 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 			return err
 		}
 		log.Info().Msg("Candidature table schema is up to date")
+	}
+
+	if err := backfillStepStatuses(ctx, db); err != nil {
+		log.Error().Err(err).Msg("Failed to backfill per-step statuses")
+		return err
+	}
+
+	// Le suivi par étape vit désormais sur la ligne candidature elle-même :
+	// la table d'historique legacy n'est plus utilisée.
+	if _, err := db.ExecContext(ctx, `DROP TABLE IF EXISTS candidature_stage`); err != nil {
+		log.Warn().Err(err).Msg("Could not drop legacy candidature_stage table")
+	} else {
+		log.Info().Msg("Dropped legacy candidature_stage table")
 	}
 
 	// Rescale legacy scores stored on a /100 scale down to /20 (divide by 5).
@@ -479,7 +509,7 @@ func MigrateEmailTemplateTable(ctx context.Context, db *bun.DB) error {
 func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 	log.Info().Msg("Re-seeding default email templates...")
 
-	defaultTypes := []string{"confirmation", "acceptance", "disapproval", "reopening"}
+	defaultTypes := []string{"confirmation", "acceptance", "online_quiz", "online_meeting", "f2f_meeting", "final_decision", "disapproval", "reopening"}
 
 	_, err := db.NewDelete().Model((*domain.EmailTemplate)(nil)).Where("type IN (?)", bun.In(defaultTypes)).Exec(ctx)
 	if err != nil {
@@ -598,7 +628,8 @@ func MigrateEmailLogsTable(ctx context.Context, db *bun.DB) error {
 				candidat_name VARCHAR(255) NOT NULL,
 				subject_name VARCHAR(255) NOT NULL,
 				status VARCHAR(50) NOT NULL DEFAULT 'sent',
-				sent_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+				sent_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+				error_message TEXT NOT NULL DEFAULT ''
 			)
 		`)
 		if err != nil {
@@ -618,7 +649,8 @@ func MigrateEmailLogsTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS candidat_name VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS subject_name VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'sent',
-				ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+				ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+				ADD COLUMN IF NOT EXISTS error_message TEXT NOT NULL DEFAULT ''
 		`)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to migrate email_logs table columns")
@@ -1021,5 +1053,103 @@ func isDuplicateError(err error) bool {
 	msg := err.Error()
 	return strings.Contains(msg, "duplicate key") ||
 		strings.Contains(msg, "23505")
+}
+
+// backfillStepStatuses initialise current_step + step1..step5_status pour les
+// lignes jamais initialisées, à partir de l'historique (candidature_stage)
+// s'il existe, sinon à partir de step/status courants. Idempotent.
+func backfillStepStatuses(ctx context.Context, db *bun.DB) error {
+	type row struct {
+		ID     int    `bun:"id"`
+		Step   string `bun:"step"`
+		Status string `bun:"status"`
+	}
+	var rows []row
+	if err := db.NewRaw(`SELECT id, step, status FROM candidature WHERE step1_status IS NULL`).Scan(ctx, &rows); err != nil {
+		return fmt.Errorf("select rows to backfill: %w", err)
+	}
+	if len(rows) == 0 {
+		return nil
+	}
+
+	// Historique existant (table legacy) : map[candidatureID]map[stage]status
+	hist := map[int]map[string]string{}
+	var hrows []struct {
+		CandidatureID int    `bun:"candidature_id"`
+		Stage         string `bun:"stage"`
+		Status        string `bun:"status"`
+	}
+	if err := db.NewRaw(`SELECT candidature_id, stage, status FROM candidature_stage`).Scan(ctx, &hrows); err == nil {
+		for _, h := range hrows {
+			if hist[h.CandidatureID] == nil {
+				hist[h.CandidatureID] = map[string]string{}
+			}
+			hist[h.CandidatureID][h.Stage] = h.Status
+		}
+	}
+
+	stageIdx := func(step string) int {
+		switch strings.TrimSpace(strings.ToLower(step)) {
+		case "quiz", "online_quiz":
+			return 2
+		case "online", "online_meeting":
+			return 3
+		case "f2f", "f2f_meeting":
+			return 4
+		case "final", "final_decision":
+			return 5
+		default:
+			return 1
+		}
+	}
+	normStatus := func(s string) string {
+		switch strings.TrimSpace(strings.ToLower(s)) {
+		case "accepted", "invited", "approved":
+			return "accepted"
+		case "rejected", "refused", "declined", "failed":
+			return "rejected"
+		default:
+			return "pending"
+		}
+	}
+	stages := []string{"cv", "quiz", "online", "f2f", "final"}
+
+	for _, r := range rows {
+		cur := stageIdx(r.Step)
+		curStatus := normStatus(r.Status)
+		vals := make([]interface{}, 0, 7)
+		sets := make([]string, 0, 7)
+		for i, st := range stages {
+			idx := i + 1
+			var v interface{}
+			if hv, ok := hist[r.ID][st]; ok {
+				v = hv
+			} else if idx < cur {
+				v = "accepted"
+			} else if idx == cur {
+				v = curStatus
+			} else {
+				v = nil
+			}
+			sets = append(sets, fmt.Sprintf("step%d_status = ?", idx))
+			vals = append(vals, v)
+		}
+		// Le statut global résolu = statut de l'étape courante
+		var resolved string
+		if hv, ok := hist[r.ID][stages[cur-1]]; ok {
+			resolved = hv
+		} else {
+			resolved = curStatus
+		}
+		sets = append(sets, "current_step = ?", "status = ?")
+		vals = append(vals, cur, resolved)
+		vals = append(vals, r.ID)
+		q := fmt.Sprintf("UPDATE candidature SET %s WHERE id = ?", strings.Join(sets, ", "))
+		if _, err := db.NewRaw(q, vals...).Exec(ctx); err != nil {
+			return fmt.Errorf("backfill candidature %d: %w", r.ID, err)
+		}
+	}
+	log.Info().Int("count", len(rows)).Msg("Backfilled per-step statuses")
+	return nil
 }
 
