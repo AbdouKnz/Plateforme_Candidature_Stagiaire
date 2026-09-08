@@ -19,6 +19,17 @@ import { Card } from "@/components/ui/card";
 import type { EmailLog } from "@/models/email-log-model";
 import { useTranslation } from "react-i18next";
 
+const typeBadgeVariants: Record<string, "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary"> = {
+  confirmation: "blue",
+  acceptance: "success",
+  online_quiz: "success",
+  online_meeting: "update",
+  f2f_meeting: "warning",
+  final_decision: "success",
+  disapproval: "destructive",
+  reopening: "info",
+};
+
 interface EmailLogViewDialogProps {
   emailLog: EmailLog;
   open: boolean;
@@ -64,7 +75,12 @@ export function EmailLogModal({
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   Subject:
                 </span>
-                <span>{emailLog.subject}</span>
+                <Badge
+                  variant={typeBadgeVariants[emailLog.template_type] ?? "secondary"}
+                  className="max-w-full"
+                >
+                  {emailLog.subject}
+                </Badge>
               </div>
               <div className="flex items-center gap-2">
                 <IconClock className="h-5 w-5 text-gray-500 dark:text-gray-400" />

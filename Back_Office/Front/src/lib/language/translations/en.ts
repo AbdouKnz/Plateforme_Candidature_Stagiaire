@@ -830,4 +830,5 @@ export const en = {
   'notes_placeholder': 'Add internal notes or feedback for this application...',
   'save_notes': 'Save Notes',
   'notes_saved': 'Saved',
+  'characters': 'characters',
 } as const;

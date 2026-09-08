@@ -43,14 +43,6 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
       meta: { label: t("user") },
     },
     {
-      accessorKey: "applicant_name",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("candidate")} />
-      ),
-      cell: ({ row }) => row.original.applicant_name || "-",
-      meta: { label: t("candidate") },
-    },
-    {
       accessorKey: "action",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("action")} />
@@ -85,7 +77,9 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
         const module = row.getValue("module") as string;
         type IconName = keyof typeof TablerIcons;
 
-        const iconName = row.original.icon as IconName;
+        const iconName = module.toLowerCase() === "candidature"
+          ? "IconFileDescription"
+          : row.original.icon as IconName;
 
         // Type-safe icon retrieval
         const Icon = TablerIcons[iconName] as

@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IconEye, IconFile, IconTrash, IconNote, IconCheck, IconLoader2, IconLock, IconChartBar, IconTrendingUp, IconFileText, IconListDetails, IconVideo, IconUsersGroup, IconAward, IconSparkles, IconDeviceFloppy } from "@tabler/icons-react";
+import { IconEye, IconFile, IconTrash, IconCheck, IconLoader2, IconLock, IconChartBar, IconTrendingUp, IconFileText, IconListDetails, IconVideo, IconUsersGroup, IconAward, IconDeviceFloppy } from "@tabler/icons-react";
 import { type Candidature } from "@/models/candidature-model";
 import { DialogEnum, type DialogType } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -370,12 +370,15 @@ export function CandidatureActionModal({
         </div>
             </TabsContent>
             <TabsContent value="notes" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
-              <div className="border rounded-lg p-4 bg-muted/20">
-                <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2 flex items-center gap-1.5">
-                  <IconNote className="size-4" />
-                  {t("notes_feedback")}
-                </h3>
-                <div className="mt-3 space-y-2">
+              <div className="relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-4 pb-1">
+                  <div className="flex items-start gap-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">{t("notes_feedback")}</h3>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-2">
                   <textarea
                     id="candidature-notes"
                     value={notes}
@@ -384,32 +387,10 @@ export function CandidatureActionModal({
                       setNotesSaved(false);
                     }}
                     placeholder={t("notes_placeholder")}
-                    rows={8}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-colors"
+                    rows={11}
+                    className="w-full resize-none rounded-xl border-2 border-slate-400 bg-transparent px-4 py-3 text-sm leading-6 placeholder:text-muted-foreground shadow-sm transition-colors focus:border-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-400/30 dark:border-slate-500 dark:bg-transparent dark:placeholder:text-muted-foreground dark:focus:border-slate-400 dark:focus:ring-slate-500/30"
                   />
-                  <div className="flex items-center justify-end gap-2">
-                    {notesSaved && (
-                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                        <IconCheck className="size-3.5" />
-                        {t("notes_saved")}
-                      </span>
-                    )}
-                    <Button
-                      size="sm"
-                      onClick={handleSaveNotes}
-                      disabled={isSavingNotes}
-                      className="gap-1.5"
-                    >
-                      {isSavingNotes ? (
-                        <>
-                          <IconLoader2 className="size-3.5 animate-spin" />
-                          {t("saving")}
-                        </>
-                      ) : (
-                        t("save_notes")
-                      )}
-                    </Button>
-                  </div>
+                  <div className="flex justify-end text-[11px] text-muted-foreground">{notes.length} {t("characters")}</div>
                 </div>
               </div>
             </TabsContent>
@@ -502,6 +483,19 @@ export function CandidatureActionModal({
             <Button variant="outline" type="button" onClick={handleClose}>
               {t("close")}
             </Button>
+            {activeTab === "notes" && (
+              <>
+                {notesSaved && (
+                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                    <IconCheck className="size-3.5" />
+                    {t("notes_saved")}
+                  </span>
+                )}
+                <Button onClick={handleSaveNotes} disabled={isSavingNotes} className="gap-1.5">
+                  {isSavingNotes ? <><IconLoader2 className="size-4 animate-spin" />{t("saving")}</> : <><IconDeviceFloppy className="size-4" />{t("save_notes")}</>}
+                </Button>
+              </>
+            )}
             {activeTab === "scoring" && (
               <>
                 {scoresSaved && (

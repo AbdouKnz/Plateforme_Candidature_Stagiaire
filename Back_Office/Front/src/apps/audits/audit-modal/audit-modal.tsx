@@ -35,6 +35,14 @@ import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { formatAuditDate } from "../format-audit-date";
+import { STEP_VARIANTS } from "../../candidatures/pipeline";
+
+const statusVariants: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  accepted: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  invited: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  rejected: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+};
 
 const getActionBadgeColor = (action?: string) => {
   switch (action?.toLowerCase()) {
@@ -48,6 +56,10 @@ const getActionBadgeColor = (action?: string) => {
       return "destructive";
     case ActionType.LOGOUT:
       return "logout";
+    case "accept":
+      return "success";
+    case "reject":
+      return "destructive";
     default:
       return "secondary";
   }
@@ -89,6 +101,20 @@ export function AuditModal({
     }
 
     return String(val);
+  };
+
+  const formatStatusValue = (val: any) => {
+    if (typeof val !== "string") return formatFieldValue(val);
+    return t(`candidature_status_${val}`, { defaultValue: val });
+  };
+
+  const renderStatusBadge = (value: any) => {
+    if (typeof value !== "string") return formatStatusValue(value);
+    return (
+      <Badge variant="outline" className={cn("font-medium", statusVariants[value] ?? "bg-muted text-muted-foreground")}>
+        {formatStatusValue(value)}
+      </Badge>
+    );
   };
 
   const renderTableHeader = () => {
@@ -147,6 +173,40 @@ export function AuditModal({
   };
 
   const renderTableRows = () => {
+    if (isStepStatusChange && (audit.action === "accept" || audit.action === "reject")) {
+      return Object.entries(fields)
+        .filter(([key]) => key.endsWith("_status") || key === "reason_code")
+        .filter(([key]) => audit.action === "accept" || key.endsWith("_status"))
+        .map(([key, value]: [string, any]) => {
+          const label = key.endsWith("_status")
+            ? t(`pipeline_step_${key.replace(/_status$/, "")}`, { defaultValue: key })
+            : t("rejection_reason");
+          return (
+            <TableRow key={key}>
+              <TableCell>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "font-medium",
+                    key.endsWith("_status")
+                      ? STEP_VARIANTS[key.replace(/_status$/, "")] ?? "bg-muted text-muted-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {label}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {key.endsWith("_status") ? renderStatusBadge(value.old_values) : "-"}
+              </TableCell>
+              <TableCell>
+                {key.endsWith("_status") ? renderStatusBadge(value.new_values) : formatFieldValue(value.new_values)}
+              </TableCell>
+            </TableRow>
+          );
+        });
+    }
+
     return Object.entries(fields).map(([key, value]: [string, any]) => {
       const changed = value.changed;
 
@@ -222,9 +282,25 @@ export function AuditModal({
           : t(key, { defaultValue: key });
         return (
           <TableRow key={key}>
-            <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
-            <TableCell className="text-muted-foreground">{formatFieldValue(value.old_values)}</TableCell>
-            <TableCell>{formatFieldValue(value.new_values)}</TableCell>
+            <TableCell>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "font-medium",
+                  key.endsWith("_status")
+                    ? STEP_VARIANTS[key.replace(/_status$/, "")] ?? "bg-muted text-muted-foreground"
+                    : "bg-muted text-muted-foreground"
+                )}
+              >
+                {label}
+              </Badge>
+            </TableCell>
+            <TableCell className="text-muted-foreground">
+              {key.endsWith("_status") ? renderStatusBadge(value.old_values) : formatFieldValue(value.old_values)}
+            </TableCell>
+            <TableCell>
+              {key.endsWith("_status") ? renderStatusBadge(value.new_values) : formatFieldValue(value.new_values)}
+            </TableCell>
           </TableRow>
         );
       }

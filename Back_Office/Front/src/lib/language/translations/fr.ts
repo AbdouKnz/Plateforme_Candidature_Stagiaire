@@ -807,4 +807,5 @@ export const fr = {
   'notes_placeholder': 'Ajouter des notes internes ou des commentaires sur cette candidature...',
   'save_notes': 'Enregistrer les notes',
   'notes_saved': 'Enregistré',
+  'characters': 'caractères',
 } as const;

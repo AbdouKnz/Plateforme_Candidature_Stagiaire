@@ -16,7 +16,7 @@ import { useCandidatureToolbarProps } from "./table/data";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
-import { useCandidatures, useUpdateCandidature } from "@/hooks/use-candidatures";
+import { useCandidatures } from "@/hooks/use-candidatures";
 import { DialogEnum, AlertEnum } from "@/models/alert-model";
 import { useAlertStore } from "@/stores/alert-store";
 import type { Candidature } from "@/models/candidature-model";
@@ -116,30 +116,6 @@ export function Candidatures() {
     [data, rowSelection]
   );
 
-  const updateMutation = useUpdateCandidature();
-
-  const handleBulkAdvance = () => {
-    const queue = selectedRows.filter(
-      (c) => displayStatus(c) === "pending"
-    );
-    if (queue.length === 0) {
-      showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
-      return;
-    }
-    if (!queue.every(hasCurrentStepScore)) {
-      showAlert({ message: t("score_required_bulk"), type: AlertEnum.WARNING });
-      return;
-    }
-    // Le backend marque l'étape courante accepted et crée l'étape suivante en pending.
-    queue.forEach((candidature) => {
-      updateMutation.mutate({
-        id: candidature.id,
-        data: { status: "accepted" },
-      });
-    });
-    setRowSelection({});
-  };
-
   const startBulk = (templateType: BulkTemplateType) => {
     const queue = selectedRows.filter(
       (c) => displayStatus(c) === "pending"
@@ -218,12 +194,13 @@ export function Candidatures() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={!!bulk}
                 className="text-green-600 hover:border-green-300 hover:text-green-700"
-                onClick={handleBulkAdvance}
-                title={t("advance_to_next_step")}
+                onClick={() => startBulk("acceptance")}
+                title={t("send_confirmation_email")}
               >
                 <IconCheck size={16} />
-                {t("bulk_advance")}
+                {t("bulk_invite")}
               </Button>
               <Button
                 variant="outline"
