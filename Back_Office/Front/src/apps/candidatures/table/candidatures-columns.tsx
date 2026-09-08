@@ -8,12 +8,12 @@ import {
 } from "@/components/shared/data-table";
 import { useTranslation } from "react-i18next";
 import type { Candidature } from "@/models/candidature-model";
-import { DialogEnum } from "@/models/alert-model";
+import { DialogEnum, AlertEnum } from "@/models/alert-model";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { useAlertStore } from "@/stores/alert-store";
-import { AlertEnum } from "@/models/alert-model";
+import { useUpdateCandidature } from "@/hooks/use-candidatures";
 import { nextPipelineStep } from "../pipeline";
 import { PipelineStepCell } from "../pipeline-step-cell";
 import { hasCurrentStepScore } from "../scoring";
@@ -39,6 +39,7 @@ export function useCandidatureColumns(
   const { t } = useTranslation();
   const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
   const { showAlert } = useAlertStore();
+  const updateCandidatureMutation = useUpdateCandidature();
 
   const requireStepScore = (candidature: Candidature, action: "advance" | "decline") => {
     if (hasCurrentStepScore(candidature)) return true;
@@ -55,6 +56,15 @@ export function useCandidatureColumns(
   const handleAdvance = (candidature: Candidature) => {
     if (!requireStepScore(candidature, "advance")) return;
     const next = nextPipelineStep(candidature.step);
+    // Promotion from "Face to Face Meeting" to "Final Decision" step:
+    // advance the pipeline WITHOUT sending any email to the candidate.
+    if (next === "final_decision") {
+      updateCandidatureMutation.mutate({
+        id: candidature.id,
+        data: { status: "accepted" },
+      });
+      return;
+    }
     setEmailModalData({
       candidatureId: candidature.id,
       templateType: "acceptance",

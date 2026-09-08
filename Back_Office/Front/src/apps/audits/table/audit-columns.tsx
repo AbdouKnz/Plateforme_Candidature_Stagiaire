@@ -12,6 +12,7 @@ import { auditActionTypes } from "./data";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useAuditStore } from "@/stores/audit-store";
+import { formatAuditDate } from "../format-audit-date";
 
 export function useAuditColumns(): ColumnDef<Audit>[] {
   const { t } = useTranslation();
@@ -24,7 +25,7 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
       ),
       cell: ({ row }) => (
         <Badge variant="secondary" className="max-w-38 text-xs">
-          <LongText>{row.original.date}</LongText>
+          <LongText>{formatAuditDate(row.original.date)}</LongText>
         </Badge>
       ),
       meta: { className: cn("pl-6 md:table-cell"), label: t("date") },
@@ -42,6 +43,14 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
       meta: { label: t("user") },
     },
     {
+      accessorKey: "applicant_name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t("candidate")} />
+      ),
+      cell: ({ row }) => row.original.applicant_name || "-",
+      meta: { label: t("candidate") },
+    },
+    {
       accessorKey: "action",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("action")} />
@@ -55,7 +64,7 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
         return (
           <div className="flex items-center gap-2">
             <Badge variant={variant} className="">
-              {actionType}
+              {actionType === "accept" ? "Accept" : actionType === "reject" ? "Reject" : actionType}
             </Badge>
           </div>
         );
@@ -99,7 +108,6 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
       enableSorting: true,
       meta: { label: t("module") },
     },
-
     {
       id: "actions",
       header: ({ column }) => (

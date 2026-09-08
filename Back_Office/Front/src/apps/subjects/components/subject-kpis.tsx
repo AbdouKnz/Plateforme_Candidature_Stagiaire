@@ -17,17 +17,22 @@ import { cn } from "@/lib/utils";
 import { useSubjects } from "@/hooks/use-subjects";
 import { useCandidatures } from "@/hooks/use-candidatures";
 
+// Maximally distinct categorical palette so every data item gets its own color.
 const STAT_COLORS = [
-  "bg-violet-500",
-  "bg-sky-500",
-  "bg-emerald-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-indigo-500",
-  "bg-teal-500",
+  "bg-blue-600",
   "bg-orange-500",
-  "bg-pink-500",
+  "bg-emerald-500",
+  "bg-rose-500",
+  "bg-violet-500",
+  "bg-amber-500",
+  "bg-teal-500",
+  "bg-fuchsia-500",
   "bg-cyan-500",
+  "bg-lime-600",
+  "bg-indigo-500",
+  "bg-pink-500",
+  "bg-red-500",
+  "bg-yellow-500",
 ];
 
 interface BreakdownItem {
@@ -41,9 +46,6 @@ interface RawStat {
   code: string;
   subjectName: string;
   total: number;
-  accepted: number;
-  rejected: number;
-  pending: number;
   pair: number;
   solo: number;
   degreeCounts: Record<string, number>;
@@ -59,7 +61,6 @@ interface SubjectRow {
   subjectName: string;
   code: string;
   total: number;
-  status: Section;
   type: Section;
   degrees: Section;
   genders: Section;
@@ -105,7 +106,15 @@ function BreakdownRow({
   );
 }
 
-function BreakdownSection({ title, items }: { title: string; items: BreakdownItem[] }) {
+function BreakdownSection({
+  title,
+  items,
+  colorOffset = 0,
+}: {
+  title: string;
+  items: BreakdownItem[];
+  colorOffset?: number;
+}) {
   if (items.length === 0) return null;
   return (
     <div className="min-w-0">
@@ -117,7 +126,7 @@ function BreakdownSection({ title, items }: { title: string; items: BreakdownIte
             label={item.label}
             count={item.count}
             percent={item.percent}
-            color={item.color ?? STAT_COLORS[i % STAT_COLORS.length]}
+            color={item.color ?? STAT_COLORS[(i + colorOffset) % STAT_COLORS.length]}
           />
         ))}
       </div>
@@ -143,9 +152,6 @@ export function SubjectKpis() {
         code: subject.code,
         subjectName: subject.name,
         total: 0,
-        accepted: 0,
-        rejected: 0,
-        pending: 0,
         pair: 0,
         solo: 0,
         degreeCounts: {},
@@ -164,16 +170,10 @@ export function SubjectKpis() {
       const isSolo = !c.full_name2 || c.full_name2.trim() === "";
       const degree = (c.degree1 || t("unknown")).trim();
       const gender = (c.gender1 || t("unknown")).trim();
-      const isAccepted = c.status === "accepted" || c.status === "invited";
-      const isRejected = c.status === "rejected";
-      const isPending = !isAccepted && !isRejected;
 
       for (const name of subjectNames) {
         const stat = statsMap.get(name)!;
         stat.total += 1;
-        if (isAccepted) stat.accepted += 1;
-        if (isRejected) stat.rejected += 1;
-        if (isPending) stat.pending += 1;
         if (isSolo) stat.solo += 1;
         else stat.pair += 1;
         stat.degreeCounts[degree] = (stat.degreeCounts[degree] || 0) + 1;
@@ -186,34 +186,11 @@ export function SubjectKpis() {
         subjectName: s.subjectName,
         code: s.code,
         total: s.total,
-        status: {
-          title: t("status"),
-          items: [
-            {
-              label: t("accepted"),
-              count: s.accepted,
-              percent: pct(s.accepted, s.total),
-              color: "bg-emerald-500",
-            },
-            {
-              label: t("pending"),
-              count: s.pending,
-              percent: pct(s.pending, s.total),
-              color: "bg-yellow-400",
-            },
-            {
-              label: t("rejected"),
-              count: s.rejected,
-              percent: pct(s.rejected, s.total),
-              color: "bg-red-500",
-            },
-          ],
-        },
         type: {
           title: t("application_type"),
           items: [
-            { label: t("pair"), count: s.pair, percent: pct(s.pair, s.total) },
-            { label: t("solo"), count: s.solo, percent: pct(s.solo, s.total) },
+            { label: t("pair"), count: s.pair, percent: pct(s.pair, s.total), color: "bg-blue-600" },
+            { label: t("solo"), count: s.solo, percent: pct(s.solo, s.total), color: "bg-orange-500" },
           ],
         },
         degrees: { title: t("by_degree_level"), items: toBreakdown(s.degreeCounts, s.total) },
@@ -236,8 +213,19 @@ export function SubjectKpis() {
     setActiveIndex((safeIndex + 1) % rows.length);
   };
 
-  const sections = active
-    ? [active.status, active.type, active.degrees, active.genders]
+  interface SectionConfig {
+    section: Section;
+    colorOffset: number;
+  }
+
+  // Each section starts at a different point of the palette so its items get
+  // their own colors instead of every section reusing the same first colors.
+  const sections: SectionConfig[] = active
+    ? [
+        { section: active.type, colorOffset: 0 },
+        { section: active.degrees, colorOffset: 2 },
+        { section: active.genders, colorOffset: 5 },
+      ]
     : [];
 
   return (
@@ -263,7 +251,7 @@ export function SubjectKpis() {
         </p>
       ) : (
         <Card className="relative w-full overflow-hidden rounded-xl border-border/50 shadow-lg transition-all hover:shadow-xl">
-          <div className="h-0.5 w-full bg-gradient-to-r from-violet-500 via-sky-500 to-emerald-500" />
+          <div className="h-0.5 w-full bg-gradient-to-r from-blue-600 via-emerald-500 to-orange-500" />
 
           <CardHeader className="border-b border-border/40 py-3 pr-52">
             <div className="flex min-w-0 items-center gap-2.5">
@@ -332,14 +320,15 @@ export function SubjectKpis() {
             <div
               className={cn(
                 "grid gap-x-8 gap-y-6",
-                sections.filter((s) => s.items.length > 0).length > 1 && "md:grid-cols-2",
+                sections.filter((s) => s.section.items.length > 0).length > 1 && "md:grid-cols-2",
               )}
             >
-              {sections.map((section) => (
+              {sections.map(({ section, colorOffset }) => (
                 <BreakdownSection
                   key={section.title}
                   title={section.title}
                   items={section.items}
+                  colorOffset={colorOffset}
                 />
               ))}
             </div>

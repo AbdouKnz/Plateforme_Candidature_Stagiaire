@@ -5,7 +5,7 @@ export function Footer() {
 
   return (
     <footer className="border-t border-violet-200/40 bg-transparent dark:border-white/10">
-      <div className="mx-auto w-full px-8 py-16 sm:px-12 lg:px-16">
+      <div className="mx-auto w-full px-5 py-12 sm:px-12 sm:py-16 lg:px-16">
         <div className="grid gap-12 md:grid-cols-3">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
@@ -22,11 +22,11 @@ export function Footer() {
               {t("footer.contactTitle")}
             </h4>
             <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2.5 text-sm text-foreground/70 dark:text-muted-foreground">
+              <div className="flex items-start gap-2.5 text-sm text-foreground/70 dark:text-muted-foreground">
                 <img src="/adress.png" alt="" className="size-4 shrink-0" />
                 <span>{t("footer.location")}</span>
               </div>
-              <a href={`mailto:${t("footer.email")}`} className="flex items-center gap-2.5 text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
+              <a href={`mailto:${t("footer.email")}`} className="flex items-start gap-2.5 break-all text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
                 <img src="/email.png" alt="" className="size-4 shrink-0" />
                 {t("footer.email")}
               </a>

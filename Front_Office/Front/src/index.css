@@ -221,3 +221,20 @@
     background: transparent;
   }
 }
+
+@media (max-width: 767px) {
+  .pfe-book-scroller {
+    overflow-y: auto;
+  }
+
+  .pfe-book-scroller > [data-page] {
+    height: auto;
+    min-height: 100%;
+    overflow-y: auto;
+  }
+
+  .pfe-book-scroller > [data-page] > .flex-1 {
+    min-height: max-content;
+    overflow: visible;
+  }
+}

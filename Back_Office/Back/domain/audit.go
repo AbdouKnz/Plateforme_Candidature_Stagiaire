@@ -10,6 +10,8 @@ type AuditLog struct {
 	ActorID       int          `bun:"actor_id,notnull" json:"actor_id"`
 	ActorName     string       `bun:"actor_name,notnull" json:"actor_name"`
 	Module        string       `bun:"module,notnull" json:"module"`
+	TargetID      int          `bun:"target_id,notnull,default:0" json:"target_id"`
+	ApplicantName string       `bun:"applicant_name,scanonly" json:"applicant_name,omitempty"`
 	Action        string       `bun:"action,notnull" json:"action"`
 	Change        ChangeDetail `bun:"change,type:jsonb" json:"change"`
 	Icon          string       `bun:"icon,nullzero" json:"icon"`

@@ -56,14 +56,14 @@ export function Navbar() {
           : "bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-16 w-full items-center justify-between px-8 sm:px-12 lg:px-16">
+      <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-8 lg:px-16">
         <Link to="/" className="shrink-0 flex items-center">
           <img
             src={`/${resolvedTheme === "dark" ? "DarkMode" : "LightMode"}.png`}
             alt="Asteroidea"
             width={200}
             height={200}
-            className="h-[180px] w-[200px] object-contain -my-14"
+            className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14"
           />
         </Link>
 

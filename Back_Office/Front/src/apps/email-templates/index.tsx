@@ -33,7 +33,7 @@ const typeVariants: Record<string, string> = {
 
 const typeLabelMap: Record<string, Record<string, string>> = {
   fr: { confirmation: "Accusé réception", online_quiz: "Quiz en ligne", disapproval: "Refus", reopening: "Réouverture", online_meeting: "Réunion en ligne", f2f_meeting: "Entretien présentiel", final_decision: "Décision finale" },
-  en: { confirmation: "Confirmation", online_quiz: "Online Quiz", disapproval: "Disapproval", reopening: "Reopening", online_meeting: "Online Meeting", f2f_meeting: "F2F Meeting", final_decision: "Final Decision" },
+  en: { confirmation: "Acknowledgment of Receipt", online_quiz: "Online Quiz", disapproval: "Disapproval", reopening: "Reopening", online_meeting: "Online Meeting", f2f_meeting: "Face to Face Meeting", final_decision: "Final Decision" },
 };
 
 const rowActionBtn = "h-8 w-8 p-0";
@@ -56,7 +56,7 @@ function EmailRow({
   isSelected?: boolean;
 }) {
   const { t } = useTranslation();
-  const typeLabel = typeLabelMap.fr?.[template.type] || template.type;
+  const typeLabel = typeLabelMap.en?.[template.type] || template.type;
 
   return (
     <div

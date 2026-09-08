@@ -51,25 +51,27 @@ func wrappedRowHeight(pdf *gofpdf.Fpdf, ff, style string, size float64, cells []
 }
 
 // drawWrappedRow draws one table row with word-wrapped cells sharing the same
-// top Y; the row height fits the tallest cell so text never bleeds sideways.
+// top Y; every cell gets a full-height border so rows form one continuous
+// grid with no gaps between rows, and text never bleeds sideways.
 func drawWrappedRow(pdf *gofpdf.Fpdf, ff, style string, size float64, cells []string, widths []float64, lineH float64, fill bool) {
 	pdf.SetFont(ff, style, size)
 	left, _, _, _ := pdf.GetMargins()
 	y0 := pdf.GetY()
-	maxY := y0
+	h := wrappedRowHeight(pdf, ff, style, size, cells, widths, lineH)
 	x := left
 	for i, txt := range cells {
 		if i >= len(widths) {
 			break
 		}
-		pdf.SetXY(x, y0)
-		pdf.MultiCell(widths[i], lineH, cleanCell(txt), "1", "C", fill)
-		if y := pdf.GetY(); y > maxY {
-			maxY = y
+		if fill {
+			pdf.SetFillColor(200, 200, 200)
 		}
+		pdf.SetXY(x, y0)
+		pdf.MultiCell(widths[i], lineH, cleanCell(txt), "0", "C", fill)
+		pdf.Rect(x, y0, widths[i], h, "D")
 		x += widths[i]
 	}
-	pdf.SetXY(left, maxY)
+	pdf.SetXY(left, y0+h)
 }
 
 func drawTableHeader(pdf *gofpdf.Fpdf, ff string, headers []string, widths []float64, lineH float64) {

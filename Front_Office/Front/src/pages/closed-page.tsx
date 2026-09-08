@@ -191,7 +191,7 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-12 flex items-center justify-center gap-6 sm:gap-8 lg:gap-12 flex-nowrap"
+            className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-8 lg:gap-12"
           >
             {items.map((item) => (
               <CountdownCircle key={item.label} value={item.value} label={item.label} max={item.max} isDark={isDark} />
@@ -226,13 +226,13 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
             </p>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-3">
+              <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:items-center">
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setErrorMsg("") }}
                   placeholder={t("closed.emailPlaceholder")}
-                  className={`h-11 w-64 rounded-xl border px-4 text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-purple-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-secondary"} ${errorMsg ? "border-red-500" : ""}`}
+                  className={`h-11 w-full max-w-64 rounded-xl border px-4 text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-purple-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-secondary"} ${errorMsg ? "border-red-500" : ""}`}
                 />
                 <button
                   onClick={handleSubscribe}

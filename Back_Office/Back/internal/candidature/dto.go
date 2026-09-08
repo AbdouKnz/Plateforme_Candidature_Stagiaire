@@ -50,60 +50,61 @@ type CreateCandidatureRequest struct {
 }
 
 type UpdateCandidatureRequest struct {
-	FullName              string `json:"full_name,omitempty"`
-	Email1                string `json:"email1,omitempty"`
-	Gender1               string `json:"gender1,omitempty"`
-	Phone1                string `json:"phone1,omitempty"`
-	Degree1               string `json:"degree1"`
-	FullName2             string `json:"full_name2,omitempty"`
-	Email2                string `json:"email2,omitempty"`
-	Gender2               string `json:"gender2,omitempty"`
-	Phone2                string `json:"phone2,omitempty"`
-	Degree2               string `json:"degree2"`
-	Duration              string `json:"duration,omitempty"`
-	Methode               string `json:"methode,omitempty"`
-	StartDate             string `json:"start_date,omitempty"`
-	SubjectName           string `json:"subject_name,omitempty"`
-	University            string `json:"university,omitempty"`
-	University2           string `json:"university2,omitempty"`
-	DateApplication       string `json:"date_application,omitempty"`
-	PathCV                string `json:"path_cv,omitempty"`
-	PathLettreMotivation  string `json:"path_lettre_motivation,omitempty"`
-	PathCV2               string `json:"path_cv2,omitempty"`
-	PathLettreMotivation2 string `json:"path_lettre_motivation2,omitempty"`
-	Status                string `json:"status,omitempty"`
-	Step                  string `json:"step,omitempty"`
+	FullName              string   `json:"full_name,omitempty"`
+	Email1                string   `json:"email1,omitempty"`
+	Gender1               string   `json:"gender1,omitempty"`
+	Phone1                string   `json:"phone1,omitempty"`
+	Degree1               string   `json:"degree1"`
+	FullName2             string   `json:"full_name2,omitempty"`
+	Email2                string   `json:"email2,omitempty"`
+	Gender2               string   `json:"gender2,omitempty"`
+	Phone2                string   `json:"phone2,omitempty"`
+	Degree2               string   `json:"degree2"`
+	Duration              string   `json:"duration,omitempty"`
+	Methode               string   `json:"methode,omitempty"`
+	StartDate             string   `json:"start_date,omitempty"`
+	SubjectName           string   `json:"subject_name,omitempty"`
+	University            string   `json:"university,omitempty"`
+	University2           string   `json:"university2,omitempty"`
+	DateApplication       string   `json:"date_application,omitempty"`
+	PathCV                string   `json:"path_cv,omitempty"`
+	PathLettreMotivation  string   `json:"path_lettre_motivation,omitempty"`
+	PathCV2               string   `json:"path_cv2,omitempty"`
+	PathLettreMotivation2 string   `json:"path_lettre_motivation2,omitempty"`
+	Status                string   `json:"status,omitempty"`
+	Step                  string   `json:"step,omitempty"`
+	RejectionReason       string   `json:"rejection_reason,omitempty"`
 	ScoreCVScreening      *FlexInt `json:"score_cv_screening,omitempty"`
 	ScoreOnlineQuiz       *FlexInt `json:"score_online_quiz,omitempty"`
 	ScoreOnlineMeeting    *FlexInt `json:"score_online_meeting,omitempty"`
 	ScoreF2FMeeting       *FlexInt `json:"score_f2f_meeting,omitempty"`
 	ScoreFinalDecision    *FlexInt `json:"score_final_decision,omitempty"`
-	Notes                 string `json:"notes,omitempty"`
+	Notes                 string   `json:"notes,omitempty"`
 }
 
 type CandidatureResponse struct {
-	ID                    int    `json:"id"`
-	FullName              string `json:"full_name"`
-	Email1                string `json:"email1"`
-	Gender1               string `json:"gender1"`
-	Phone1                string `json:"phone1"`
-	Degree1               string `json:"degree1"`
-	FullName2             string `json:"full_name2"`
-	Email2                string `json:"email2"`
-	Gender2               string `json:"gender2"`
-	Phone2                string `json:"phone2"`
-	Degree2               string `json:"degree2"`
-	Duration              string `json:"duration"`
-	Methode               string `json:"methode"`
-	StartDate             string `json:"start_date"`
-	SubjectName           string `json:"subject_name"`
-	University            string `json:"university"`
-	University2           string `json:"university2"`
-	DateApplication       string `json:"date_application"`
-	PathCV                string `json:"path_cv"`
-	PathLettreMotivation  string `json:"path_lettre_motivation"`
-	PathCV2               string `json:"path_cv2"`
-	PathLettreMotivation2 string `json:"path_lettre_motivation2"`
+	ID                    int     `json:"id"`
+	FullName              string  `json:"full_name"`
+	Email1                string  `json:"email1"`
+	Gender1               string  `json:"gender1"`
+	Phone1                string  `json:"phone1"`
+	Degree1               string  `json:"degree1"`
+	FullName2             string  `json:"full_name2"`
+	Email2                string  `json:"email2"`
+	Gender2               string  `json:"gender2"`
+	Phone2                string  `json:"phone2"`
+	Degree2               string  `json:"degree2"`
+	Duration              string  `json:"duration"`
+	Methode               string  `json:"methode"`
+	StartDate             string  `json:"start_date"`
+	SubjectName           string  `json:"subject_name"`
+	University            string  `json:"university"`
+	University2           string  `json:"university2"`
+	DateApplication       string  `json:"date_application"`
+	PathCV                string  `json:"path_cv"`
+	PathLettreMotivation  string  `json:"path_lettre_motivation"`
+	PathCV2               string  `json:"path_cv2"`
+	PathLettreMotivation2 string  `json:"path_lettre_motivation2"`
 	Status                string  `json:"status"`
 	Step                  string  `json:"step"`
 	CurrentStep           int     `json:"current_step"`
@@ -112,14 +113,14 @@ type CandidatureResponse struct {
 	Step3Status           *string `json:"step3_status"`
 	Step4Status           *string `json:"step4_status"`
 	Step5Status           *string `json:"step5_status"`
-	ScoreCVScreening      int    `json:"score_cv_screening"`
-	ScoreOnlineQuiz       int    `json:"score_online_quiz"`
-	ScoreOnlineMeeting    int    `json:"score_online_meeting"`
-	ScoreF2FMeeting       int    `json:"score_f2f_meeting"`
-	ScoreFinalDecision    int    `json:"score_final_decision"`
-	Notes                 string `json:"notes"`
-	CreatedAt             string `json:"created_at"`
-	UpdatedAt             string `json:"updated_at"`
+	ScoreCVScreening      int     `json:"score_cv_screening"`
+	ScoreOnlineQuiz       int     `json:"score_online_quiz"`
+	ScoreOnlineMeeting    int     `json:"score_online_meeting"`
+	ScoreF2FMeeting       int     `json:"score_f2f_meeting"`
+	ScoreFinalDecision    int     `json:"score_final_decision"`
+	Notes                 string  `json:"notes"`
+	CreatedAt             string  `json:"created_at"`
+	UpdatedAt             string  `json:"updated_at"`
 }
 
 type CandidatureParams struct {
@@ -143,6 +144,10 @@ type SendEmailRequest struct {
 	QuizLink        string `json:"quiz_link"`
 	MeetingLink     string `json:"meeting_link"`
 	StartDate       string `json:"start_date"`
+	F2FMeetingLink  string `json:"f2f_meeting_link"`
+	// Body is an optional override. When non-empty it is used as-is instead
+	// of the template-generated body, so the HR can edit the email content.
+	Body string `json:"body"`
 }
 
 type EmailPreviewResponse struct {

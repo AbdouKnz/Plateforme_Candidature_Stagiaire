@@ -19,10 +19,9 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/date-picker";
 import { format, nextMonday } from 'date-fns'
-import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent, IconLink } from "@tabler/icons-react";
+import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Candidature, RejectionReason } from "@/models/candidature-model";
 import { getEmailPreview, getRejectionReasons, sendEmail } from "@/service/candidatures";
@@ -52,6 +51,26 @@ function formatDate(dateStr: string): string {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
+// Convert an HTML string into a human-readable plain-text version suitable
+// for the editing textarea: <a href="…">text</a> becomes just "text", <br>/
+// <p> become newlines, and any remaining tags are stripped. The original
+// HTML is preserved separately so the sent email keeps clickable links.
+function stripHtml(html: string): string {
+  if (!html) return "";
+  let text = html;
+  // Replace anchor tags with their visible text content.
+  text = text.replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1");
+  // Replace <br> variants with newlines.
+  text = text.replace(/<br\s*\/?>/gi, "\n");
+  // Replace </p> with double newlines.
+  text = text.replace(/<\/p>/gi, "\n");
+  // Strip any remaining HTML tags.
+  text = text.replace(/<[^>]+>/g, "");
+  // Decode a few common entities.
+  text = text.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ");
+  return text.trim();
+}
+
 export function SendEmailModal({ open, onClose, onSent, candidature, templateType, targetStep, bulkIndex, bulkTotal }: SendEmailModalProps) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -61,6 +80,12 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   const [sending, setSending] = useState(false);
   const [editedSubject, setEditedSubject] = useState("");
   const [editedBody, setEditedBody] = useState("");
+  // Human-readable version of the body shown in the textarea: anchor tags
+  // like <a href="…">Address</a> appear as just "Address". The original HTML
+  // is kept in editedBody and is what gets sent when the user has not
+  // modified the body, so clickable links are preserved in the real email.
+  const [displayBody, setDisplayBody] = useState("");
+  const [bodyModified, setBodyModified] = useState(false);
   const [interviewDate, setInterviewDate] = useState("");
   const [interviewHour, setInterviewHour] = useState("");
   const [interviewMinute, setInterviewMinute] = useState("");
@@ -70,6 +95,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   const [selectedRejectionReason, setSelectedRejectionReason] = useState("");
   const [quizLink, setQuizLink] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
+  const [f2fLink, setF2fLink] = useState("");
   const [startDate, setStartDate] = useState("");
 
   const { data: subjects } = useSubjects();
@@ -123,6 +149,12 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     return d;
   }, []);
 
+  // Calendar range: from the current year (e.g. 2026) up to a far-future
+  // year so the year dropdown contains only usable years and HR can freely
+  // scroll through the months without being capped at December of this year.
+  const currentYear = new Date().getFullYear();
+  const maxYear = currentYear + 20;
+
   const handleDateSelect = useCallback((date: Date | undefined) => {
     if (!date) {
       setInterviewDate("");
@@ -143,15 +175,17 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     setLoading(true);
     setError(null);
     try {
-      const preview = await getEmailPreview(candidature.id, emailTypeForRequest, effectiveStepForRequest, formattedDate, interviewTime, selectedRejectionReason, quizLink, meetingLink, formattedStartDate);
+      const preview = await getEmailPreview(candidature.id, emailTypeForRequest, effectiveStepForRequest, formattedDate, interviewTime, selectedRejectionReason, quizLink, meetingLink, formattedStartDate, f2fLink);
       setEditedSubject(preview.subject);
       setEditedBody(preview.body || "");
+      setDisplayBody(stripHtml(preview.body || ""));
+      setBodyModified(false);
     } catch (err: any) {
       setError(err?.response?.data?.error || t("error_loading_template"));
     } finally {
       setLoading(false);
     }
-  }, [candidature.id, emailTypeForRequest, effectiveStepForRequest, formattedDate, interviewTime, selectedRejectionReason, quizLink, meetingLink, formattedStartDate, t]);
+  }, [candidature.id, emailTypeForRequest, effectiveStepForRequest, formattedDate, interviewTime, selectedRejectionReason, quizLink, meetingLink, formattedStartDate, f2fLink, t]);
 
   useEffect(() => {
     if (open) loadPreview();
@@ -176,39 +210,57 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     };
   }, [open, templateType, candidature.id, candidature.step]);
 
-  // Auto-fill the quiz link from the candidate's chosen subject so HR only
-  // has to press Send. Falls back to manual selection when the subject has
-  // no quiz link (the dropdown stays available as an override).
+  // Auto-fill the links from the candidate's chosen subject so HR only has to
+  // press Send: the linked value is embedded directly inside the mail body.
+
   useEffect(() => {
     if (!open) return;
+    setQuizLink("");
     setMeetingLink("");
-    if (!isQuiz) {
-      setQuizLink("");
-      return;
-    }
+    setF2fLink("");
+    if (!subjects) return;
     const names = (candidature.subject_name || "")
       .split(",")
       .map((n) => n.trim())
       .filter(Boolean);
-    let auto = "";
-    if (subjects) {
-      const findByName = (n: string) =>
-        subjects.find((s) => s.name === n) ??
-        subjects.find((s) => (s.name || "").toLowerCase() === n.toLowerCase());
+    const findByName = (n: string) =>
+      subjects.find((s) => s.name === n) ??
+      subjects.find((s) => (s.name || "").toLowerCase() === n.toLowerCase());
+    const resolveLink = (pick: (s: (typeof subjects)[number]) => string | undefined): string => {
+      let auto = "";
       for (const n of names) {
-        const link = findByName(n)?.online_quiz_link?.trim();
+        const s = findByName(n);
+        if (!s) continue;
+        const link = pick(s)?.trim();
         if (link) {
           auto = link;
           break;
         }
       }
+      return auto;
+    };
+    if (isQuiz) {
+      setQuizLink(resolveLink((s) => s.online_quiz_link));
+      return;
     }
-    setQuizLink(auto);
-  }, [open, nextStep, isQuiz, subjects, candidature.subject_name]);
+    if (isOnlineMeeting) {
+      setMeetingLink(resolveLink((s) => s.online_meeting_link));
+      return;
+    }
+    if (isF2F) {
+      setF2fLink(resolveLink((s) => s.f2f_meeting_link));
+      return;
+    }
+  }, [open, nextStep, isQuiz, isOnlineMeeting, isF2F, subjects, candidature.subject_name]);
 
   const handleSend = async () => {
     setSending(true);
     try {
+      // If the user edited the body, send their plain-text version as-is.
+      // Otherwise send the original HTML body so clickable links (e.g. the
+      // "Address" maps link) are preserved in the sent email.
+      const overrideBody = bodyModified ? displayBody : editedBody;
+
       await sendEmail(candidature.id, { 
         type: emailTypeForRequest,
         step: effectiveStepForRequest,
@@ -217,7 +269,9 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
         rejection_reason: templateType === "disapproval" ? selectedRejectionReason : "",
         quiz_link: isQuiz ? quizLink : "",
         meeting_link: isOnlineMeeting ? meetingLink : "",
+        f2f_meeting_link: isF2F ? f2fLink : "",
         start_date: isFinal ? formattedStartDate : "",
+        body: overrideBody,
       });
       // For acceptance, also advance the candidature to the target step
       if (templateType === "acceptance" && effectiveStep) {
@@ -351,19 +405,11 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
               </div>
             )}
             {isOnlineMeeting && (
-              <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+              <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-muted/20">
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1">
-                    <IconLink className="size-4" />
-                    {t("meeting_link")}
-                  </Label>
-                  <Input placeholder="https://..." value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1">
-                      <IconCalendarEvent className="size-4" />
-                      {t("interview_date")}
+                    <IconCalendarEvent className="size-4" />
+                    {t("interview_date")}
                     </Label>
                     <DatePicker
                       selected={interviewDateObj}
@@ -371,7 +417,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                       placeholder={t("interview_date")}
                       disabled={sending}
                       fromDate={minDate}
-                      month={minDate}
+                      fromYear={currentYear}
+                      toYear={maxYear}
                       disableWeekends
                     />
                   </div>
@@ -420,7 +467,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                       </Button>
                     </div>
                   </div>
-                </div>
               </div>
             )}
             {isF2F && (
@@ -436,7 +482,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                     placeholder={t("interview_date")}
                     disabled={sending}
                     fromDate={minDate}
-                    month={minDate}
+                    fromYear={currentYear}
+                    toYear={maxYear}
                     disableWeekends
                   />
                 </div>
@@ -499,7 +546,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                   placeholder={t("select_start_date")}
                   disabled={sending}
                   fromDate={minDate}
-                  month={minDate}
+                  fromYear={currentYear}
+                  toYear={maxYear}
                   disableWeekends
                 />
                 {formattedStartDate && <p className="text-xs text-muted-foreground">{formattedStartDate}</p>}
@@ -527,8 +575,11 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
             <div className="space-y-2">
               <Label>{t("email_body")}</Label>
               <Textarea
-                value={editedBody}
-                onChange={(e) => setEditedBody(e.target.value)}
+                value={displayBody}
+                onChange={(e) => {
+                  setDisplayBody(e.target.value);
+                  setBodyModified(true);
+                }}
                 className="min-h-[200px] text-sm font-mono"
                 disabled={sending}
               />

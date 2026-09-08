@@ -18,6 +18,8 @@ type DatePickerProps = {
   disablePast?: boolean
   fromDate?: Date
   month?: Date
+  fromYear?: number
+  toYear?: number
   disableWeekends?: boolean
 }
 
@@ -29,6 +31,8 @@ export function DatePicker({
   disablePast = false,
   fromDate,
   month,
+  fromYear,
+  toYear,
   disableWeekends = false,
 }: DatePickerProps) {
   const { i18n } = useTranslation()
@@ -69,6 +73,8 @@ export function DatePicker({
           locale={locale}
           month={month}
           fromDate={fromDate}
+          fromYear={fromYear}
+          toYear={toYear}
           disabled={(date: Date) => {
             if (disablePast && date < today) return true
             if (disableWeekends) {

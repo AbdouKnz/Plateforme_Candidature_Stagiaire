@@ -39,6 +39,7 @@ export interface Subject {
   technologies: Technology[];
   profiles: Profile[];
   duration?: Duration | null;
+  period?: string;
 }
 
 export interface CandidaturePayload {

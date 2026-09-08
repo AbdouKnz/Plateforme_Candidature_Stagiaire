@@ -12,16 +12,17 @@ import { toast } from "sonner"
 
 import {
   createApplicationSchema,
+  normalizeEmail,
+  normalizePhone,
   type ApplicationFormValues,
 } from "@/lib/application-schema"
 import {
   fetchDegrees,
-  fetchDurations,
   fetchSubjects,
   fetchTypes,
   submitCandidature,
 } from "@/service/front-office"
-import type { Degree, Duration, Subject, Type_ } from "@/models/api"
+import type { Degree, Subject, Type_ } from "@/models/api"
 import { useTranslation } from "@/context/language-context"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -85,7 +86,6 @@ export function ApplicationForm() {
   const [activeStep, setActiveStep] = React.useState(1)
   const stepperRef = React.useRef<StepperHandle>(null)
   const [degrees, setDegrees] = React.useState<Degree[]>([])
-  const [durations, setDurations] = React.useState<Duration[]>([])
   const [subjects, setSubjects] = React.useState<Subject[]>([])
   const [types, setTypes] = React.useState<Type_[]>([])
   const [loadingOptions, setLoadingOptions] = React.useState(true)
@@ -103,7 +103,7 @@ export function ApplicationForm() {
     formState: { errors, isSubmitting },
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema as any) as unknown as Resolver<ApplicationFormValues>,
-    mode: "onChange",
+    mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
       firstName: "",
@@ -126,10 +126,9 @@ export function ApplicationForm() {
   })
 
   React.useEffect(() => {
-    Promise.all([fetchDegrees(), fetchDurations(), fetchSubjects(), fetchTypes()])
-      .then(([deg, dur, subj, typ]) => {
+    Promise.all([fetchDegrees(), fetchSubjects(), fetchTypes()])
+      .then(([deg, subj, typ]) => {
         setDegrees(deg)
-        setDurations(dur)
         setSubjects(subj)
         setTypes(typ)
         // Prefill subjects from PFE Book shortlist (stored as codes)
@@ -138,11 +137,15 @@ export function ApplicationForm() {
           if (raw) {
             const codes: string[] = JSON.parse(raw)
             if (Array.isArray(codes) && codes.length > 0) {
-              const names = subj
-                .filter((s) => codes.includes(s.code))
-                .map((s) => s.name)
+              const matchedSubjects = subj.filter((s) => codes.includes(s.code))
+              const names = matchedSubjects.map((s) => s.name)
               if (names.length > 0) {
                 setValue("subjects", names, { shouldValidate: true })
+                const firstSubj = matchedSubjects[0]
+                const period = firstSubj?.period || firstSubj?.duration?.name
+                if (period) {
+                  setValue("duration", period, { shouldValidate: true })
+                }
               }
             }
           }
@@ -156,6 +159,17 @@ export function ApplicationForm() {
       })
       .finally(() => setLoadingOptions(false))
   }, [setValue])
+
+  const watchedSubjects = watch("subjects")
+  React.useEffect(() => {
+    if (watchedSubjects && watchedSubjects.length > 0 && subjects.length > 0) {
+      const chosen = subjects.find((s) => watchedSubjects.includes(s.name))
+      const period = chosen?.period || chosen?.duration?.name
+      if (period && getValues("duration") !== period) {
+        setValue("duration", period, { shouldValidate: true })
+      }
+    }
+  }, [watchedSubjects, subjects, setValue, getValues])
 
   // After a failed step validation, acknowledge edits immediately instead of
   // keeping the required-field message visible until the whole rule is valid.
@@ -242,7 +256,7 @@ export function ApplicationForm() {
       case "candidate":
         return ["firstName", "lastName", "gender", "email", "phone", "university", "degreeLevel", "applicationType", "cv", ...pairExtras]
       case "internship":
-        return ["subjects", "duration", "workingMethod", "startDate"]
+        return ["subjects", "workingMethod", "startDate"]
       case "confirm":
         return []
     }
@@ -290,7 +304,9 @@ export function ApplicationForm() {
     formData.append("phone1", data.phone)
     formData.append("degree1", data.degreeLevel)
     formData.append("university", data.university)
-    formData.append("duration", data.duration)
+    const chosenSubject = subjects.find((s) => data.subjects?.includes(s.name))
+    const subjectPeriod = (chosenSubject?.period || chosenSubject?.duration?.name || data.duration || "").trim()
+    formData.append("duration", subjectPeriod)
     formData.append("methode", data.workingMethod)
     formData.append("start_date", data.startDate)
     formData.append("subject_name", data.subjects.join(", "))
@@ -305,14 +321,16 @@ export function ApplicationForm() {
     }
 
     if (isPairApplicationType(data.applicationType)) {
-      const fullName2 = `${data.firstName2 ?? ""} ${data.lastName2 ?? ""}`.trim()
+      const firstName2 = (data.firstName2 ?? "").trim()
+      const lastName2 = (data.lastName2 ?? "").trim()
+      const fullName2 = `${firstName2} ${lastName2}`.trim()
       formData.append("full_name2", fullName2)
-      formData.append("first_name2", data.firstName2 ?? "")
-      formData.append("last_name2", data.lastName2 ?? "")
-      formData.append("email2", data.email2 ?? "")
+      formData.append("first_name2", firstName2)
+      formData.append("last_name2", lastName2)
+      formData.append("email2", normalizeEmail(data.email2 ?? ""))
       formData.append("gender2", data.gender2 ?? "")
-      formData.append("phone2", data.phone2 ?? "")
-      formData.append("university2", data.university2 ?? "")
+      formData.append("phone2", normalizePhone((data.phone2 ?? "").trim()))
+      formData.append("university2", (data.university2 ?? "").trim())
       formData.append("degree2", data.degree2 ?? "")
       if (data.cv2) {
         formData.append("cv2", data.cv2)
@@ -435,12 +453,12 @@ export function ApplicationForm() {
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.firstName}>
                                 <FieldLabel htmlFor="firstName">{t("label.firstName")}</FieldLabel>
-                                <Input id="firstName" placeholder={t("placeholder.firstName")} autoComplete="given-name" aria-invalid={!!errors.firstName} {...register("firstName")} />
+                                <Input id="firstName" placeholder={t("placeholder.firstName")} autoComplete="given-name" maxLength={80} aria-invalid={!!errors.firstName} {...register("firstName")} />
                                 <FieldError errors={[errors.firstName]} />
                               </Field>
                               <Field data-invalid={!!errors.lastName}>
                                 <FieldLabel htmlFor="lastName">{t("label.lastName")}</FieldLabel>
-                                <Input id="lastName" placeholder={t("placeholder.lastName")} autoComplete="family-name" aria-invalid={!!errors.lastName} {...register("lastName")} />
+                                <Input id="lastName" placeholder={t("placeholder.lastName")} autoComplete="family-name" maxLength={80} aria-invalid={!!errors.lastName} {...register("lastName")} />
                                 <FieldError errors={[errors.lastName]} />
                               </Field>
                               <Controller control={control} name="gender" render={({ field }) => (
@@ -465,12 +483,12 @@ export function ApplicationForm() {
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.firstName2}>
                                 <FieldLabel htmlFor="firstName2">{t("label.firstName2")}</FieldLabel>
-                                <Input id="firstName2" placeholder={t("placeholder.firstName2")} autoComplete="given-name" aria-invalid={!!errors.firstName2} {...register("firstName2")} />
+                                <Input id="firstName2" placeholder={t("placeholder.firstName2")} autoComplete="given-name" maxLength={80} aria-invalid={!!errors.firstName2} {...register("firstName2")} />
                                 <FieldError errors={[errors.firstName2]} />
                               </Field>
                               <Field data-invalid={!!errors.lastName2}>
                                 <FieldLabel htmlFor="lastName2">{t("label.lastName2")}</FieldLabel>
-                                <Input id="lastName2" placeholder={t("placeholder.lastName2")} autoComplete="family-name" aria-invalid={!!errors.lastName2} {...register("lastName2")} />
+                                <Input id="lastName2" placeholder={t("placeholder.lastName2")} autoComplete="family-name" maxLength={80} aria-invalid={!!errors.lastName2} {...register("lastName2")} />
                                 <FieldError errors={[errors.lastName2]} />
                               </Field>
                               <Controller control={control} name="gender2" render={({ field }) => (
@@ -496,12 +514,12 @@ export function ApplicationForm() {
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.email}>
                                 <FieldLabel htmlFor="email">{t("label.email")}</FieldLabel>
-                                <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" aria-invalid={!!errors.email} {...register("email")} />
+                                <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email} {...register("email")} />
                                 <FieldError errors={[errors.email]} />
                               </Field>
                               <Field data-invalid={!!errors.phone}>
                                 <FieldLabel htmlFor="phone">{t("label.phone")}</FieldLabel>
-                                <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" aria-invalid={!!errors.phone} {...register("phone")} />
+                                <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone} {...register("phone")} />
                                 <FieldError errors={[errors.phone]} />
                               </Field>
                             </Field>
@@ -509,12 +527,12 @@ export function ApplicationForm() {
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.email2}>
                                 <FieldLabel htmlFor="email2">{t("label.email2")}</FieldLabel>
-                                <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" aria-invalid={!!errors.email2} {...register("email2")} />
+                                <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email2} {...register("email2")} />
                                 <FieldError errors={[errors.email2]} />
                               </Field>
                               <Field data-invalid={!!errors.phone2}>
                                 <FieldLabel htmlFor="phone2">{t("label.phone2")}</FieldLabel>
-                                <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" aria-invalid={!!errors.phone2} {...register("phone2")} />
+                                <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone2} {...register("phone2")} />
                                 <FieldError errors={[errors.phone2]} />
                               </Field>
                             </Field>
@@ -658,7 +676,18 @@ export function ApplicationForm() {
                                     title: s.name,
                                   }))}
                                   selected={field.value ?? []}
-                                  onChange={field.onChange}
+                                  onChange={(newSelected) => {
+                                    field.onChange(newSelected)
+                                    if (newSelected.length > 0) {
+                                      const chosen = subjects.find((s) => s.name === newSelected[0])
+                                      const period = chosen?.period || chosen?.duration?.name
+                                      if (period) {
+                                        setValue("duration", period, { shouldValidate: true })
+                                      }
+                                    } else {
+                                      setValue("duration", "")
+                                    }
+                                  }}
                                   fieldName="subjects"
                                   invalid={!!errors.subjects}
                                 />
@@ -684,25 +713,6 @@ export function ApplicationForm() {
                             )
                           }} />
 
-                          {/* Duration (from back office duration management) */}
-                          <Controller control={control} name="duration" render={({ field }) => (
-                            <Field data-invalid={!!errors.duration}>
-                              <FieldLabel className="text-sm font-semibold">{t("label.duration")}</FieldLabel>
-                              <Select value={field.value || undefined} onValueChange={field.onChange} disabled={loadingOptions}>
-                                <SelectTrigger aria-label="Internship duration" aria-invalid={!!errors.duration} className="h-10">
-                                  <SelectValue placeholder={loadingOptions ? "Loading..." : t("placeholder.duration")} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectGroup>
-                                    {durations.map((d) => (
-                                      <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                                    ))}
-                                  </SelectGroup>
-                                </SelectContent>
-                              </Select>
-                              <FieldError errors={[errors.duration]} />
-                            </Field>
-                          )} />
 
                           {/* Earliest start date */}
                           <Controller control={control} name="startDate" render={({ field }) => (
@@ -752,71 +762,123 @@ export function ApplicationForm() {
                 <p className="text-sm text-muted-foreground">{t("confirm.description")}</p>
               </div>
 
-              <div className="grid w-full max-w-sm gap-3 rounded-xl border border-border bg-muted/20 p-4 text-left text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("label.fullName")}</span>
-                  <span className="font-medium text-foreground">{`${getValues("firstName")} ${getValues("lastName")}`.trim()}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("label.email")}</span>
-                  <span className="font-medium text-foreground">{getValues("email")}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("label.phone")}</span>
-                  <span className="font-medium text-foreground">{getValues("phone")}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("label.university")}</span>
-                  <span className="font-medium text-foreground">{getValues("university")}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("label.degreeLevel")}</span>
-                  <span className="font-medium text-foreground">{getValues("degreeLevel")}</span>
-                </div>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("confirm.type")}</span>
-                  <span className="font-medium text-foreground capitalize">{getValues("applicationType")}</span>
-                </div>
-
-                {isPair && (
+              <div className={cn("grid w-full gap-3 rounded-xl border border-border bg-muted/20 p-4 text-left text-sm sm:p-6", isPair ? "max-w-4xl" : "max-w-lg")}>
+                {isPair ? (
                   <>
-                    <Separator />
-                    <div className="pt-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("label.secondCandidate")}</div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">{t("label.fullName")}</span>
-                      <span className="font-medium text-foreground">{`${getValues("firstName2") ?? ""} ${getValues("lastName2") ?? ""}`.trim()}</span>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-x-16">
+                      <div className="grid content-start gap-3">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("label.firstCandidate")}</div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.fullName")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{`${getValues("firstName")} ${getValues("lastName")}`.trim()}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.email")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("email")}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.phone")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("phone")}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.university")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("university")}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.degreeLevel")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("degreeLevel")}</span>
+                        </div>
+                      </div>
+                      <div className="grid content-start gap-3">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("label.secondCandidate")}</div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.fullName")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{`${getValues("firstName2") ?? ""} ${getValues("lastName2") ?? ""}`.trim()}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.email")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("email2")}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.phone")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("phone2")}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.university")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("university2")}</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="w-36 shrink-0 text-muted-foreground">{t("label.degreeLevel")}</span>
+                          <span className="shrink-0 text-muted-foreground">:</span>
+                          <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("degree2")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="w-36 shrink-0 text-muted-foreground">{t("label.fullName")}</span>
+                      <span className="shrink-0 text-muted-foreground">:</span>
+                      <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{`${getValues("firstName")} ${getValues("lastName")}`.trim()}</span>
                     </div>
                     <Separator />
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">{t("label.email")}</span>
-                      <span className="font-medium text-foreground">{getValues("email2")}</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="w-36 shrink-0 text-muted-foreground">{t("label.email")}</span>
+                      <span className="shrink-0 text-muted-foreground">:</span>
+                      <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("email")}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex items-baseline gap-2">
+                      <span className="w-36 shrink-0 text-muted-foreground">{t("label.phone")}</span>
+                      <span className="shrink-0 text-muted-foreground">:</span>
+                      <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("phone")}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex items-baseline gap-2">
+                      <span className="w-36 shrink-0 text-muted-foreground">{t("label.university")}</span>
+                      <span className="shrink-0 text-muted-foreground">:</span>
+                      <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("university")}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex items-baseline gap-2">
+                      <span className="w-36 shrink-0 text-muted-foreground">{t("label.degreeLevel")}</span>
+                      <span className="shrink-0 text-muted-foreground">:</span>
+                      <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("degreeLevel")}</span>
                     </div>
                   </>
                 )}
 
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("label.subjects")}</span>
-                  <span className="font-medium text-foreground">
+                <div className="flex items-baseline gap-2">
+                  <span className="w-36 shrink-0 text-muted-foreground">{t("confirm.subjects")}</span>
+                  <span className="shrink-0 text-muted-foreground">:</span>
+                  <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">
                     {getValues("subjects")?.join(", ") || "—"}
                   </span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("confirm.duration")}</span>
-                  <span className="font-medium text-foreground">
+                <div className="flex items-baseline gap-2">
+                  <span className="w-36 shrink-0 text-muted-foreground">{t("confirm.duration")}</span>
+                  <span className="shrink-0 text-muted-foreground">:</span>
+                  <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">
                     {getValues("duration") || "—"}
                   </span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("confirm.workingMethod")}</span>
-                  <span className="font-medium text-foreground capitalize">
+                <div className="flex items-baseline gap-2">
+                  <span className="w-36 shrink-0 text-muted-foreground">{t("confirm.workingMethod")}</span>
+                  <span className="shrink-0 text-muted-foreground">:</span>
+                  <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground capitalize">
                     {getValues("workingMethod") === "office" ? t("workingMethod.office")
                       : getValues("workingMethod") === "hybrid" ? t("workingMethod.hybrid")
                       : getValues("workingMethod") === "remote" ? t("workingMethod.remote")
@@ -824,9 +886,10 @@ export function ApplicationForm() {
                   </span>
                 </div>
                 <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("confirm.startDate")}</span>
-                  <span className="font-medium text-foreground">{getValues("startDate") ?? "—"}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="w-36 shrink-0 text-muted-foreground">{t("confirm.startDate")}</span>
+                  <span className="shrink-0 text-muted-foreground">:</span>
+                  <span className="min-w-0 flex-1 break-words text-left font-medium text-foreground">{getValues("startDate") ? getValues("startDate").split("-").reverse().join("/") : "—"}</span>
                 </div>
               </div>
 

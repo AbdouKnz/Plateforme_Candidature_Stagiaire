@@ -62,3 +62,4 @@ export interface RejectionReason {
 }
 
 export type CandidatureResponse = ApiResponse<Candidature>;
+

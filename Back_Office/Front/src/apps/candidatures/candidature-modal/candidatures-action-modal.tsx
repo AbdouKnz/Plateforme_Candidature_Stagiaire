@@ -85,6 +85,7 @@ export function CandidatureActionModal({
 
   const [notes, setNotes] = useState(candidature?.notes ?? "");
   const [notesSaved, setNotesSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
 
   const [prevNotesKey, setPrevNotesKey] = useState<string>();
   const notesKey = `${candidature?.id ?? "none"}:${candidature?.notes ?? ""}`;
@@ -200,8 +201,8 @@ export function CandidatureActionModal({
   return (
     <>
       <Dialog open={open} onOpenChange={(state) => { if (!state) handleClose(); }}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="border-b pb-3">
+        <DialogContent className="sm:max-w-4xl h-[85vh] max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="border-b pb-3 shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                 <IconEye className="size-5" />
@@ -210,7 +211,7 @@ export function CandidatureActionModal({
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex items-center justify-between px-1 mt-2">
+          <div className="flex items-center justify-between px-1 mt-2 shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-muted-foreground">{t("status")}:</span>
               <span className={cn(
@@ -222,12 +223,13 @@ export function CandidatureActionModal({
             </div>
           </div>
 
-          <Tabs defaultValue="details" className="mt-3">
-            <TabsList className="w-fit">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-3 flex flex-1 flex-col min-h-0">
+            <TabsList className="w-fit shrink-0">
               <TabsTrigger value="details">{t("details")}</TabsTrigger>
+              <TabsTrigger value="notes">{t("notes_feedback")}</TabsTrigger>
               <TabsTrigger value="scoring">{t("scoring")}</TabsTrigger>
             </TabsList>
-            <TabsContent value="details" className="mt-3">
+            <TabsContent value="details" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
         <div className="space-y-4">
           {(() => {
             const isDuo = !!candidature.full_name2;
@@ -352,49 +354,13 @@ export function CandidatureActionModal({
                       <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("duration")}:</span>
                       <span className="text-sm break-words">{candidature.duration || np()}</span>
                     </div>
-                  </div>
-                </div>
-
-                {/* Notes / Feedback section */}
-                <div className="border rounded-lg p-4 bg-muted/20">
-                  <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2 flex items-center gap-1.5">
-                    <IconNote className="size-4" />
-                    {t("notes_feedback")}
-                  </h3>
-                  <div className="mt-3 space-y-2">
-                    <textarea
-                      id="candidature-notes"
-                      value={notes}
-                      onChange={(e) => {
-                        setNotes(e.target.value);
-                        setNotesSaved(false);
-                      }}
-                      placeholder={t("notes_placeholder")}
-                      rows={4}
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-colors"
-                    />
-                    <div className="flex items-center justify-end gap-2">
-                      {notesSaved && (
-                        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                          <IconCheck className="size-3.5" />
-                          {t("notes_saved")}
-                        </span>
-                      )}
-                      <Button
-                        size="sm"
-                        onClick={handleSaveNotes}
-                        disabled={isSavingNotes}
-                        className="gap-1.5"
-                      >
-                        {isSavingNotes ? (
-                          <>
-                            <IconLoader2 className="size-3.5 animate-spin" />
-                            {t("saving")}
-                          </>
-                        ) : (
-                          t("save_notes")
-                        )}
-                      </Button>
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-muted-foreground w-32 shrink-0">{t("start_date")}:</span>
+                      <span className="text-sm break-words">{(() => {
+                        if (!candidature.start_date) return np()
+                        const parts = candidature.start_date.slice(0, 10).split("-")
+                        return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : candidature.start_date
+                      })()}</span>
                     </div>
                   </div>
                 </div>
@@ -403,7 +369,51 @@ export function CandidatureActionModal({
           })()}
         </div>
             </TabsContent>
-            <TabsContent value="scoring" className="mt-3">
+            <TabsContent value="notes" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
+              <div className="border rounded-lg p-4 bg-muted/20">
+                <h3 className="text-sm font-semibold text-muted-foreground border-b pb-2 flex items-center gap-1.5">
+                  <IconNote className="size-4" />
+                  {t("notes_feedback")}
+                </h3>
+                <div className="mt-3 space-y-2">
+                  <textarea
+                    id="candidature-notes"
+                    value={notes}
+                    onChange={(e) => {
+                      setNotes(e.target.value);
+                      setNotesSaved(false);
+                    }}
+                    placeholder={t("notes_placeholder")}
+                    rows={8}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none transition-colors"
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    {notesSaved && (
+                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                        <IconCheck className="size-3.5" />
+                        {t("notes_saved")}
+                      </span>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={handleSaveNotes}
+                      disabled={isSavingNotes}
+                      className="gap-1.5"
+                    >
+                      {isSavingNotes ? (
+                        <>
+                          <IconLoader2 className="size-3.5 animate-spin" />
+                          {t("saving")}
+                        </>
+                      ) : (
+                        t("save_notes")
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="scoring" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
               {(() => {
                 const totalScore = Math.round(
                   scoringFields.reduce((acc, { field }) => acc + (Number(scoreDraft[field]) || 0), 0) / scoringFields.length
@@ -425,32 +435,6 @@ export function CandidatureActionModal({
                 };
                 return (
                   <div className="space-y-5">
-                    {/* Overview – light, soft gradient */}
-                    <div className="flex items-center justify-between gap-4 rounded-2xl border bg-gradient-to-br from-violet-500/[0.06] via-card to-card p-5 shadow-sm">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-11 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/15">
-                          <IconTrendingUp className="size-5 text-violet-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-semibold text-foreground">{t("scoring_overview")}</h3>
-                          <p className="text-xs text-muted-foreground mt-0.5">{t("scoring_overview_desc")}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4 rounded-xl bg-muted/40 border px-4 py-3">
-                        <div className="text-right">
-                          <p className="text-[11px] font-medium text-muted-foreground">{t("total_score")}</p>
-                          <p className="text-xl font-bold leading-none mt-1"><span className="text-violet-600">{totalScore}</span><span className="text-muted-foreground font-medium"> / 20</span></p>
-                        </div>
-                        <div className="relative size-14 shrink-0">
-                          <svg className="size-14 -rotate-90" viewBox="0 0 44 44">
-                            <circle cx="22" cy="22" r="16" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" className="opacity-30" />
-                            <circle cx="22" cy="22" r="16" fill="none" stroke="hsl(var(--primary))" strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(totalPct/100)*100.53} 100.53`} className="transition-all duration-500" />
-                          </svg>
-                          <span className="absolute inset-0 flex items-center justify-center text-xs font-bold">{totalPct}%</span>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Cards */}
                     <div className="grid gap-4 sm:grid-cols-2">
                       {scoringFields.map(({ field, step }) => {
@@ -472,14 +456,8 @@ export function CandidatureActionModal({
                             )}
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-3">
-                                <div className={cn("flex size-10 items-center justify-center rounded-xl border", meta.iconWrap)}>
-                                  <Icon className={cn("size-5", meta.iconColor)} />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold leading-none">{t(meta.titleKey)}</p>
-                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{t(meta.descKey)}</p>
-                                </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold leading-none">{t(meta.titleKey)}</p>
                               </div>
                               {locked ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-muted border px-2.5 py-1 text-xs text-muted-foreground"><IconLock className="size-3" /> {t("locked_step")}</span>
@@ -514,26 +492,30 @@ export function CandidatureActionModal({
                       })}
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 border-t pt-4">
-                      {scoresSaved && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
-                          <IconCheck className="size-3.5" />
-                          {t("notes_saved")}
-                        </span>
-                      )}
-                      <Button onClick={handleSaveScores} disabled={isSavingScores} className="rounded-xl px-6 gap-1.5">
-                        {isSavingScores ? <><IconLoader2 className="size-4 animate-spin" />{t("saving")}</> : <><IconDeviceFloppy className="size-4" />{t("save_scores")}</>}
-                      </Button>
-                    </div>
                   </div>
                 );
               })()}
             </TabsContent>
           </Tabs>
-        <DialogFooter>
-          <Button variant="outline" type="button" onClick={handleClose}>
-            {t("close")}
-          </Button>
+        <DialogFooter className="shrink-0">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" type="button" onClick={handleClose}>
+              {t("close")}
+            </Button>
+            {activeTab === "scoring" && (
+              <>
+                {scoresSaved && (
+                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
+                    <IconCheck className="size-3.5" />
+                    {t("notes_saved")}
+                  </span>
+                )}
+                <Button onClick={handleSaveScores} disabled={isSavingScores} className="rounded-xl px-6 gap-1.5">
+                  {isSavingScores ? <><IconLoader2 className="size-4 animate-spin" />{t("saving")}</> : <><IconDeviceFloppy className="size-4" />{t("save_scores")}</>}
+                </Button>
+              </>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

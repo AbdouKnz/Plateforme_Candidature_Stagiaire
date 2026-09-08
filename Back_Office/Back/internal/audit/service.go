@@ -31,6 +31,12 @@ func buildBaseAuditQuery(query *bun.SelectQuery, params AuditParams) *bun.Select
 	if params.Module != "" {
 		query = query.Where("module = ?", params.Module)
 	}
+	if params.TargetID > 0 {
+		query = query.Where("target_id = ?", params.TargetID)
+	}
+	// Candidature audits are reserved for pipeline decisions only. This also
+	// hides legacy CRUD audit rows created before that rule was enforced.
+	query = query.Where("NOT (LOWER(module) = ? AND LOWER(action) NOT IN (?, ?))", "candidature", "accept", "reject")
 
 	if params.Start == "" && params.End == "" {
 		today := time.Now().UTC().Truncate(24 * time.Hour)
@@ -73,6 +79,8 @@ func (s *AuditService) GetAllAudits(ctx context.Context, params AuditParams) (*P
 
 	baseQuery := s.db.NewSelect().Model((*domain.AuditLog)(nil))
 	query := buildBaseAuditQuery(baseQuery, params)
+	query = query.ColumnExpr("a.*, c.full_name AS applicant_name").
+		Join("LEFT JOIN candidature AS c ON c.id = a.target_id")
 
 	totalRows, err := query.Count(ctx)
 	if err != nil {
@@ -108,14 +116,16 @@ func (s *AuditService) GetAllAudits(ctx context.Context, params AuditParams) (*P
 	response := make([]AuditLogResponse, 0, len(auditLogs))
 	for _, l := range auditLogs {
 		response = append(response, AuditLogResponse{
-			ID:        l.ID,
-			ActorID:   l.ActorID,
-			ActorName: l.ActorName,
-			Module:    l.Module,
-			Action:    l.Action,
-			Change:    l.Change,
-			Icon:      l.Icon,
-			Timestamp: l.Timestamp,
+			ID:            l.ID,
+			ActorID:       l.ActorID,
+			ActorName:     l.ActorName,
+			Module:        l.Module,
+			TargetID:      l.TargetID,
+			ApplicantName: l.ApplicantName,
+			Action:        l.Action,
+			Change:        l.Change,
+			Icon:          l.Icon,
+			Timestamp:     l.Timestamp,
 		})
 	}
 
@@ -140,13 +150,51 @@ func (s *AuditService) GetAllAudits(ctx context.Context, params AuditParams) (*P
 	}, nil
 }
 
+func LogCandidatureStepAction(ctx context.Context, db bun.IDB, targetID int, action, step, oldValue, nextStep, reasonCode string, actionAt time.Time) error {
+	actor, err := middleware.GetActorFromContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get actor: %w", err)
+	}
+
+	fields := map[string]domain.FieldChange{
+		step + "_status": {OldValues: oldValue, NewValues: action + "ed", Changed: true},
+	}
+	if action == "accept" && nextStep != "" {
+		fields[nextStep+"_status"] = domain.FieldChange{NewValues: "pending", Changed: true}
+	}
+	if action == "reject" && reasonCode != "" {
+		fields["reason_code"] = domain.FieldChange{NewValues: reasonCode, Changed: true}
+	}
+
+	icon := "x"
+	if action == "accept" {
+		icon = "check"
+	}
+	auditLog := &domain.AuditLog{
+		ActorID:   actor.UserID,
+		ActorName: actor.FirstName + " " + actor.LastName,
+		Module:    "candidature",
+		TargetID:  targetID,
+		Action:    action,
+		Change:    domain.ChangeDetail{Type: "step_status", Fields: fields},
+		Icon:      icon,
+		Timestamp: actionAt.UTC().Format("2006-01-02 15:04:05"),
+	}
+	if _, err := db.NewInsert().Model(auditLog).Exec(ctx); err != nil {
+		return fmt.Errorf("could not log candidature step action: %w", err)
+	}
+	return nil
+}
+
 func (s *AuditService) GetAuditByID(ctx context.Context, auditID int) (*domain.AuditLog, error) {
 	log.Info().Int("auditID", auditID).Msg("Fetching audit log with ID:")
 
 	var audit domain.AuditLog
 	err := s.db.NewSelect().
 		Model(&audit).
-		Where("id = ?", auditID).
+		ColumnExpr("a.*, c.full_name AS applicant_name").
+		Join("LEFT JOIN candidature AS c ON c.id = a.target_id").
+		Where("a.id = ?", auditID).
 		Scan(ctx)
 
 	if err != nil {

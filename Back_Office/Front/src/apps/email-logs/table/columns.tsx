@@ -11,6 +11,17 @@ import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useEmailLogsStore } from "@/stores/email-logs-store";
 
+const typeBadgeVariants: Record<string, "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary"> = {
+  confirmation: "blue",
+  acceptance: "success",
+  online_quiz: "success",
+  online_meeting: "update",
+  f2f_meeting: "warning",
+  final_decision: "success",
+  disapproval: "destructive",
+  reopening: "info",
+};
+
 export function useEmailLogColumns(): ColumnDef<EmailLog>[] {
   const { t } = useTranslation();
 
@@ -38,39 +49,22 @@ export function useEmailLogColumns(): ColumnDef<EmailLog>[] {
       meta: { label: t("recipient") },
     },
     {
-      accessorKey: "template_type",
+      accessorKey: "subject",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("email_template_type")} />
+        <DataTableColumnHeader column={column} title={t("email_subject")} />
       ),
       cell: ({ row }) => {
-        const type = row.getValue("template_type") as string;
-        const variantMap: Record<string, "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary" | "default"> = {
-          confirmation: "blue",
-          acceptance: "success",
-          online_quiz: "success",
-          online_meeting: "update",
-          f2f_meeting: "warning",
-          final_decision: "success",
-          disapproval: "destructive",
-          reopening: "info",
-        };
-        const typeLabel: Record<string, string> = {
-          confirmation: t("email_template_type_confirmation"),
-          acceptance: t("email_template_type_acceptance"),
-          online_quiz: t("email_template_type_online_quiz"),
-          online_meeting: t("email_template_type_online_meeting"),
-          f2f_meeting: t("email_template_type_f2f_meeting"),
-          final_decision: t("email_template_type_final_decision"),
-          disapproval: t("email_template_type_disapproval"),
-          reopening: t("email_template_type_reopening"),
-        };
+        const subject = row.original.subject || "-";
         return (
-          <Badge variant={variantMap[type] ?? "default"} className="capitalize">
-            {typeLabel[type] || type}
+          <Badge
+            variant={typeBadgeVariants[row.original.template_type] ?? "secondary"}
+            className="max-w-64 capitalize"
+          >
+            <LongText>{subject}</LongText>
           </Badge>
         );
       },
-      meta: { label: t("email_template_type") },
+      meta: { label: t("email_subject") },
     },
     {
       accessorKey: "status",

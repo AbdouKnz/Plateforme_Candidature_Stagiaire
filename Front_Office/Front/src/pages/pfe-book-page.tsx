@@ -31,7 +31,6 @@ import {
   ScaleIcon,
   ClockIcon,
   HandshakeIcon,
-  MessageSquareQuoteIcon,
   UserIcon,
   CalendarIcon,
 } from "lucide-react"
@@ -47,10 +46,10 @@ function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 const WHY_STEPS = [
-  { n: "01", title: "Hands-On Experience", desc: "Gain practical skills through direct involvement in real product features — not shadowing, building.", icon: BuildingIcon },
+  { n: "01", title: "Hands-On Experience", desc: "Gain practical skills through direct involvement in real product features not shadowing, building.", icon: BuildingIcon },
   { n: "02", title: "Real Projects", desc: "Work on production systems that serve cities and thousands of users from day one.", icon: RocketIcon },
   { n: "03", title: "Mentorship", desc: "Guidance from senior engineers, designers, and product leaders invested in your growth.", icon: GraduationCapIcon },
-  { n: "04", title: "Paid Internship", desc: "You work, you get paid — as simple as that. Fair compensation and recognition.", icon: HeartHandshakeIcon },
+  { n: "04", title: "Paid Internship", desc: "You work, you get paid as simple as that. Fair compensation and recognition.", icon: HeartHandshakeIcon },
 ]
 
 const MINDSET_STEPS = [
@@ -236,111 +235,110 @@ export function PfeBookPage() {
   const progress = ((activePage + 1) / totalPages) * 100
 
   return (
-    <div className="flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#140a2e] text-white selection:bg-primary/20">
+    <div className="pfe-book flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#140a2e] text-white selection:bg-primary/20">
       <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
 
       {/* ── horizontally scrollable book ── */}
       <div
         ref={containerRef}
-        className="flex min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden snap-x snap-proximity scroll-smooth scrollbar-hide"
+        className="pfe-book-scroller flex min-h-0 w-full flex-1 overflow-x-auto overflow-y-hidden snap-x snap-proximity scroll-smooth scrollbar-hide"
       >
-        {/* ── COVER: PFE BOOK 2026 ── GLASS */}
+        {/* ── COVER: PFE BOOK 2027 ── REDESIGNED CENTERED LAYOUT */}
         <section
           data-page={0}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate overflow-hidden bg-[#140a2e] text-white dark:text-white"
         >
+          {/* Background layers — colors unchanged */}
           <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-          <div className="relative z-10 flex items-center justify-between px-6 sm:px-8 lg:px-12 py-2">
-            <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-xl" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/35 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
-              01 / {String(totalPages).padStart(2, "0")}
-            </span>
+
+
+          {/* Ghost year watermark */}
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center select-none">
+            <span className="text-[22vw] font-black text-white/[0.025] tracking-tighter leading-none">2027</span>
           </div>
 
-          <div className="relative z-10 flex flex-1 flex-col lg:flex-row items-center justify-center px-6 sm:px-8 lg:px-12 py-8 gap-10 lg:gap-14 max-w-[1280px] mx-auto w-full">
+          {/* Top bar: logo */}
+          <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2">
+            <BrandLogo dark className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-xl" />
+          </div>
+
+          {/* ── Main centered hero ── */}
+          <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 sm:px-10 lg:px-16 gap-0">
+
+            {/* Live badge */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left"
+              initial={{ opacity: 0, y: -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-[#7C3AED]/40 bg-[#7C3AED]/10 backdrop-blur px-4 py-1.5">
                 <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-[11px] font-bold tracking-[0.18em] text-white uppercase">Internship Program 2027</span>
               </div>
-
-              <h1 className="mt-6 text-5xl sm:text-6xl lg:text-[4.5rem] xl:text-[5.5rem] font-black tracking-tight text-white leading-[0.95]">
-                PFE <span className="font-extralight text-white/85">BOOK</span>
-                <span className="ml-3 align-middle text-2xl sm:text-3xl lg:text-4xl font-light tracking-[0.2em] text-[#C4B5FD]">2027</span>
-              </h1>
-
-              <p className="mt-5 max-w-xl text-sm sm:text-[15px] leading-relaxed text-white/65">
-                Shape the future with us — <span className="text-white font-semibold">your path begins here.</span> Explore curated subjects, global impact, and a team that invests in you.
-              </p>
-
-              <div className="mt-7 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 w-full">
-                <Button onClick={() => goTo(1)} size="lg" className="w-full sm:w-auto rounded-2xl bg-white text-[#140a2e] hover:bg-white/90 px-8 h-12 text-sm font-bold tracking-wide shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all">
-                  Explore Book <ArrowRightIcon className="size-4" />
-                </Button>
-                <Button onClick={() => goTo(4)} variant="outline" size="lg" className="w-full sm:w-auto rounded-2xl border-white/15 bg-white/5 backdrop-blur text-white hover:bg-white/10 hover:text-white px-8 h-12 text-sm font-medium">
-                  View Subjects ({subjects.length})
-                </Button>
-              </div>
-
-              <div className="mt-8 flex items-center gap-5 text-xs text-white/50">
-                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-[#7C3AED]" /> {subjects.length} subjects</span>
-                <span className="size-1 rounded-full bg-white/15" />
-                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-emerald-400" /> 12 countries</span>
-                <span className="size-1 rounded-full bg-white/15" />
-                <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-white" /> 30+ projects</span>
-              </div>
             </motion.div>
 
+            {/* Title block */}
             <motion.div
-              initial={{ opacity: 0, x: 20, scale: 0.96 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              transition={{ delay: 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex-1 hidden lg:flex items-center justify-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-7 text-center"
             >
-              <div className="relative w-full max-w-[420px]">
-                <div className="absolute -inset-8 bg-gradient-to-br from-[#7C3AED]/25 to-transparent blur-3xl rounded-full pointer-events-none" />
-                <div className="relative rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-8 shadow-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] shadow-lg">
-                      <GraduationCapIcon className="size-6 text-white" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-white">PFE 2027</p>
-                      <p className="text-xs text-white/55">Asteroidea • Tunisia</p>
-                    </div>
-                    <span className="ml-auto inline-flex items-center rounded-full bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 text-[11px] font-bold text-emerald-300">Open</span>
-                  </div>
-                  <div className="my-5 h-px bg-white/10" />
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                      <p className="text-2xl font-black text-white tabular-nums">{subjects.length}</p>
-                      <p className="mt-1 text-[10px] font-bold tracking-widest text-white/50 uppercase">Subjects</p>
-                    </div>
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                      <p className="text-2xl font-black text-white tabular-nums">12</p>
-                      <p className="mt-1 text-[10px] font-bold tracking-widest text-white/50 uppercase">Countries</p>
-                    </div>
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                      <p className="text-2xl font-black text-white tabular-nums">30+</p>
-                      <p className="mt-1 text-[10px] font-bold tracking-widest text-white/50 uppercase">Projects</p>
-                    </div>
-                  </div>
-                  <div className="mt-5 rounded-2xl bg-[#7C3AED]/10 border border-[#7C3AED]/30 p-4 text-left">
-                    <p className="text-xs font-semibold text-white">Your path begins here</p>
-                    <p className="mt-1 text-xs leading-relaxed text-white/60">Browse the book, pre-select one subject, then apply in one click.</p>
-                  </div>
-                </div>
+              <h1 className="text-[clamp(3.5rem,9vw,7.5rem)] font-black tracking-tight text-white leading-[0.9]">
+                <span className="block">PFE</span>
+                <span className="block font-extralight text-white/80 tracking-[0.18em]">BOOK</span>
+              </h1>
+              {/* Decorative accent line + year */}
+              <div className="mt-4 flex items-center justify-center gap-4">
+                <div className="h-px flex-1 max-w-[80px] bg-gradient-to-r from-transparent to-[#7C3AED]/60" />
+                <span className="text-2xl sm:text-3xl font-light tracking-[0.35em] text-[#C4B5FD]">2027</span>
+                <div className="h-px flex-1 max-w-[80px] bg-gradient-to-l from-transparent to-[#7C3AED]/60" />
               </div>
             </motion.div>
+
+            {/* Tagline */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.25, duration: 0.6 }}
+              className="mt-7 max-w-lg text-center text-sm sm:text-[15px] leading-relaxed text-white/60"
+            >
+              Shape the future with us ,{" "}
+              <span className="text-white font-semibold">your path begins here.</span>{" "}
+            </motion.p>
+
+            {/* CTA buttons */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.35, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="mt-8 flex flex-col sm:flex-row items-center gap-3"
+            >
+              <Button
+                onClick={() => goTo(1)}
+                size="lg"
+                className="rounded-2xl bg-white text-[#140a2e] hover:bg-white/90 px-9 h-12 text-sm font-bold tracking-wide shadow-xl hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+              >
+                Explore Book <ArrowRightIcon className="size-4" />
+              </Button>
+              <Button
+                onClick={() => goTo(4)}
+                variant="outline"
+                size="lg"
+                className="rounded-2xl border-white/15 bg-white/5 backdrop-blur text-white hover:bg-white/10 hover:text-white px-9 h-12 text-sm font-medium"
+              >
+                View Subjects ({subjects.length})
+              </Button>
+            </motion.div>
+
+
           </div>
+
+          {/* Bottom thin accent bar */}
+          <div className="relative z-10 shrink-0 h-[3px] bg-gradient-to-r from-transparent via-[#7C3AED]/50 to-transparent" />
         </section>
 
         {/* ── WHO ARE WE - PDF 01 ── DARK DESIGN COPY */}
@@ -351,7 +349,7 @@ export function PfeBookPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
-            <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-sm" />
+            <BrandLogo dark className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
               01 / {String(totalPages).padStart(2, "0")}
             </span>
@@ -481,14 +479,13 @@ export function PfeBookPage() {
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-3 sm:px-4 lg:px-8 xl:px-10 py-2 sm:py-3 overflow-hidden">
             {/* header - keep your template typography/colors but follow photo layout (centered title + subtitle) */}
             <div className="text-center shrink-0">
-              <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-bold tracking-tight text-white leading-none">Our Culture</h2>
-              <p className="mt-2 text-sm sm:text-[15px] font-light tracking-wide text-white/70">The Heart of Our Team: Culture That Inspires</p>
+              <h2 className="text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none"><span className="text-white">Our </span><span className="text-[#8B5CF6]">Culture</span></h2>
               <div className="mx-auto mt-3 h-px w-12 bg-white/10" />
             </div>
 
             {/* vertical cards - SPREAD ACROSS FULL PAGE WIDTH */}
             <div className="mt-5 sm:mt-6 flex-1 min-h-0 flex flex-col justify-center">
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6 lg:gap-6 xl:gap-8 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 lg:gap-6 xl:gap-8 w-full">
                 {[
                   {
                     title: "Company Culture",
@@ -515,18 +512,13 @@ export function PfeBookPage() {
                     desc: "Collaboration is key in our workplace, fostering team work and open communication among all staff.",
                     customIcon: "collab",
                   },
-                  {
-                    title: "Employee Voices",
-                    desc: "We include quotes from employees that express what they love about working here, showcasing the positive impact of our culture.",
-                    customIcon: "voices",
-                  },
                 ].map((c) => (
                   <div
                     key={c.title}
                     className="group relative flex flex-col rounded-2xl border border-[#7C3AED]/40 bg-white dark:bg-white/[0.06] backdrop-blur p-5 sm:p-5 lg:px-5 lg:py-6 min-h-[310px] sm:min-h-[340px] lg:min-h-[440px] lg:h-[440px] shadow-sm hover:bg-white/[0.09] hover:border-[#7C3AED]/35 transition-all"
                   >
                     {/* title - enlarged again */}
-                    <h3 className="text-center text-[16px] sm:text-[17px] lg:text-[17.5px] font-bold leading-tight tracking-tight text-white min-h-[50px] flex items-center justify-center text-balance">{c.title}</h3>
+                    <h3 className="text-center text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-white min-h-[50px] flex items-center justify-center text-balance">{c.title}</h3>
 
                     {/* icon - CLEAN LUCIDE icons, larger & better readable */}
                     <div className="flex h-[110px] sm:h-[118px] items-center justify-center shrink-0 py-2">
@@ -541,12 +533,11 @@ export function PfeBookPage() {
                         )}
                         {c.customIcon === "worklife" && <ScaleIcon className="size-[46px]" strokeWidth={1.7} />}
                         {c.customIcon === "collab" && <HandshakeIcon className="size-[46px]" strokeWidth={1.7} />}
-                        {c.customIcon === "voices" && <MessageSquareQuoteIcon className="size-[46px]" strokeWidth={1.7} />}
                       </div>
                     </div>
 
                     {/* desc - enlarged to fill empty space */}
-                    <p className="text-center text-[14.5px] sm:text-[15px] lg:text-[15.5px] leading-[1.5] text-white/80 font-medium flex-1 flex items-start justify-center pt-1.5">{c.desc}</p>
+                    <p className="text-center text-[15.5px] sm:text-base lg:text-lg leading-[1.5] text-white/80 font-medium flex-1 flex items-start justify-center pt-1.5">{c.desc}</p>
                     <div className="mt-3 h-1 w-10 self-center rounded-full bg-white/10 group-hover:w-14 group-hover:bg-[#7C3AED] transition-all" />
                   </div>
                 ))}
@@ -570,7 +561,6 @@ export function PfeBookPage() {
                 <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none">
                   <span className="text-white">Why</span> <span className="text-[#8B5CF6]">Intern</span> <span className="text-white">With Us?</span>
                 </h2>
-                <p className="mt-2.5 text-sm sm:text-[13.5px] font-light tracking-wide text-white/60 max-w-xl mx-auto">Four reasons to launch your career with a team that invests in you — modern, human, and impact-driven.</p>
               </div>
 
               {/* ── WHY US TIMELINE — horizontal connected 4-step timeline ── */}
@@ -582,10 +572,10 @@ export function PfeBookPage() {
                       <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
                         <c.icon className="size-9 xl:size-12 text-white" strokeWidth={1.6} />
                       </div>
-                      <span className="relative mt-4 xl:mt-5 text-[13.5px] xl:text-[14px] font-bold text-[#8B5CF6]">{c.n}</span>
-                      <h3 className="relative mt-1.5 text-[16px] sm:text-[17px] lg:text-[17.5px] font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
+                      <span className="relative mt-4 xl:mt-5 text-xs xl:text-sm font-bold text-[#8B5CF6]">{c.n}</span>
+                      <h3 className="relative mt-1.5 text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
                       <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
-                      <p className="relative mt-2.5 text-[14.5px] sm:text-[15px] lg:text-[15.5px] leading-[1.5] text-white/80 font-medium max-w-[clamp(220px,22vw,300px)]">{c.desc}</p>
+                      <p className="relative mt-2.5 text-[15.5px] sm:text-base lg:text-lg leading-[1.5] text-white/80 font-medium max-w-[clamp(220px,22vw,300px)]">{c.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -598,10 +588,10 @@ export function PfeBookPage() {
                         <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
                           <c.icon className="size-11 text-white" strokeWidth={1.6} />
                         </div>
-                        <span className="relative mt-4 text-[14px] sm:text-[15px] font-bold text-[#8B5CF6]">{c.n}</span>
-                        <h3 className="relative mt-1.5 text-[16px] sm:text-[17px] font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
+                        <span className="relative mt-4 text-xs font-bold text-[#8B5CF6]">{c.n}</span>
+                        <h3 className="relative mt-1.5 text-lg sm:text-xl font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
                         <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
-                        <p className="relative mt-2.5 max-w-md text-[14.5px] sm:text-[15px] leading-[1.5] text-white/80 font-medium">{c.desc}</p>
+                        <p className="relative mt-2.5 max-w-md text-[15.5px] sm:text-base leading-[1.5] text-white/80 font-medium">{c.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -694,7 +684,7 @@ export function PfeBookPage() {
           </div>
         </section>
 
-        {/* ── SUBJECT PAGES - PDF 06-11 ── copied design from reference image, data unchanged */}
+        {/* ── SUBJECT PAGES ── FULL-PAGE LAYOUT */}
         {subjects.map((s, idx) => {
           const isSelected = has(s.code)
           const pageNo = 6 + idx
@@ -705,125 +695,147 @@ export function PfeBookPage() {
               className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#140a2e] text-white overflow-hidden"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
+              <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
 
-              {/* page indicator — top right like before but muted to match image */}
-              <div className="relative z-10 flex shrink-0 items-center justify-end px-6 sm:px-8 lg:px-10 py-3">
-                <span className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-white/[0.06] backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.18em] text-violet-400 dark:text-white/50">
-                  {String(pageNo).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
-                </span>
-              </div>
+              {/* ── Full-height content grid ── */}
+              <div className="relative z-10 flex flex-1 min-h-0 flex-col">
 
-              <div className="relative z-10 flex flex-1 min-h-0 flex-col overflow-y-auto scrollbar-thin">
-                <div className="w-full px-6 sm:px-8 lg:px-10 pb-6">
-                  {/* header — yellow left line + pill + title like image */}
-                  <div className="flex gap-4">
+                {/* ── TOP: page indicator + subject header ── */}
+                <div className="shrink-0 flex items-start justify-between gap-4 px-6 sm:px-8 lg:px-10 pt-4 pb-3">
+                  {/* subject code + title */}
+                  <div className="flex gap-3 min-w-0 flex-1">
                     <div className="hidden sm:block w-[3px] shrink-0 self-stretch rounded-full bg-[#D4E157] mt-1" />
-                    <div className="flex flex-col gap-2.5 min-w-0 flex-1">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                       <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#D4E157]/30 bg-[#D4E157]/10 px-3 py-1 text-[11px] font-bold tracking-wide text-[#D4E157]">
                         <span className="size-2 rounded-full bg-[#D4E157] shadow-[0_0_6px_rgba(212,225,87,0.6)]" />
                         {s.code}
                       </span>
-                      <h2 className="text-2xl sm:text-3xl lg:text-[32px] font-black leading-tight tracking-tight text-white">
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-[2rem] font-black leading-tight tracking-tight text-white">
                         {s.name}
                       </h2>
-                      <p className="text-sm font-medium tracking-wide text-[#A78BFA]">{s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" • ") : "PFE • 2026"}</p>
+                    </div>
+                  </div>
+                  {/* page number */}
+                  <span className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white/[0.06] backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.18em] text-white/50">
+                    {String(pageNo).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
+                  </span>
+                </div>
+
+                {/* ── MIDDLE: photo left + description+technologies right ── */}
+                <div className="flex flex-1 min-h-0 flex-col gap-5 overflow-y-auto px-4 sm:px-8 lg:flex-row lg:gap-8 lg:overflow-hidden lg:px-10">
+
+                  {/* LEFT — large photo container filling card completely */}
+                  <div className="h-[220px] w-full shrink-0 flex flex-col sm:h-[280px] lg:h-auto lg:w-[48%] lg:min-h-0">
+                    <div className="relative flex-1 min-h-0 rounded-2xl border border-white/10 overflow-hidden shadow-2xl bg-black/30">
+                      <img
+                        src={subjectImageUrl(s, idx)}
+                        alt={s.name}
+                        className="h-full w-full object-cover"
+                        loading="eager"
+                        onError={(e) => {
+                          const t = e.currentTarget as HTMLImageElement
+                          if (!t.dataset.fallback) {
+                            t.dataset.fallback = "1"
+                            t.src = "/world-map-dotted.png"
+                          }
+                        }}
+                      />
                     </div>
                   </div>
 
-                  <div className="mt-6 grid lg:grid-cols-[1.05fr_1.35fr] gap-8 lg:gap-10 lg:items-stretch">
-                    {/* left: world map + Profile/Period under photo — no cards */}
-                    <div className="flex flex-col gap-6">
-                      <div className="relative rounded-2xl overflow-hidden flex-1 min-h-[420px]">
-                        <img
-                          src={subjectImageUrl(s, idx)}
-                          alt={s.name}
-                          className="absolute inset-0 h-full w-full object-cover rounded-2xl"
-                          loading="eager"
-                          onError={(e) => {
-                            const t = e.currentTarget as HTMLImageElement
-                            if (!t.dataset.fallback) {
-                              t.dataset.fallback = "1"
-                              t.src = "/world-map-dotted.png"
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-6">
-                        <div className="flex gap-3 py-1">
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                            <UserIcon className="size-4 text-white/80" strokeWidth={1.8} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
-                              <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Profile</p>
-                            </div>
-                            <p className="mt-2 text-sm font-bold text-white">{s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"}</p>
-                          </div>
-                        </div>
-                        <div className="flex gap-3 py-1">
-                          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-white/5 border border-white/10">
-                            <CalendarIcon className="size-4 text-white/80" strokeWidth={1.8} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
-                              <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Period</p>
-                            </div>
-                            <p className="mt-2 text-sm font-bold text-white">{s.duration?.name || "6 Mois"}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  {/* RIGHT — description + technologies stacked */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-5 lg:min-h-0">
 
-                    {/* right: description + Technologies under description — no cards */}
-                    <div className="flex flex-col gap-6">
-                      <div className="py-1 flex flex-col flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
-                          <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Description</p>
-                        </div>
-                        <div className="mt-4 space-y-4 text-[17px] lg:text-[18px] leading-[1.75] text-white/90 whitespace-pre-wrap flex-1">
+                    {/* Description — grows to fill available space */}
+                    <div className="flex flex-col flex-1 min-h-0">
+                      <div className="flex items-center gap-2 shrink-0 mb-4">
+                        <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
+                        <p className="text-[13px] font-bold tracking-widest text-[#A78BFA] uppercase">Description</p>
+                      </div>
+                      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-1">
+                        <div className="space-y-4 text-[17px] sm:text-[18px] lg:text-[19px] xl:text-[20px] leading-[1.8] text-white/90 whitespace-pre-wrap">
                           {s.description ? (
                             s.description.split("\n\n").map((para, i) => (
                               <p key={i}>{para}</p>
                             ))
                           ) : (
-                            <p>No description provided for this subject — contact us for details.</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="py-1">
-                        <div className="flex items-center gap-2 shrink-0">
-                          <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
-                          <p className="text-[11px] font-bold tracking-widest text-[#A78BFA] uppercase">Technologies</p>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2 content-start max-h-[140px] overflow-y-auto pr-1 scrollbar-thin">
-                          {s.technologies && s.technologies.length > 0 ? (
-                            s.technologies.map((t) => (
-                              <span key={t.id} className="inline-flex items-center rounded-full bg-[#2B1B6B] border border-[#7C3AED]/40 text-white px-3.5 py-1.5 text-xs font-semibold shadow-sm shrink-0">
-                                {t.name}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-sm text-violet-400 dark:text-white/50">—</span>
+                            <p className="text-white/50">No description provided for this subject — contact us for details.</p>
                           )}
                         </div>
                       </div>
                     </div>
+
+                    {/* Technologies — below description */}
+                    <div className="shrink-0">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-0.5 h-5 rounded-full bg-[#D4E157]" />
+                        <p className="text-[13px] font-bold tracking-widest text-[#A78BFA] uppercase">Technologies</p>
+                      </div>
+                      <div className="flex flex-wrap gap-2.5">
+                        {s.technologies && s.technologies.length > 0 ? (
+                          s.technologies.map((t) => (
+                            <span key={t.id} className="inline-flex items-center rounded-full bg-[#2B1B6B] border border-[#7C3AED]/40 text-white px-4 py-2 text-sm font-semibold shadow-sm shrink-0">
+                              {t.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-base text-white/40">—</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {/* button — bottom right of page */}
-                  <div className="mt-6 flex justify-end">
-                    <Button
-                      onClick={() => toggle(s.code)}
-                      className={`rounded-xl px-7 py-5 text-sm font-bold shadow-[0_0_20px_rgba(124,58,237,0.4)] border transition-all ${isSelected ? "bg-white border-[#7C3AED] text-[#7C3AED] hover:bg-white/90" : "bg-[#7C3AED] border-[#7C3AED] text-white hover:bg-[#6D28D9] hover:shadow-[0_0_28px_rgba(124,58,237,0.55)]"}`}
-                    >
-                      {isSelected ? "Selected ✓" : "Pre-select this subject"}
-                    </Button>
+                </div>
+
+                {/* ── BOTTOM BAR: profile + period | preselect button ── */}
+                <div className="shrink-0 flex flex-wrap items-center gap-x-6 gap-y-4 px-4 sm:px-8 lg:flex-nowrap lg:gap-10 lg:px-10 pt-5 pb-6 border-t border-white/[0.07] mt-3">
+
+                  {/* Profile — with icon */}
+                  <div className="flex min-w-0 gap-3 items-center">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/5 border border-white/10">
+                      <UserIcon className="size-5 text-white/80" strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
+                        <p className="text-[13px] font-bold tracking-widest text-[#A78BFA] uppercase">Profile</p>
+                      </div>
+                      <p className="mt-1 text-base font-bold text-white">
+                        {s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"}
+                      </p>
+                    </div>
                   </div>
-            </div>
-          </div>
-        </section>
+
+                  {/* Period — with icon */}
+                  <div className="flex min-w-0 gap-3 items-center">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/5 border border-white/10">
+                      <CalendarIcon className="size-5 text-white/80" strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-0.5 h-4 rounded-full bg-[#D4E157]" />
+                        <p className="text-[13px] font-bold tracking-widest text-[#A78BFA] uppercase">Period</p>
+                      </div>
+                      <p className="mt-1 text-base font-bold text-white">{s.period || s.duration?.name || "6 Months"}</p>
+                    </div>
+                  </div>
+
+                  {/* Spacer */}
+                  <div className="flex-1" />
+
+                  {/* Preselect button — far right */}
+                  <Button
+                    onClick={() => toggle(s.code)}
+                    className={`w-full rounded-xl px-7 py-5 text-sm font-bold shadow-[0_0_20px_rgba(124,58,237,0.4)] border transition-all sm:w-auto lg:ml-auto ${
+                      isSelected
+                        ? "bg-white border-[#7C3AED] text-[#7C3AED] hover:bg-white/90"
+                        : "bg-[#7C3AED] border-[#7C3AED] text-white hover:bg-[#6D28D9] hover:shadow-[0_0_28px_rgba(124,58,237,0.55)]"
+                    }`}
+                  >
+                    {isSelected ? "Selected ✓" : "Pre-select this subject"}
+                  </Button>
+                </div>
+              </div>
+            </section>
           )
         })}
 
@@ -843,7 +855,6 @@ export function PfeBookPage() {
                 <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none">
                   <span className="text-white">We will </span><span className="text-[#8B5CF6]">challenge</span><span className="text-white"> you</span>
                 </h2>
-                <p className="mt-2.5 text-sm sm:text-[13.5px] font-light tracking-wide text-white/60 max-w-xl mx-auto">Growth begins outside your comfort zone — our mindset in three principles.</p>
               </div>
 
               <div className="relative w-full max-w-[1440px] mx-auto mt-10 lg:mt-12 flex-1 min-h-0 flex flex-col justify-center">
@@ -854,10 +865,10 @@ export function PfeBookPage() {
                       <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
                         <c.icon className="size-9 xl:size-12 text-white" strokeWidth={1.6} />
                       </div>
-                      <span className="relative mt-4 xl:mt-5 text-[13.5px] xl:text-[14px] font-bold text-[#8B5CF6]">{c.n}</span>
-                      <h3 className="relative mt-1.5 text-[16px] sm:text-[17px] lg:text-[17.5px] font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
+                      <span className="relative mt-4 xl:mt-5 text-xs xl:text-sm font-bold text-[#8B5CF6]">{c.n}</span>
+                      <h3 className="relative mt-1.5 text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
                       <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
-                      <p className="relative mt-2.5 text-[14.5px] sm:text-[15px] lg:text-[15.5px] leading-[1.5] text-white/80 font-medium max-w-[clamp(220px,22vw,300px)]">{c.desc}</p>
+                      <p className="relative mt-2.5 text-[15.5px] sm:text-base lg:text-lg leading-[1.5] text-white/80 font-medium max-w-[clamp(220px,22vw,300px)]">{c.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -870,10 +881,10 @@ export function PfeBookPage() {
                         <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
                           <c.icon className="size-11 text-white" strokeWidth={1.6} />
                         </div>
-                        <span className="relative mt-4 text-[14px] sm:text-[15px] font-bold text-[#8B5CF6]">{c.n}</span>
-                        <h3 className="relative mt-1.5 text-[16px] sm:text-[17px] font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
+                        <span className="relative mt-4 text-xs font-bold text-[#8B5CF6]">{c.n}</span>
+                        <h3 className="relative mt-1.5 text-lg sm:text-xl font-bold leading-tight tracking-tight text-white text-balance">{c.title}</h3>
                         <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
-                        <p className="relative mt-2.5 max-w-md text-[14.5px] sm:text-[15px] leading-[1.5] text-white/80 font-medium">{c.desc}</p>
+                        <p className="relative mt-2.5 max-w-md text-[15.5px] sm:text-base leading-[1.5] text-white/80 font-medium">{c.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -898,13 +909,12 @@ export function PfeBookPage() {
                 <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none">
                   <span className="text-white">Recruitment </span><span className="text-[#8B5CF6]">Process</span>
                 </h2>
-                <p className="mt-2.5 text-sm sm:text-[13.5px] font-light tracking-wide text-white/60 max-w-xl mx-auto">Three steps to join our team — transparent, fair, and fast.</p>
               </div>
 
               <div className="relative w-full max-w-[1440px] mx-auto mt-10 lg:mt-14 flex-1 min-h-0 flex flex-col justify-center">
                 <div className="relative hidden md:grid grid-cols-3 gap-x-12 lg:gap-x-16 xl:gap-x-20">
                   {/* horizontal connectors with arrows — step 1→2 and 2→3 */}
-                  <div aria-hidden className="absolute left-[16.66%] right-[16.66%] top-[40px] xl:top-[56px] flex items-center pointer-events-none">
+                  <div aria-hidden className="absolute left-[16.66%] right-[16.66%] top-[64px] xl:top-[80px] flex items-center pointer-events-none">
                     <div className="flex-1 flex items-center">
                       <div className="flex-1 h-[2px] bg-[#7C3AED]/70" />
                       <ArrowRightIcon className="size-4 xl:size-5 text-[#7C3AED] -ml-1 shrink-0" strokeWidth={2.5} />
@@ -914,29 +924,32 @@ export function PfeBookPage() {
                       <ArrowRightIcon className="size-4 xl:size-5 text-[#7C3AED] -ml-1 shrink-0" strokeWidth={2.5} />
                     </div>
                   </div>
-                  <div aria-hidden className="absolute left-[16.66%] right-[16.66%] top-[40px] xl:top-[56px] h-[10px] -translate-y-[4px] flex pointer-events-none">
+                  <div aria-hidden className="absolute left-[16.66%] right-[16.66%] top-[64px] xl:top-[80px] h-[10px] -translate-y-[4px] flex pointer-events-none">
                     <div className="flex-1 mx-2 h-[10px] bg-[#7C3AED]/15 blur-[6px] rounded-full" />
                     <div className="flex-1 mx-2 h-[10px] bg-[#7C3AED]/15 blur-[6px] rounded-full" />
                   </div>
                   {[
-                    { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations." },
-                    { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills." },
-                    { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture." },
+                    { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-center" },
+                    { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills.", img: "/Online_Assesement.jpg", pos: "object-center" },
+                    { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
                   ].map((s) => (
                     <div key={s.step} className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(124,58,237,0.4)]">
-                        <span className="text-sm xl:text-base font-black tracking-wide text-white">Step {Number(s.step)}</span>
+                      <div className="relative z-10 shrink-0">
+                        <div className="flex size-32 xl:size-40 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#7C3AED]/60 bg-[#1e0a3e] shadow-[0_0_45px_rgba(124,58,237,0.4)]">
+                          <img src={s.img} alt={s.title} className={`size-full object-cover ${s.pos}`} loading="lazy" />
+                        </div>
+                        <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#7C3AED]/40 bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] px-3 py-1 text-xs xl:text-sm font-black tracking-wide text-white shadow">Step {Number(s.step)}</span>
                       </div>
-                      <h3 className="relative mt-4 xl:mt-5 text-[16px] sm:text-[17px] lg:text-[17.5px] font-bold leading-tight tracking-tight text-white text-balance">{s.title}</h3>
+                      <h3 className="relative mt-7 xl:mt-8 text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-white text-balance">{s.title}</h3>
                       <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
-                      <p className="relative mt-2.5 text-[14.5px] sm:text-[15px] lg:text-[15.5px] leading-[1.5] text-white/80 font-medium max-w-[clamp(220px,22vw,300px)]">{s.desc}</p>
+                      <p className="relative mt-2.5 text-[15.5px] sm:text-base lg:text-lg leading-[1.5] text-white/80 font-medium max-w-[clamp(220px,22vw,300px)]">{s.desc}</p>
                     </div>
                   ))}
                 </div>
 
                 <div className="relative flex-1 min-h-0 overflow-y-auto scrollbar-thin md:hidden">
                   {/* vertical connectors with arrows */}
-                  <div aria-hidden className="absolute left-1/2 top-[48px] bottom-[48px] w-0.5 -translate-x-1/2 flex flex-col pointer-events-none">
+                  <div aria-hidden className="absolute left-1/2 top-[72px] bottom-[72px] w-0.5 -translate-x-1/2 flex flex-col pointer-events-none">
                     <div className="flex-1 flex flex-col items-center">
                       <div className="flex-1 w-[2px] bg-[#7C3AED]/70" />
                       <ArrowRightIcon className="size-4 text-[#7C3AED] rotate-90 -mt-1 shrink-0" strokeWidth={2.5} />
@@ -946,23 +959,26 @@ export function PfeBookPage() {
                       <ArrowRightIcon className="size-4 text-[#7C3AED] rotate-90 -mt-1 shrink-0" strokeWidth={2.5} />
                     </div>
                   </div>
-                  <div aria-hidden className="absolute left-1/2 top-[48px] bottom-[48px] w-2 -translate-x-1/2 flex flex-col pointer-events-none">
+                  <div aria-hidden className="absolute left-1/2 top-[72px] bottom-[72px] w-2 -translate-x-1/2 flex flex-col pointer-events-none">
                     <div className="flex-1 mx-auto w-2 bg-[#7C3AED]/10 blur-[6px] rounded-full my-2" />
                     <div className="flex-1 mx-auto w-2 bg-[#7C3AED]/10 blur-[6px] rounded-full my-2" />
                   </div>
                   <div className="flex flex-col gap-14">
                     {[
-                      { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations." },
-                      { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills." },
-                      { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture." },
+                      { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-center" },
+                      { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills.", img: "/Online_Assesement.jpg", pos: "object-center" },
+                      { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
                     ].map((s) => (
                       <div key={s.step} className="relative flex flex-col items-center text-center">
-                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] border border-[#7C3AED]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(124,58,237,0.4)]">
-                          <span className="text-sm font-black tracking-wide text-white">Step {Number(s.step)}</span>
+                        <div className="relative z-10 shrink-0">
+                          <div className="flex size-36 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#7C3AED]/60 bg-[#1e0a3e] shadow-[0_0_30px_rgba(124,58,237,0.4)]">
+                            <img src={s.img} alt={s.title} className={`size-full object-cover ${s.pos}`} loading="lazy" />
+                          </div>
+                          <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#7C3AED]/40 bg-gradient-to-br from-[#7C3AED] to-[#4F1BB8] px-3 py-1 text-xs font-black tracking-wide text-white shadow">Step {Number(s.step)}</span>
                         </div>
-                        <h3 className="relative mt-4 text-[16px] sm:text-[17px] font-bold leading-tight tracking-tight text-white text-balance">{s.title}</h3>
+                        <h3 className="relative mt-7 text-lg sm:text-xl font-bold leading-tight tracking-tight text-white text-balance">{s.title}</h3>
                         <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#A78BFA]" />
-                        <p className="relative mt-2.5 max-w-md text-[14.5px] sm:text-[15px] leading-[1.5] text-white/80 font-medium">{s.desc}</p>
+                        <p className="relative mt-2.5 max-w-md text-[15.5px] sm:text-base leading-[1.5] text-white/80 font-medium">{s.desc}</p>
                       </div>
                     ))}
                   </div>
@@ -980,7 +996,7 @@ export function PfeBookPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-[#2a0a4a] via-[#1e0a3e] to-[#2d0a4e]" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
-            <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-sm" />
+            <BrandLogo dark className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
               {String(8 + subjects.length).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
             </span>
@@ -1043,7 +1059,6 @@ export function PfeBookPage() {
                 <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-white leading-none">
                   This is the <span className="text-[#8B5CF6]">subject</span> you selected
                 </h2>
-                <p className="mt-2.5 text-sm font-light tracking-wide text-white/60">{shortlist.length === 0 ? "No subject selected yet — pick one from the list." : "Ready? Apply now or go back to choose another one."}</p>
               </div>
 
               <div className="mt-8 flex flex-1 min-h-0 flex-col items-center justify-center">
@@ -1170,12 +1185,6 @@ export function PfeBookPage() {
 
           {/* right: actions */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <span className="hidden sm:inline-flex text-xs font-mono tracking-wide text-white/60 tabular-nums">
-              {String(activePage + 1).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
-            </span>
-            <span className="sm:hidden text-[11px] font-mono text-white/60 tabular-nums">
-              {activePage + 1}/{totalPages}
-            </span>
             <button
               onClick={() => goTo(totalPages - 1)}
               className={`inline-flex items-center gap-1 sm:gap-1.5 rounded-full px-2.5 sm:px-3 py-1.5 text-xs font-semibold shadow-sm border transition-colors ${shortlist.length > 0 ? "bg-[#7C3AED] text-white border-[#7C3AED]" : "bg-violet-50 dark:bg-white/5 border-[#7C3AED]/40 text-white hover:border-white/20 hover:bg-white/10"}`}
@@ -1211,7 +1220,7 @@ function AwardIcon(props: React.SVGProps<SVGSVGElement>) {
 function PageHeader({ number, total }: { number: number; total: number }) {
   return (
     <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
-      <BrandLogo dark className="h-[180px] w-[200px] object-contain -my-14 drop-shadow-sm" />
+      <BrandLogo dark className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
       <span className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur border border-[#7C3AED]/40 px-3 py-1.5 text-[11px] font-mono tracking-[0.2em] text-white/70">
           {String(number).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </span>

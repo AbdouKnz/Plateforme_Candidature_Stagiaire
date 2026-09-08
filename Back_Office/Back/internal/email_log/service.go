@@ -168,32 +168,21 @@ func (s *EmailLogService) Export(ctx context.Context, params EmailLogParams) (*e
 			return &export.ExportOptions{
 				TableOrientation: "L",
 				Data:             [][]string{},
-				Widths:           []float64{50, 60, 40, 40},
+				Widths:           []float64{38, 110, 100, 30},
 				FileName:         "Email_Logs",
 				Title:            "No email logs data",
-				Headers:          []string{"Sent At", "Recipient", "Type", "Status"},
+				Headers:          []string{"Sent At", "Recipient", "Subject", "Status"},
 			}, nil
 		}
 		return nil, fmt.Errorf("failed to fetch email logs: %w", err)
 	}
 
-	typeLabel := map[string]string{
-		"confirmation": "Accusé de réception",
-		"acceptance":   "Invitation",
-		"disapproval":  "Refus",
-		"reopening":    "Réouverture",
-	}
-
 	var data [][]string
 	for _, el := range emailLogs {
-		label, ok := typeLabel[el.TemplateType]
-		if !ok {
-			label = el.TemplateType
-		}
 		row := []string{
 			el.SentAt,
 			el.Recipient,
-			label,
+			el.Subject,
 			el.Status,
 		}
 		data = append(data, row)
@@ -202,9 +191,9 @@ func (s *EmailLogService) Export(ctx context.Context, params EmailLogParams) (*e
 	return &export.ExportOptions{
 		TableOrientation: "L",
 		Data:             data,
-		Widths:           []float64{50, 40, 40, 40},
+		Widths:           []float64{38, 110, 100, 30},
 		FileName:         "Email_Logs",
 		Title:            "Email Logs Report",
-		Headers:          []string{"Sent At", "Recipient", "Type", "Status"},
+		Headers:          []string{"Sent At", "Recipient", "Subject", "Status"},
 	}, nil
 }

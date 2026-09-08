@@ -6,13 +6,17 @@ export type AuditAction =
   | "delete"
   | "logged in"
   | "logged out"
-  | "export";
+  | "export"
+  | "accept"
+  | "reject";
 
 export type Audit = {
   audit_id?: number;
   actor_id?: number;
   actor_name?: string;
   module?: string;
+  target_id?: number;
+  applicant_name?: string;
   action: AuditAction;
   change?: ChangeDetail;
   icon?:string
@@ -37,6 +41,7 @@ export type ChangeDetail = {
 export interface AuditQueryParams {
   action?: string;
   module?: string;
+  target_id?: number;
   start?: string;
   end?: string;
   search?: string;

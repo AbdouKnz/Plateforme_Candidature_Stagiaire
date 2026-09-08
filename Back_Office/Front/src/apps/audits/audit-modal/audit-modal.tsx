@@ -25,7 +25,6 @@ import {
   IconUser,
   IconFolder,
   IconClock,
-  IconListDetails,
   IconReportSearch,
   IconHistory,
 } from "@tabler/icons-react";
@@ -34,6 +33,8 @@ import { Card } from "@/components/ui/card";
 import { ActionType, Audit, ChangeType } from "@/models/audit-model";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+import { formatAuditDate } from "../format-audit-date";
 
 const getActionBadgeColor = (action?: string) => {
   switch (action?.toLowerCase()) {
@@ -63,8 +64,10 @@ export function AuditModal({
   open,
   onOpenChange,
 }: AuditLogComparisonDialogProps) {
+  const { t } = useTranslation();
   const changeType = audit?.change?.type ?? "";
   const fields = audit?.change?.fields ?? {};
+  const isStepStatusChange = changeType === "step_status";
 
   const formatFieldValue = (val: any) => {
     if (val === null || val === undefined) return "-";
@@ -99,6 +102,16 @@ export function AuditModal({
       [ChangeType.LOGOUT]: { label: "Logged Out", Icon: IconLogout },
       [ChangeType.UPDATE]: { label: "Updated Fields", Icon: FileIcon },
     };
+
+    if (isStepStatusChange) {
+      return (
+        <TableRow>
+          <TableHead>{t("step")}</TableHead>
+          <TableHead className="border-r">{t("before")}</TableHead>
+          <TableHead>{t("after")}</TableHead>
+        </TableRow>
+      );
+    }
 
     if (changeType in typeMap) {
       const { label, Icon } = typeMap[changeType];
@@ -203,6 +216,19 @@ export function AuditModal({
         );
       }
 
+      if (isStepStatusChange) {
+        const label = key.endsWith("_status")
+          ? t(`pipeline_step_${key.replace(/_status$/, "")}`, { defaultValue: key })
+          : t(key, { defaultValue: key });
+        return (
+          <TableRow key={key}>
+            <TableCell><Badge variant="secondary">{label}</Badge></TableCell>
+            <TableCell className="text-muted-foreground">{formatFieldValue(value.old_values)}</TableCell>
+            <TableCell>{formatFieldValue(value.new_values)}</TableCell>
+          </TableRow>
+        );
+      }
+
       return null;
     });
   };
@@ -225,7 +251,7 @@ export function AuditModal({
               variant={getActionBadgeColor(audit?.action)}
               className="capitalize"
             >
-              {audit?.action}
+              {audit?.action === "accept" ? "Accept" : audit?.action === "reject" ? "Reject" : audit?.action}
             </Badge>
           </DialogTitle>
         </DialogHeader>
@@ -248,12 +274,20 @@ export function AuditModal({
                 <span>{audit?.module ?? "Unknown"}</span>
               </div>
 
+              {audit?.applicant_name ? (
+                <div className="flex items-center gap-2">
+                  <IconUser className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{t("candidate")}:</span>
+                  <span>{audit.applicant_name}</span>
+                </div>
+              ) : null}
+
               <div className="flex items-center gap-2">
                 <IconClock className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   Time:
                 </span>
-                <span>{audit?.time_stamp ?? "-"}</span>
+                <span>{formatAuditDate(audit?.date)}</span>
               </div>
             </div>
           </Card>

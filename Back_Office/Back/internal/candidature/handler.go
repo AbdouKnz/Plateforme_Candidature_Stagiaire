@@ -106,25 +106,26 @@ func (h *CandidatureHandler) UpdateHandler(c *gin.Context) {
 	} else {
 		c.Request.ParseMultipartForm(32 << 20)
 		request = UpdateCandidatureRequest{
-			FullName:    c.PostForm("full_name"),
-			Email1:      c.PostForm("email1"),
-			Gender1:     c.PostForm("gender1"),
-			Phone1:      c.PostForm("phone1"),
-			Degree1:     c.PostForm("degree1"),
-			FullName2:   c.PostForm("full_name2"),
-			Email2:      c.PostForm("email2"),
-			Gender2:     c.PostForm("gender2"),
-			Phone2:      c.PostForm("phone2"),
-			Degree2:     c.PostForm("degree2"),
-			Duration:    c.PostForm("duration"),
-			Methode:     c.PostForm("methode"),
-			StartDate:   c.PostForm("start_date"),
-			SubjectName: c.PostForm("subject_name"),
-			University:  c.PostForm("university"),
-			University2: c.PostForm("university2"),
-			Status:      c.PostForm("status"),
-			Step:        c.PostForm("step"),
-			Notes:       c.PostForm("notes"),
+			FullName:        c.PostForm("full_name"),
+			Email1:          c.PostForm("email1"),
+			Gender1:         c.PostForm("gender1"),
+			Phone1:          c.PostForm("phone1"),
+			Degree1:         c.PostForm("degree1"),
+			FullName2:       c.PostForm("full_name2"),
+			Email2:          c.PostForm("email2"),
+			Gender2:         c.PostForm("gender2"),
+			Phone2:          c.PostForm("phone2"),
+			Degree2:         c.PostForm("degree2"),
+			Duration:        c.PostForm("duration"),
+			Methode:         c.PostForm("methode"),
+			StartDate:       c.PostForm("start_date"),
+			SubjectName:     c.PostForm("subject_name"),
+			University:      c.PostForm("university"),
+			University2:     c.PostForm("university2"),
+			Status:          c.PostForm("status"),
+			Step:            c.PostForm("step"),
+			RejectionReason: c.PostForm("rejection_reason"),
+			Notes:           c.PostForm("notes"),
 		}
 		request.ScoreCVScreening = parseScore(c.PostForm("score_cv_screening"))
 		request.ScoreOnlineQuiz = parseScore(c.PostForm("score_online_quiz"))
@@ -160,9 +161,10 @@ func (h *CandidatureHandler) GetEmailPreviewHandler(c *gin.Context) {
 	step := c.Query("step")
 	quizLink := c.Query("quiz_link")
 	meetingLink := c.Query("meeting_link")
+	f2fLink := c.Query("f2f_meeting_link")
 	startDate := c.Query("start_date")
 
-	preview, err := h.Service.GetEmailPreview(c.Request.Context(), id, templateType, step, interviewDate, interviewTime, rejectionReason, quizLink, meetingLink, startDate)
+	preview, err := h.Service.GetEmailPreview(c.Request.Context(), id, templateType, step, interviewDate, interviewTime, rejectionReason, quizLink, meetingLink, startDate, f2fLink)
 	if err != nil {
 		log.Error().Err(err).Int("id", id).Str("type", templateType).Msg("GetEmailPreview failed")
 		pkg.InternalError(c, err.Error())

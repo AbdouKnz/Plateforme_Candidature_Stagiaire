@@ -1,9 +1,12 @@
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   IconSend,
@@ -11,7 +14,6 @@ import {
   IconMail,
   IconBook,
   IconClock,
-  IconFileDescription,
 } from "@tabler/icons-react";
 import { Card } from "@/components/ui/card";
 import type { EmailLog } from "@/models/email-log-model";
@@ -29,32 +31,9 @@ export function EmailLogModal({
   onOpenChange,
 }: EmailLogViewDialogProps) {
   const { t } = useTranslation();
-  const getTypeBadgeColor = (type: string) => {
-    switch (type) {
-      case "confirmation":
-        return "blue";
-      case "acceptance":
-        return "success";
-      case "online_quiz":
-        return "success";
-      case "online_meeting":
-        return "update";
-      case "f2f_meeting":
-        return "warning";
-      case "final_decision":
-        return "success";
-      case "disapproval":
-        return "destructive";
-      case "reopening":
-        return "info";
-      default:
-        return "secondary";
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
@@ -95,24 +74,6 @@ export function EmailLogModal({
                 <span>{emailLog.sent_at}</span>
               </div>
               <div className="flex items-center gap-2">
-                <IconFileDescription className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  Type:
-                </span>
-                <Badge variant={getTypeBadgeColor(emailLog.template_type) as "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary"}>
-                  {({
-                    confirmation: t("email_template_type_confirmation"),
-                    acceptance: t("email_template_type_acceptance"),
-                    online_quiz: t("email_template_type_online_quiz"),
-                    online_meeting: t("email_template_type_online_meeting"),
-                    f2f_meeting: t("email_template_type_f2f_meeting"),
-                    final_decision: t("email_template_type_final_decision"),
-                    disapproval: t("email_template_type_disapproval"),
-                    reopening: t("email_template_type_reopening"),
-                  } as Record<string, string>)[emailLog.template_type] ?? emailLog.template_type}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   Status:
                 </span>
@@ -144,6 +105,11 @@ export function EmailLogModal({
             </div>
           </Card>
         </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline">{t("close")}</Button>
+          </DialogClose>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

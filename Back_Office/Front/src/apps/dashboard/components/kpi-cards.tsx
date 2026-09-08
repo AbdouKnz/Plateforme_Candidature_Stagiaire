@@ -11,7 +11,7 @@ const STEPS = [
   { id: "quiz", labelKey: "pipeline_step_online_quiz", fallback: "Online Quiz", final: false },
   { id: "online", labelKey: "pipeline_step_online_meeting", fallback: "Online Meeting", final: false },
   { id: "f2f", labelKey: "pipeline_step_f2f_meeting", fallback: "F2F Meeting", final: false },
-  { id: "final", labelKey: "pipeline_step_final_decision", fallback: "Final Decision", final: true },
+  { id: "final", labelKey: "pipeline_step_final_decision", fallback: "Final Decision", final: false },
 ] as const;
 
 const STATUS_ROWS = [

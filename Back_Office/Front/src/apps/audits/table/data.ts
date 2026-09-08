@@ -10,6 +10,8 @@ export const auditActionTypes = {
   Create: { variant: 'success' as const },
   Update: { variant: 'update' as const },
   Delete: { variant: 'destructive' as const },
+  accept: { variant: 'success' as const },
+  reject: { variant: 'destructive' as const },
   'Logged in': { variant: 'login' as const },
   'Logged out': { variant: 'logout' as const },
 }
@@ -31,7 +33,7 @@ export const useAuditToolbarProps = () => {
   const actionItems = React.useMemo(() => {
     if (!auditsResponse?.filters?.actions) return []
     return auditsResponse.filters.actions.map((action) => ({
-      label: action,
+      label: action === 'accept' ? 'Accept' : action === 'reject' ? 'Reject' : action,
       value: action,
     }))
   }, [auditsResponse?.filters?.actions])

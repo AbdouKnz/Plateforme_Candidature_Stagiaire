@@ -41,6 +41,8 @@ const (
 	EXPORT_ACTION = "Export"
 	LOGIN_ACTION  = "Logged in"
 	LOGOUT_ACTION = "Logged out"
+	ACCEPT_ACTION = "accept"
+	REJECT_ACTION = "reject"
 )
 
 // Audit-Module
@@ -109,4 +111,6 @@ var AllActions = []string{
 	DELETE_ACTION,
 	LOGIN_ACTION,
 	LOGOUT_ACTION,
+	ACCEPT_ACTION,
+	REJECT_ACTION,
 }

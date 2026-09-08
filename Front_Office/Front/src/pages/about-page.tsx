@@ -64,10 +64,6 @@ const advantages = [
   },
 ]
 
-const techStack = [
-  "React", "TypeScript", "Go", "Python", "Docker", "PostgreSQL", "MySQL",
-]
-
 export function AboutPage() {
   const t = useTranslation()
   const navigate = useNavigate()
@@ -184,47 +180,6 @@ export function AboutPage() {
                 </motion.div>
               ))}
             </div>
-          </div>
-        </section>
-
-        {/* ── Technologies / Expertise ── */}
-        <section className="relative px-6 pb-24 sm:px-8 sm:pb-32">
-          <div className="mx-auto max-w-6xl">
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-12 text-center"
-            >
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary mb-4">
-                <ZapIcon className="size-3.5" />
-                {t("about.techBadge")}
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                {t("about.techTitle")}
-              </h2>
-              <p className="mt-3 text-foreground">
-                {t("about.techDesc")}
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-wrap justify-center gap-3"
-            >
-              {techStack.map((tech, i) => (
-                <span
-                  key={tech}
-                  className="inline-flex items-center rounded-xl border border-border/60 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-                >
-                  {tech}
-                </span>
-              ))}
-            </motion.div>
           </div>
         </section>
 

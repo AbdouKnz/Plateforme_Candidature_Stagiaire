@@ -49,17 +49,17 @@ import { usePermissions } from "@/hooks/use-permissions";
 
 const typeLabelMap: Record<string, Record<string, string>> = {
   fr: { confirmation: "Accusé de réception", online_quiz: "Quiz en ligne", disapproval: "Refus", reopening: "Réouverture", online_meeting: "Réunion en ligne", f2f_meeting: "Entretien présentiel", final_decision: "Décision finale" },
-  en: { confirmation: "Confirmation", online_quiz: "Online Quiz", disapproval: "Disapproval", reopening: "Reopening", online_meeting: "Online Meeting", f2f_meeting: "F2F Meeting", final_decision: "Final Decision" },
+  en: { confirmation: "Acknowledgment of Receipt", online_quiz: "Online Quiz", disapproval: "Disapproval", reopening: "Reopening", online_meeting: "Online Meeting", f2f_meeting: "Face to Face Meeting", final_decision: "Final Decision" },
 };
 
 const subjectOptions = [
-  { label: "Accusé de réception", type: "confirmation", subject: "Accusé de réception" },
-  { label: "Online Quiz", type: "online_quiz", subject: "Online quiz" },
-  { label: "Refus candidature", type: "disapproval", subject: "Refus de votre candidature" },
-  { label: "Réouverture", type: "reopening", subject: "Réouverture des candidatures" },
-  { label: "Online Meeting", type: "online_meeting", subject: "Online meeting" },
-  { label: "F2F Meeting", type: "f2f_meeting", subject: "F2F meeting" },
-  { label: "Final Decision", type: "final_decision", subject: "Acceptation finale" },
+  { label: "Acknowledgment of Receipt", type: "confirmation", subject: "Acknowledgment of Receipt" },
+  { label: "Online Quiz", type: "online_quiz", subject: "Online Quiz" },
+  { label: "Disapproval", type: "disapproval", subject: "Disapproval" },
+  { label: "Reopening", type: "reopening", subject: "Reopening" },
+  { label: "Online Meeting", type: "online_meeting", subject: "Online Meeting" },
+  { label: "Face to Face Meeting", type: "f2f_meeting", subject: "Face to Face Meeting" },
+  { label: "Final Decision", type: "final_decision", subject: "Final Decision" },
 ] as const;
 
 const viewTypeVariants: Record<string, string> = {
@@ -206,7 +206,7 @@ export function EmailTemplatesActionModal({
                   "text-[10px] font-medium px-1.5 py-0.5 rounded uppercase inline-block leading-none",
                   viewTypeVariants[emailTemplate.type] || ""
                 )}>
-                  {typeLabelMap.fr[emailTemplate.type] || emailTemplate.type}
+                  {typeLabelMap.en[emailTemplate.type] || emailTemplate.type}
                 </span>
               </div>
               <div className="text-sm font-medium text-foreground border rounded-lg px-3 py-2 bg-muted/20">

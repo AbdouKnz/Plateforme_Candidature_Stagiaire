@@ -369,6 +369,39 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 	return nil
 }
 
+func MigrateAuditTable(ctx context.Context, db *bun.DB) error {
+	log.Info().Msg("Checking audit table schema...")
+
+	_, err := db.ExecContext(ctx, `
+		ALTER TABLE audit
+			ADD COLUMN IF NOT EXISTS target_id INT NOT NULL DEFAULT 0
+	`)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to migrate audit table columns")
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, `
+		CREATE INDEX IF NOT EXISTS idx_audit_module_target_timestamp
+		ON audit (module, target_id, time_stamp DESC)
+	`)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to create audit candidature index")
+		return err
+	}
+
+	_, err = db.ExecContext(ctx, `
+		DELETE FROM audit
+		WHERE LOWER(module) = 'candidature'
+		  AND LOWER(action) NOT IN ('accept', 'reject')
+	`)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to remove legacy candidature CRUD audit rows")
+		return err
+	}
+	return nil
+}
+
 func MigrateTypeTable(ctx context.Context, db *bun.DB) error {
 	log.Info().Msg("Checking type table schema...")
 
@@ -485,7 +518,7 @@ func MigrateEmailTemplateTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS step VARCHAR(50) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS subject VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS body TEXT NOT NULL DEFAULT '',
-				ADD COLUMN IF NOT EXISTS language VARCHAR(10) NOT NULL DEFAULT 'fr',
+				ADD COLUMN IF NOT EXISTS language VARCHAR(10) NOT NULL DEFAULT 'en',
 				ADD COLUMN IF NOT EXISTS status BOOLEAN NOT NULL DEFAULT true,
 				ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT current_timestamp,
 				ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
@@ -509,7 +542,7 @@ func MigrateEmailTemplateTable(ctx context.Context, db *bun.DB) error {
 func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 	log.Info().Msg("Re-seeding default email templates...")
 
-	defaultTypes := []string{"confirmation", "acceptance", "online_quiz", "online_meeting", "f2f_meeting", "final_decision", "disapproval", "reopening"}
+	defaultTypes := []string{"Acknowledgment of receipt of your application", "CV Screening", "Online Quiz", "online_meeting", "Face to Face Meeting", "Final Decision", "Disapproval", "Reopening"}
 
 	_, err := db.NewDelete().Model((*domain.EmailTemplate)(nil)).Where("type IN (?)", bun.In(defaultTypes)).Exec(ctx)
 	if err != nil {
@@ -521,56 +554,56 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 
 	defaultTemplates := []domain.EmailTemplate{
 		{
-			Type:      "confirmation",
+			Type:      "Acknowledgment of receipt of your application",
 			Step:      "",
-			Subject:   "Accusé réception de votre candidature",
-			Body:      "Bonjour {{NomCandidat}},\n\nNous vous remercions pour l'intérêt que vous portez à notre entreprise.\n\nNous confirmons la bonne réception de votre candidature pour le sujet de PFE {{TitreSujet}}. Votre dossier est actuellement en cours d'examen par notre équipe.\n\nNous vous contacterons dans les meilleurs délais pour vous informer de la suite du processus de sélection.\n\nNous vous remercions de votre confiance et vous souhaitons une excellente journée.\n\nCordialement,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Subject:   "Acknowledgment of receipt of your application",
+			Body:      "Dear {{NomCandidat}},\n\nThank you for your interest in our company.\n\nWe confirm the receipt of your application for the PFE subject {{TitreSujet}}. Your file is currently under review by our team.\n\nWe will contact you as soon as possible to inform you about the next steps of the selection process.\n\nThank you for your trust and we wish you an excellent day.\n\nBest regards,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
 		{
-			Type:      "acceptance",
-			Step:      "cv_screening",
-			Subject:   "CV Screening",
-			Body:      "Bonjour {{NomCandidat}},\n\nFélicitations, votre candidature pour {{TitreSujet}} a passé l'étape CV Screening.\n\nVous êtes invité à l'étape suivante.\n\nCordialement,\n\n{{NomEntreprise}}",
+			Type:    "CV Screening",
+			Step:    "CV Screening",
+			Subject: "CV Screening",
+			Body:    "Dear {{NomCandidat}},\n\nCongratulations, your application for {{TitreSujet}} has passed the CV Screening stage.\n\nYou are invited to the next stage.\n\nBest regards,\n\n{{NomEntreprise}}",
 
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
 		{
-			Type:      "online_quiz",
-			Step:      "",
-			Subject:   "Online quiz",
-			Body:      "Bonjour {{NomCandidat}},\n\nVous êtes invité à passer le quiz en ligne pour {{TitreSujet}}.\n\nLien du quiz : {{LienQuiz}}\n\nBonne chance !\n\nCordialement,\n\n{{NomEntreprise}}",
+			Type:      "Online Quiz",
+			Step:      "Online Quiz",
+			Subject:   "Online Quiz",
+			Body:      "Dear {{NomCandidat}},\n\nYou are invited to take the online quiz for {{TitreSujet}}.\n\nQuiz link: {{LienQuiz}}\n\nGood luck!\n\nBest regards,\n\n{{NomEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
 		{
-			Type:      "online_meeting",
-			Step:      "",
-			Subject:   "Online meeting",
-			Body:      "Bonjour {{NomCandidat}},\n\nVous êtes invité à une réunion en ligne pour {{TitreSujet}}.\n\nLien de réunion : {{LienMeeting}}\n\nCordialement,\n\n{{NomEntreprise}}",
+			Type:      "Online Meeting",
+			Step:      "Online Meeting",
+			Subject:   "Online Meeting",
+			Body:      "Dear {{NomCandidat}},\n\nYou are invited to an online meeting for {{TitreSujet}}.\n\n{{LienMeeting}}\n\nBest regards,\n\n{{NomEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
 		{
-			Type:      "f2f_meeting",
-			Step:      "",
-			Subject:   "F2F meeting",
-			Body:      "Bonjour {{NomCandidat}},\n\nVous êtes invité à un entretien en présentiel pour {{TitreSujet}}.\n\nDate : {{DateEntretien}} à {{HeureEntretien}}\nAdresse : {{LienGoogleMaps}}\n\nCordialement,\n\n{{NomEntreprise}}",
+			Type:      "Face to Face Meeting",
+			Step:      "Face to Face Meeting",
+			Subject:   "Face to Face Meeting",
+			Body:      "Dear {{NomCandidat}},\n\nYou are invited to a face-to-face interview for {{TitreSujet}}.\n\nDate: {{DateEntretien}} at {{HeureEntretien}}\n{{LienGoogleMaps}}\n\nBest regards,\n\n{{NomEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
 		},
 		{
-			Type:      "final_decision",
-			Step:      "",
-			Subject:   "Acceptation finale",
-			Body:      "Bonjour {{NomCandidat}},\n\nFélicitations ! Votre candidature pour {{TitreSujet}} a été acceptée.\n\nDate de début : {{DateDebut}}\n\nBienvenue chez Asteroidea !\n\nCordialement,\n\n{{NomEntreprise}}",
+			Type:      "Final Decision",
+			Step:      "Final Decision",
+			Subject:   "Final Decision",
+			Body:      "Dear {{NomCandidat}},\n\nCongratulations! Your application for {{TitreSujet}} has been accepted.\n\nStart date: {{DateDebut}}\n\nWelcome to Asteroidea!\n\nBest regards,\n\n{{NomEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -578,8 +611,8 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 		{
 			Type:      "disapproval",
 			Step:      "",
-			Subject:   "Refus de votre candidature",
-			Body:      "Bonjour {{NomCandidat}},\n\nNous vous remercions pour l'intérêt que vous avez porté à notre entreprise ainsi que pour le temps consacré à votre candidature concernant le sujet de PFE {{TitreSujet}}.\n\nAprès une étude attentive des différentes candidatures reçues, nous regrettons de vous informer que votre candidature n'a pas été retenue pour cette opportunité.\n\nMotif de refus : {{MotifRefus}}\n\nCette décision ne remet pas en cause la qualité de votre parcours. Le nombre important de candidatures nous a conduits à effectuer une sélection selon les besoins spécifiques du projet.\n\nNous vous souhaitons pleine réussite dans la poursuite de vos études et de vos futurs projets professionnels.\n\nCordialement,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Subject:   "Rejection of your application",
+			Body:      "Dear {{NomCandidat}},\n\nThank you for the interest you have shown in our company and for the time you devoted to your application for the PFE subject {{TitreSujet}}.\n\nAfter a careful review of the applications received, we regret to inform you that your application has not been selected for this opportunity.\n\nReason for rejection: {{MotifRefus}}\n\nThis decision does not call into question the quality of your profile. The large number of applications has led us to make a selection according to the specific needs of the project.\n\nWe wish you every success in your studies and in your future professional projects.\n\nBest regards,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -587,8 +620,8 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 		{
 			Type:      "reopening",
 			Step:      "",
-			Subject:   "Réouverture des candidatures Asteroidea",
-			Body:      "Bonjour {{NomCandidat}},\n\nNous avons le plaisir de vous informer que notre plateforme de candidatures est de nouveau ouverte !\n\nVous pouvez dès à présent postuler aux différents sujets de PFE proposés par notre équipe.\n\nPour soumettre votre candidature, cliquez sur le lien ci-dessous :\n{{PlateformeLien}}\n\nNous sommes impatients de recevoir votre candidature et de découvrir votre profil.\n\nCordialement,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Subject:   "Asteroidea applications are open again",
+			Body:      "Dear {{NomCandidat}},\n\nWe are pleased to inform you that our application platform is open again!\n\nYou can now apply to the various PFE subjects offered by our team.\n\nTo submit your application, click on the link below:\n{{PlateformeLien}}\n\nWe look forward to receiving your application and discovering your profile.\n\nBest regards,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -748,6 +781,10 @@ func AddDefaultData(db *bun.DB) error {
 	// init candidature table migration
 	if err := MigrateCandidatureTable(context.Background(), db); err != nil {
 		log.Error().Err(err).Msg("Failed to migrate candidature table")
+	}
+
+	if err := MigrateAuditTable(context.Background(), db); err != nil {
+		log.Error().Err(err).Msg("Failed to migrate audit table")
 	}
 
 	// init email_templates table migration
@@ -1152,4 +1189,3 @@ func backfillStepStatuses(ctx context.Context, db *bun.DB) error {
 	log.Info().Int("count", len(rows)).Msg("Backfilled per-step statuses")
 	return nil
 }
-

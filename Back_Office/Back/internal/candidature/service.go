@@ -5,7 +5,6 @@ import (
 	"astro-backend/domain"
 	"astro-backend/internal/audit"
 	"astro-backend/internal/mail_config"
-	"astro-backend/pkg"
 	"astro-backend/pkg/export"
 	mailPkg "astro-backend/pkg/mail"
 	"context"
@@ -197,6 +196,41 @@ func applyDecisionToRow(c *domain.Candidature, decision string) error {
 	return nil
 }
 
+func (s *CandidatureService) updateDecisionWithAudit(ctx context.Context, candidature *domain.Candidature, decision, reasonCode string) error {
+	actionAt := time.Now().UTC()
+	stepIndex := currentIndex(candidature)
+	step := pipelineDBSteps[stepIndex-1]
+	oldValue := getStepStatus(candidature, stepIndex)
+	nextStep := ""
+	if decision == "accepted" && stepIndex < len(pipelineDBSteps) {
+		nextStep = pipelineDBSteps[stepIndex]
+	}
+
+	if err := applyDecisionToRow(candidature, decision); err != nil {
+		return err
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("could not begin candidature decision transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx); err != nil {
+		return fmt.Errorf("could not update candidature status: %w", err)
+	}
+	action := "reject"
+	if decision == "accepted" {
+		action = "accept"
+	}
+	if err := audit.LogCandidatureStepAction(ctx, tx, candidature.ID, action, step, oldValue, nextStep, reasonCode, actionAt); err != nil {
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("could not commit candidature decision: %w", err)
+	}
+	return nil
+}
+
 func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string, step string) (*domain.EmailTemplate, error) {
 	var template domain.EmailTemplate
 	if step != "" {
@@ -245,6 +279,31 @@ func (s *CandidatureService) getSubjectMeetingLink(ctx context.Context, subjectN
 	var link string
 	_ = s.db.NewSelect().Column("online_meeting_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
 	return link
+}
+
+func (s *CandidatureService) getSubjectF2FMeetingLink(ctx context.Context, subjectName string) string {
+	names := strings.Split(subjectName, ",")
+	if len(names) == 0 {
+		return ""
+	}
+	name := strings.TrimSpace(names[0])
+	if name == "" {
+		return ""
+	}
+	var link string
+	_ = s.db.NewSelect().Column("f2f_meeting_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
+	return link
+}
+
+// asterOideaMapsURL is the fixed office location used for the "Address" line
+// in face-to-face meeting invitation emails.
+
+const asterOideaMapsURL = "https://www.google.com/maps/place/Asteroidea/@36.7683782,10.2420193,909m/data=!3m2!1e3!4b1!4m6!3m5!1s0x12fd370003d7b35b:0xba18eae5e43a8557!8m2!3d36.7683739!4d10.2445942!16s%2Fg%2F11vy5k2_b2?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D"
+
+// asterOideaAddressLink renders the office address as a clickable link whose
+// visible text is "Address".
+func asterOideaAddressLink() string {
+	return fmt.Sprintf(`<a href="%s">Address</a>`, asterOideaMapsURL)
 }
 
 // truncateError caps stored SMTP errors so email_logs stays readable.
@@ -437,19 +496,6 @@ func (s *CandidatureService) Create(ctx context.Context, candidature *domain.Can
 		return nil, fmt.Errorf("could not create candidature: %w", err)
 	}
 
-	changeDetails := domain.ChangeDetail{
-		Type: pkg.CREATE,
-		Fields: map[string]domain.FieldChange{
-			"FullName": {CreatedValues: candidature.FullName, Changed: true},
-			"Email1":   {CreatedValues: candidature.Email1, Changed: true},
-		},
-	}
-
-	_, err = audit.LogAction(ctx, s.db, pkg.CANDIDATURE_MODULE, pkg.CREATE_ACTION, changeDetails)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to log audit action for CreateCandidature")
-	}
-
 	log.Info().Str("full_name", candidature.FullName).Msg("Candidature created successfully")
 	return candidature, nil
 }
@@ -553,43 +599,34 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 		}
 	}
 
-	// Décision accept/reject => transition par étape (UN SEUL update, même ligne).
+	decisionUpdated := false
+	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
+
+	// Décision accept/reject => transition par étape et audit dans la même transaction.
 	if reqStatus := normalizeStatus(request.Status); request.Status != "" && reqStatus != "pending" {
-		if err := applyDecisionToRow(candidature, reqStatus); err != nil {
+		if err := s.updateDecisionWithAudit(ctx, candidature, reqStatus, request.RejectionReason); err != nil {
 			return nil, err
 		}
+		decisionUpdated = true
 	} else if request.Status != "" {
 		// Réouverture manuelle : repasse l'étape courante en pending.
 		setStepStatus(candidature, currentIndex(candidature), "pending")
 		candidature.Status = "pending"
 	}
 
-	candidature.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
-
-	_, err = s.db.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx)
-	if err != nil {
-		log.Error().Err(err).Int("id", id).Msg("Could not update candidature")
-		return nil, fmt.Errorf("could not update candidature: %w", err)
-	}
-
-	changeDetails := domain.ChangeDetail{
-		Type: pkg.UPDATE,
-		Fields: map[string]domain.FieldChange{
-			"FullName": {OldValues: "", NewValues: candidature.FullName, Changed: true},
-			"Email1":   {OldValues: "", NewValues: candidature.Email1, Changed: true},
-		},
-	}
-
-	_, err = audit.LogAction(ctx, s.db, pkg.CANDIDATURE_MODULE, pkg.UPDATE_ACTION, changeDetails)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to log audit action for UpdateCandidature")
+	if !decisionUpdated {
+		_, err = s.db.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx)
+		if err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Could not update candidature")
+			return nil, fmt.Errorf("could not update candidature: %w", err)
+		}
 	}
 
 	log.Info().Int("id", id).Msg("Successfully updated candidature")
 	return candidature, nil
 }
 
-func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, step string, interviewDate string, interviewTime string, rejectionReason string, quizLink string, meetingLink string, startDate string) (*EmailPreviewResponse, error) {
+func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, step string, interviewDate string, interviewTime string, rejectionReason string, quizLink string, meetingLink string, startDate string, f2fMeetingLink string) (*EmailPreviewResponse, error) {
 	candidature, err := s.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -609,6 +646,11 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 	if (effectiveStep == "online_meeting" || templateType == "online_meeting") && meetingLink == "" {
 		if ml := s.getSubjectMeetingLink(ctx, candidature.SubjectName); ml != "" {
 			meetingLink = ml
+		}
+	}
+	if (effectiveStep == "f2f_meeting" || templateType == "f2f_meeting") && f2fMeetingLink == "" {
+		if fl := s.getSubjectF2FMeetingLink(ctx, candidature.SubjectName); fl != "" {
+			f2fMeetingLink = fl
 		}
 	}
 
@@ -650,9 +692,10 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 	body = strings.ReplaceAll(body, "[Heure]", interviewTime)
 	body = replaceRejectionReasonPlaceholders(body, rejectionReason)
 
-	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", "Adresse")
-	body = strings.ReplaceAll(body, "[LienGoogleMaps]", "Adresse")
-	body = strings.ReplaceAll(body, "[Adresse]", "Adresse")
+	addressLink := asterOideaAddressLink()
+	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", addressLink)
+	body = strings.ReplaceAll(body, "[LienGoogleMaps]", addressLink)
+	body = strings.ReplaceAll(body, "[Adresse]", addressLink)
 	body = strings.ReplaceAll(body, "{{LienQuiz}}", quizLink)
 	body = strings.ReplaceAll(body, "[LienQuiz]", quizLink)
 	body = strings.ReplaceAll(body, "{{QuizLink}}", quizLink)
@@ -692,9 +735,103 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 			req.MeetingLink = ml
 		}
 	}
+	if (effectiveStep == "f2f_meeting" || req.Type == "f2f_meeting") && req.F2FMeetingLink == "" {
+		if fl := s.getSubjectF2FMeetingLink(ctx, candidature.SubjectName); fl != "" {
+			req.F2FMeetingLink = fl
+		}
+	}
 	template, err := s.GetEmailTemplateByType(ctx, req.Type, effectiveStep)
 	if err != nil {
 		return fmt.Errorf("no email template found for type %s step %s", req.Type, effectiveStep)
+	}
+
+	// When the caller supplies an explicit body (HR edited the email), use it
+	// as-is instead of the template-generated body. This preserves any edit
+	// while still letting the mailer send it as HTML.
+	if strings.TrimSpace(req.Body) != "" {
+		body := req.Body
+		subject := template.Subject
+		subject = strings.ReplaceAll(subject, "{{NomCandidat}}", candidature.FullName)
+		subject = strings.ReplaceAll(subject, "[Nom du candidat]", candidature.FullName)
+		subject = strings.ReplaceAll(subject, "[Nom Candidat]", candidature.FullName)
+		subject = strings.ReplaceAll(subject, "{{TitreSujet}}", candidature.SubjectName)
+		subject = strings.ReplaceAll(subject, "[nom]", candidature.FullName)
+		subject = strings.ReplaceAll(subject, "{{DateEntretien}}", req.InterviewDate)
+		subject = strings.ReplaceAll(subject, "{{HeureEntretien}}", req.InterviewTime)
+		subject = replaceRejectionReasonPlaceholders(subject, req.RejectionReason)
+		subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Address")
+		subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Address")
+		subject = strings.ReplaceAll(subject, "[Adresse]", "Address")
+		subject = strings.ReplaceAll(subject, "{{LienQuiz}}", req.QuizLink)
+		subject = strings.ReplaceAll(subject, "[LienQuiz]", req.QuizLink)
+		subject = strings.ReplaceAll(subject, "{{QuizLink}}", req.QuizLink)
+		subject = strings.ReplaceAll(subject, "{{LienReunion}}", req.MeetingLink)
+		subject = strings.ReplaceAll(subject, "{{LienMeeting}}", req.MeetingLink)
+		subject = strings.ReplaceAll(subject, "[LienReunion]", req.MeetingLink)
+		subject = strings.ReplaceAll(subject, "{{DateDebut}}", req.StartDate)
+		subject = strings.ReplaceAll(subject, "{{DateStart}}", req.StartDate)
+		subject = strings.ReplaceAll(subject, "[DateDebut]", req.StartDate)
+
+		to := strings.TrimSpace(candidature.Email1)
+		if to == "" {
+			return fmt.Errorf("candidature has no email address")
+		}
+		recipients := []string{to}
+		if email2 := strings.TrimSpace(candidature.Email2); email2 != "" && !strings.EqualFold(email2, to) {
+			recipients = append(recipients, email2)
+		}
+		to = strings.Join(recipients, ", ")
+
+		now := time.Now().Format("2006-01-02 15:04:05")
+		emailLog := &domain.EmailLog{
+			CandidatureID: id,
+			Recipient:     to,
+			Subject:       subject,
+			Body:          body,
+			TemplateType:  req.Type,
+			CandidatName:  candidature.FullName,
+			SubjectName:   candidature.SubjectName,
+			Status:        "pending",
+			SentAt:        now,
+		}
+		if _, err := s.db.NewInsert().Model(emailLog).Exec(ctx); err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Failed to create email log")
+			return fmt.Errorf("failed to create email log: %w", err)
+		}
+
+		cfg, err := mail_config.GetSMTPConfig(ctx, s.db)
+		if err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Failed to get SMTP config")
+			return fmt.Errorf("failed to get SMTP config: %w", err)
+		}
+		mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
+		email := mailPkg.Email{To: recipients, Subject: subject, Body: body}
+
+		if sendErr := mailer.Send(email); sendErr != nil {
+			log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
+			emailLog.Status = "failed"
+			emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
+			if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+				log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
+			}
+			return fmt.Errorf("failed to send email: %w", sendErr)
+		}
+
+		emailLog.Status = "sent"
+		emailLog.ErrorMessage = ""
+		if _, err := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
+		}
+
+		// Advance the candidature step exactly like the normal (template) path.
+		status := "accepted"
+		if req.Type == "disapproval" {
+			status = "rejected"
+		}
+		if err := s.updateDecisionWithAudit(ctx, candidature, status, req.RejectionReason); err != nil {
+			return err
+		}
+		return nil
 	}
 
 	to := strings.TrimSpace(candidature.Email1)
@@ -731,7 +868,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	body = strings.ReplaceAll(body, "[Heure]", req.InterviewTime)
 	body = replaceRejectionReasonPlaceholders(body, req.RejectionReason)
 
-	googleMapsLink := `<a href="https://www.google.com/maps/place/Asteroidea/@36.7683782,10.2420193,909m/data=!3m2!1e3!4b1!4m6!3m5!1s0x12fd370003d7b35b:0xba18eae5e43a8557!8m2!3d36.7683739!4d10.2445942!16s%2Fg%2F11vy5k2_b2?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D">Adresse</a>`
+	googleMapsLink := asterOideaAddressLink()
 	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", googleMapsLink)
 	body = strings.ReplaceAll(body, "[LienGoogleMaps]", googleMapsLink)
 	body = strings.ReplaceAll(body, "[Adresse]", googleMapsLink)
@@ -744,9 +881,9 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	body = strings.ReplaceAll(body, "{{DateDebut}}", req.StartDate)
 	body = strings.ReplaceAll(body, "{{DateStart}}", req.StartDate)
 	body = strings.ReplaceAll(body, "[DateDebut]", req.StartDate)
-	subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Adresse")
-	subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Adresse")
-	subject = strings.ReplaceAll(subject, "[Adresse]", "Adresse")
+	subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Address")
+	subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Address")
+	subject = strings.ReplaceAll(subject, "[Adresse]", "Address")
 	subject = strings.ReplaceAll(subject, "{{LienQuiz}}", req.QuizLink)
 	subject = strings.ReplaceAll(subject, "[LienQuiz]", req.QuizLink)
 	subject = strings.ReplaceAll(subject, "{{QuizLink}}", req.QuizLink)
@@ -811,13 +948,8 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	}
 
 	// Transition par étape sur la même ligne (le flow d'email de rejet est réutilisé tel quel).
-	if err := applyDecisionToRow(candidature, status); err != nil {
+	if err := s.updateDecisionWithAudit(ctx, candidature, status, req.RejectionReason); err != nil {
 		return err
-	}
-
-	_, err = s.db.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx)
-	if err != nil {
-		return fmt.Errorf("could not update candidature status: %w", err)
 	}
 
 	log.Info().Int("id", id).Str("status", status).Msg("Email sent and candidature status updated")
@@ -875,6 +1007,25 @@ func (s *CandidatureService) GetPipeline(ctx context.Context) ([]PipelineStage, 
 		{ID: "final", Index: "05", Name: "Final Decision", Short: "Final", Final: true, Counts: PipelineCounts{Pending: counts["final"]["pending"], Accepted: counts["final"]["accepted"], Rejected: counts["final"]["rejected"]}},
 	}
 	return stages, nil
+}
+
+// stepExportLabels maps internal pipeline step codes to readable export labels.
+var stepExportLabels = map[string]string{
+	"cv_screening":   "CV Screening",
+	"online_quiz":    "Online Quiz",
+	"online_meeting": "Online Meeting",
+	"f2f_meeting":    "F2F Meeting",
+	"final_decision": "Final Decision",
+}
+
+func stepExportLabel(step string) string {
+	if label, ok := stepExportLabels[strings.ToLower(strings.TrimSpace(step))]; ok {
+		return label
+	}
+	if strings.TrimSpace(step) == "" {
+		return "—"
+	}
+	return step
 }
 
 func (s *CandidatureService) Export(ctx context.Context, params CandidatureParams) (*export.ExportOptions, error) {
@@ -935,8 +1086,8 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 
 	err := query.Order("cnd.id DESC").Scan(ctx)
 
-	headers := []string{"Status", "Type", "Full Name 1", "Full Name 2", "Project", "Start Date"}
-	pdfWidths := []float64{40, 30, 60, 60, 60, 40}
+	headers := []string{"Step", "Type", "Full Name 1", "Full Name 2", "Project", "Start Date"}
+	pdfWidths := []float64{35, 25, 55, 55, 75, 32}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -960,7 +1111,7 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 			candidatureType = "Binôme"
 		}
 		row := []string{
-			c.Status,
+			stepExportLabel(c.Step),
 			candidatureType,
 			c.FullName,
 			c.FullName2,
@@ -998,18 +1149,6 @@ func (s *CandidatureService) Delete(ctx context.Context, id int) error {
 	if rowsAffected == 0 {
 		log.Warn().Int("id", id).Msg("Delete failed: Candidature not found at execution time")
 		return fmt.Errorf("candidature with ID %d not found", id)
-	}
-
-	changeDetails := domain.ChangeDetail{
-		Type: pkg.DELETE,
-		Fields: map[string]domain.FieldChange{
-			"FullName": {DeletedValues: candidature.FullName, Changed: true},
-		},
-	}
-
-	_, err = audit.LogAction(ctx, s.db, pkg.CANDIDATURE_MODULE, pkg.DELETE_ACTION, changeDetails)
-	if err != nil {
-		log.Error().Err(err).Msg("Failed to log audit action for DeleteCandidature")
 	}
 
 	log.Info().Int("id", id).Msg("Successfully deleted candidature")

@@ -14,19 +14,22 @@ type LogActionRequest struct {
 }
 
 type AuditLogResponse struct {
-	ID        int                 `json:"audit_id"`
-	ActorID   int                 `json:"actor_id"`
-	ActorName string              `json:"actor_name"`
-	Module    string              `json:"module"`
-	Action    string              `json:"action"`
-	Change    domain.ChangeDetail `json:"change"`
-	Icon      string              `json:"icon"`
-	Timestamp string              `json:"date"`
+	ID            int                 `json:"audit_id"`
+	ActorID       int                 `json:"actor_id"`
+	ActorName     string              `json:"actor_name"`
+	Module        string              `json:"module"`
+	TargetID      int                 `json:"target_id"`
+	ApplicantName string              `json:"applicant_name,omitempty"`
+	Action        string              `json:"action"`
+	Change        domain.ChangeDetail `json:"change"`
+	Icon          string              `json:"icon"`
+	Timestamp     string              `json:"date"`
 }
 
 type AuditParams struct {
 	Action   string `form:"action"`
 	Module   string `form:"module"`
+	TargetID int    `form:"target_id"`
 	Start    string `form:"start"`
 	End      string `form:"end"`
 	Search   string `form:"search"`
