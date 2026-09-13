@@ -9,7 +9,7 @@ export const useTechnologyToolbarProps = () => {
   const { setOpenTechnology, setQueryParams } = useTechnologiesStore();
   const { modulePermissions } = usePermissions();
 
-  const canCreateTechnology = modulePermissions.technologies?.canCreate;
+  const canCreateTechnology = modulePermissions.settings?.canUpdate;
 
   return {
     tableSearchProps: {

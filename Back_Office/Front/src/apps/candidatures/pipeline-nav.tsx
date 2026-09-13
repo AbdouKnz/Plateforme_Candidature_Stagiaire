@@ -57,9 +57,9 @@ const NAV_ITEMS: NavItemMeta[] = [
     value: "online_meeting",
     icon: Video,
     labelKey: "pipeline_step_online_meeting",
-    color: "text-purple-500",
+    color: "text-[#1d7cc7]",
     gradient:
-      "radial-gradient(circle, rgba(168,85,247,0.18) 0%, rgba(147,51,234,0.08) 50%, rgba(126,34,206,0) 100%)",
+      "radial-gradient(circle, rgba(29,124,199,0.18) 0%, rgba(29,124,199,0.08) 50%, rgba(29,124,199,0) 100%)",
   },
   {
     value: "f2f_meeting",

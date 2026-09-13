@@ -24,6 +24,8 @@ func CandidatureRoutes(r *gin.RouterGroup, db *bun.DB) {
 		{
 			candidatureGroup.POST("/", handler.CreateHandler)
 			candidatureGroup.POST("/export", handler.ExportHandler)
+			candidatureGroup.POST("/bulk-reject", handler.BulkRejectHandler)
+			candidatureGroup.POST("/bulk-accept", handler.BulkAcceptHandler)
 			candidatureGroup.GET("/:id", handler.GetByIDHandler)
 			candidatureGroup.GET("/:id/email-preview", handler.GetEmailPreviewHandler)
 			candidatureGroup.PUT("/:id", handler.UpdateHandler)

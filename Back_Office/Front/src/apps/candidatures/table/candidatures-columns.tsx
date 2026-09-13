@@ -16,7 +16,7 @@ import { useAlertStore } from "@/stores/alert-store";
 import { useUpdateCandidature } from "@/hooks/use-candidatures";
 import { nextPipelineStep } from "../pipeline";
 import { PipelineStepCell } from "../pipeline-step-cell";
-import { hasCurrentStepScore } from "../scoring";
+import { hasCurrentStepScore, currentStepScore, stepScoreField } from "../scoring";
 import { IconEye, IconCheck, IconX } from "@tabler/icons-react";
 
 const statusVariants: Record<string, string> = {
@@ -34,7 +34,8 @@ const typeVariants: Record<string, string> = {
 export function useCandidatureColumns(
   onView?: (candidature: Candidature) => void,
   showStepActions = false,
-  getDisplayStatus?: (candidature: Candidature) => string
+  getDisplayStatus?: (candidature: Candidature) => string,
+  activeStep?: string
 ): ColumnDef<Candidature>[] {
   const { t } = useTranslation();
   const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
@@ -167,36 +168,6 @@ export function useCandidatureColumns(
       },
     },
     {
-      accessorKey: "full_name2",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("full_name2")} />
-      ),
-      cell: ({ row }) => {
-        const c = row.original;
-        const name =
-          c.first_name2 || c.last_name2
-            ? `${c.first_name2 ?? ""} ${c.last_name2 ?? ""}`.trim()
-            : c.full_name2;
-        return <LongText className="max-w-36">{name || "-"}</LongText>;
-      },
-      meta: {
-        label: t("full_name2"),
-      },
-    },
-    {
-      accessorKey: "gender2",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("gender2")} />
-      ),
-      cell: ({ row }) => {
-        const gender = row.getValue("gender2") as string;
-        return <Badge variant="secondary">{gender || "-"}</Badge>;
-      },
-      meta: {
-        label: t("gender2"),
-      },
-    },
-    {
       accessorKey: "subject_name",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title={t("project")} />
@@ -206,6 +177,22 @@ export function useCandidatureColumns(
       ),
       meta: {
         label: t("project"),
+      },
+    },
+    {
+      accessorKey: "score",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title={t("Score")} />
+      ),
+      cell: ({ row }) => {
+        const c = row.original;
+        const field = stepScoreField(activeStep || c.step) as keyof Candidature;
+        const value = c[field];
+        const score = typeof value === "number" ? value : Number(value) || 0;
+        return <Badge variant="secondary">{score > 0 ? `${score}/20` : "-"}</Badge>;
+      },
+      meta: {
+        label: t("Score"),
       },
     },
 

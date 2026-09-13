@@ -209,6 +209,7 @@ func (s *CandidatureService) updateDecisionWithAudit(ctx context.Context, candid
 	if err := applyDecisionToRow(candidature, decision); err != nil {
 		return err
 	}
+	candidature.RejectionReason = reasonCode
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("could not begin candidature decision transaction: %w", err)
@@ -315,17 +316,48 @@ func truncateError(s string, max int) string {
 	return s[:max]
 }
 
-// replaceRejectionReasonPlaceholders replaces every supported rejection-reason
-// placeholder with the selected reason. Supported placeholders:
-// {Motif}, {{MotifRefus}}, {{MotifRejet}}, [Motif de refus], [MotifRefus], [Motif de rejet]
-func replaceRejectionReasonPlaceholders(s string, reason string) string {
-	s = strings.ReplaceAll(s, "{Motif}", reason)
-	s = strings.ReplaceAll(s, "{motif}", reason)
-	s = strings.ReplaceAll(s, "{{MotifRefus}}", reason)
-	s = strings.ReplaceAll(s, "{{MotifRejet}}", reason)
-	s = strings.ReplaceAll(s, "[Motif de refus]", reason)
-	s = strings.ReplaceAll(s, "[MotifRefus]", reason)
-	s = strings.ReplaceAll(s, "[Motif de rejet]", reason)
+// emailRenderVars carries the dynamic values used to fill an email template.
+type emailRenderVars struct {
+	interviewDate   string
+	interviewTime   string
+	startDate       string
+	rejectionReason string
+	link            string
+	mapsLink        string
+}
+
+// resolveEmailLink picks the first non-empty link among quiz / meeting / f2f
+// links so the single [Link] placeholder works for every invitation type.
+func resolveEmailLink(quiz, meeting, f2f string) string {
+	if quiz != "" {
+		return quiz
+	}
+	if meeting != "" {
+		return meeting
+	}
+	return f2f
+}
+
+// renderEmailPlaceholders replaces the only supported placeholders in s. All
+// other tokens are left untouched (removed from templates):
+//
+//	[Date]   -> interview date, or the start date when no interview was set
+//	[Time]   -> interview time
+//	[Reason] -> rejection reason
+//	[Link]   -> the relevant link (quiz or meeting)
+//	[Maps]   -> Google Maps link
+func renderEmailPlaceholders(s string, v emailRenderVars) string {
+	date := v.interviewDate
+	if strings.TrimSpace(date) == "" {
+		date = v.startDate
+	}
+
+	s = strings.ReplaceAll(s, "[Date]", date)
+	s = strings.ReplaceAll(s, "[Time]", v.interviewTime)
+	s = strings.ReplaceAll(s, "[Reason]", v.rejectionReason)
+	s = strings.ReplaceAll(s, "[Link]", v.link)
+	s = strings.ReplaceAll(s, "[Maps]", v.mapsLink)
+
 	return s
 }
 
@@ -400,7 +432,13 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 		query = query.Where("cnd.step = ?", params.Step)
 	}
 
-	err := query.Order("cnd.id DESC").Scan(ctx)
+	if sort := scoreSortClause(params.ScoreSortStep, params.ScoreSortDirection); sort != "" {
+		query = query.Order(sort)
+	} else {
+		query = query.Order("cnd.id DESC")
+	}
+
+	err := query.Scan(ctx)
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -412,6 +450,28 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 
 	log.Info().Int("count", len(candidatures)).Msg("Successfully retrieved candidatures")
 	return candidatures, nil
+}
+
+// scoreSortClause builds the ORDER BY clause for a step-based score sort using
+// a safe column whitelist. Returns "" when no sort is requested, so callers
+// fall back to the default ordering.
+func scoreSortClause(step, direction string) string {
+	columns := map[string]string{
+		"cv_screening":   "score_cv_screening",
+		"online_quiz":    "score_online_quiz",
+		"online_meeting": "score_online_meeting",
+		"f2f_meeting":    "score_f2f_meeting",
+		"final_decision": "score_final_decision",
+	}
+	col := columns[step]
+	if col == "" {
+		return ""
+	}
+	dir := strings.ToUpper(direction)
+	if dir != "ASC" && dir != "DESC" {
+		dir = "ASC"
+	}
+	return fmt.Sprintf("cnd.%s %s NULLS LAST", col, dir)
 }
 
 // storedRelPath returns the path portion after the last "uploads/" segment,
@@ -585,6 +645,11 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	}
 	// Notes is always synced so users can also clear an existing note
 	candidature.Notes = request.Notes
+	// Persist the rejection reason when supplied directly (without a status
+	// transition) so it can be edited/cleared through the update endpoint too.
+	if request.RejectionReason != "" {
+		candidature.RejectionReason = request.RejectionReason
+	}
 
 	// Déplacement manuel explicite (sans décision) : resynchronise current_step
 	// sur le step demandé, sans toucher aux statuts par étape.
@@ -661,50 +726,27 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 
 	to := strings.TrimSpace(candidature.Email1)
 	// Pair application (binôme) : preview the recipients exactly as SendEmail
-	// will send them — both members, deduplicated.
+	// will send them — both members, even when the two addresses are identical.
 	recipients := []string{}
 	if to != "" {
 		recipients = append(recipients, to)
 	}
-	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" && !strings.EqualFold(email2, to) {
+	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 		recipients = append(recipients, email2)
 	}
 	to = strings.Join(recipients, ", ")
-	subject := template.Subject
-	subject = strings.ReplaceAll(subject, "{{NomCandidat}}", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "[Nom du candidat]", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "[Nom Candidat]", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "{{TitreSujet}}", candidature.SubjectName)
-	subject = strings.ReplaceAll(subject, "[nom]", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "{{DateEntretien}}", interviewDate)
-	subject = strings.ReplaceAll(subject, "{{HeureEntretien}}", interviewTime)
-	subject = replaceRejectionReasonPlaceholders(subject, rejectionReason)
+	link := resolveEmailLink(quizLink, meetingLink, f2fMeetingLink)
+	vars := emailRenderVars{
+		interviewDate:   interviewDate,
+		interviewTime:   interviewTime,
+		startDate:       startDate,
+		rejectionReason: rejectionReason,
+		link:            link,
+		mapsLink:        asterOideaAddressLink(),
+	}
+	subject := renderEmailPlaceholders(template.Subject, vars)
 
-	body := template.Body
-	body = strings.ReplaceAll(body, "{{NomCandidat}}", candidature.FullName)
-	body = strings.ReplaceAll(body, "[Nom du candidat]", candidature.FullName)
-	body = strings.ReplaceAll(body, "[Nom Candidat]", candidature.FullName)
-	body = strings.ReplaceAll(body, "{{TitreSujet}}", candidature.SubjectName)
-	body = strings.ReplaceAll(body, "[nom]", candidature.FullName)
-	body = strings.ReplaceAll(body, "{{DateEntretien}}", interviewDate)
-	body = strings.ReplaceAll(body, "{{HeureEntretien}}", interviewTime)
-	body = strings.ReplaceAll(body, "[Date]", interviewDate)
-	body = strings.ReplaceAll(body, "[Heure]", interviewTime)
-	body = replaceRejectionReasonPlaceholders(body, rejectionReason)
-
-	addressLink := asterOideaAddressLink()
-	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", addressLink)
-	body = strings.ReplaceAll(body, "[LienGoogleMaps]", addressLink)
-	body = strings.ReplaceAll(body, "[Adresse]", addressLink)
-	body = strings.ReplaceAll(body, "{{LienQuiz}}", quizLink)
-	body = strings.ReplaceAll(body, "[LienQuiz]", quizLink)
-	body = strings.ReplaceAll(body, "{{QuizLink}}", quizLink)
-	body = strings.ReplaceAll(body, "{{LienReunion}}", meetingLink)
-	body = strings.ReplaceAll(body, "{{LienMeeting}}", meetingLink)
-	body = strings.ReplaceAll(body, "[LienReunion]", meetingLink)
-	body = strings.ReplaceAll(body, "{{DateDebut}}", startDate)
-	body = strings.ReplaceAll(body, "{{DateStart}}", startDate)
-	body = strings.ReplaceAll(body, "[DateDebut]", startDate)
+	body := renderEmailPlaceholders(template.Body, vars)
 
 	return &EmailPreviewResponse{
 		To:      to,
@@ -749,35 +791,23 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	// as-is instead of the template-generated body. This preserves any edit
 	// while still letting the mailer send it as HTML.
 	if strings.TrimSpace(req.Body) != "" {
-		body := req.Body
-		subject := template.Subject
-		subject = strings.ReplaceAll(subject, "{{NomCandidat}}", candidature.FullName)
-		subject = strings.ReplaceAll(subject, "[Nom du candidat]", candidature.FullName)
-		subject = strings.ReplaceAll(subject, "[Nom Candidat]", candidature.FullName)
-		subject = strings.ReplaceAll(subject, "{{TitreSujet}}", candidature.SubjectName)
-		subject = strings.ReplaceAll(subject, "[nom]", candidature.FullName)
-		subject = strings.ReplaceAll(subject, "{{DateEntretien}}", req.InterviewDate)
-		subject = strings.ReplaceAll(subject, "{{HeureEntretien}}", req.InterviewTime)
-		subject = replaceRejectionReasonPlaceholders(subject, req.RejectionReason)
-		subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Address")
-		subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Address")
-		subject = strings.ReplaceAll(subject, "[Adresse]", "Address")
-		subject = strings.ReplaceAll(subject, "{{LienQuiz}}", req.QuizLink)
-		subject = strings.ReplaceAll(subject, "[LienQuiz]", req.QuizLink)
-		subject = strings.ReplaceAll(subject, "{{QuizLink}}", req.QuizLink)
-		subject = strings.ReplaceAll(subject, "{{LienReunion}}", req.MeetingLink)
-		subject = strings.ReplaceAll(subject, "{{LienMeeting}}", req.MeetingLink)
-		subject = strings.ReplaceAll(subject, "[LienReunion]", req.MeetingLink)
-		subject = strings.ReplaceAll(subject, "{{DateDebut}}", req.StartDate)
-		subject = strings.ReplaceAll(subject, "{{DateStart}}", req.StartDate)
-		subject = strings.ReplaceAll(subject, "[DateDebut]", req.StartDate)
-
+		link := resolveEmailLink(req.QuizLink, req.MeetingLink, req.F2FMeetingLink)
+		vars := emailRenderVars{
+			interviewDate:   req.InterviewDate,
+			interviewTime:   req.InterviewTime,
+			startDate:       req.StartDate,
+			rejectionReason: req.RejectionReason,
+			link:            link,
+			mapsLink:        asterOideaAddressLink(),
+		}
+		subject := renderEmailPlaceholders(template.Subject, vars)
+		body := renderEmailPlaceholders(req.Body, vars)
 		to := strings.TrimSpace(candidature.Email1)
 		if to == "" {
 			return fmt.Errorf("candidature has no email address")
 		}
 		recipients := []string{to}
-		if email2 := strings.TrimSpace(candidature.Email2); email2 != "" && !strings.EqualFold(email2, to) {
+		if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 			recipients = append(recipients, email2)
 		}
 		to = strings.Join(recipients, ", ")
@@ -805,16 +835,21 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 			return fmt.Errorf("failed to get SMTP config: %w", err)
 		}
 		mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
-		email := mailPkg.Email{To: recipients, Subject: subject, Body: body}
 
-		if sendErr := mailer.Send(email); sendErr != nil {
-			log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
-			emailLog.Status = "failed"
-			emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
-			if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
-				log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
+		// Send one email per member (binôme): even when the two addresses are
+		// identical (e.g. a pair sharing a mailbox), each member gets their own
+		// email instead of a single message with a duplicated To list.
+		for _, r := range recipients {
+			email := mailPkg.Email{To: []string{r}, Subject: subject, Body: body}
+			if sendErr := mailer.Send(email); sendErr != nil {
+				log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
+				emailLog.Status = "failed"
+				emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
+				if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+					log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
+				}
+				return fmt.Errorf("failed to send email: %w", sendErr)
 			}
-			return fmt.Errorf("failed to send email: %w", sendErr)
 		}
 
 		emailLog.Status = "sent"
@@ -838,61 +873,28 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	if to == "" {
 		return fmt.Errorf("candidature has no email address")
 	}
-	// Pair application (binôme) : notify both members. The pipeline
+	// Pair application (binôme) : notify both members, sending one email per
+	// member. Even when the two addresses are identical, two separate emails
+	// are sent (each member must receive their own invitation). The pipeline
 	// transition below still applies once to the whole application.
 	recipients := []string{to}
-	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" && !strings.EqualFold(email2, to) {
+	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 		recipients = append(recipients, email2)
 	}
 	to = strings.Join(recipients, ", ")
 
-	subject := template.Subject
-	subject = strings.ReplaceAll(subject, "{{NomCandidat}}", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "[Nom du candidat]", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "[Nom Candidat]", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "{{TitreSujet}}", candidature.SubjectName)
-	subject = strings.ReplaceAll(subject, "[nom]", candidature.FullName)
-	subject = strings.ReplaceAll(subject, "{{DateEntretien}}", req.InterviewDate)
-	subject = strings.ReplaceAll(subject, "{{HeureEntretien}}", req.InterviewTime)
-	subject = replaceRejectionReasonPlaceholders(subject, req.RejectionReason)
+	link := resolveEmailLink(req.QuizLink, req.MeetingLink, req.F2FMeetingLink)
+	vars := emailRenderVars{
+		interviewDate:   req.InterviewDate,
+		interviewTime:   req.InterviewTime,
+		startDate:       req.StartDate,
+		rejectionReason: req.RejectionReason,
+		link:            link,
+		mapsLink:        asterOideaAddressLink(),
+	}
+	subject := renderEmailPlaceholders(template.Subject, vars)
 
-	body := template.Body
-	body = strings.ReplaceAll(body, "{{NomCandidat}}", candidature.FullName)
-	body = strings.ReplaceAll(body, "[Nom du candidat]", candidature.FullName)
-	body = strings.ReplaceAll(body, "[Nom Candidat]", candidature.FullName)
-	body = strings.ReplaceAll(body, "{{TitreSujet}}", candidature.SubjectName)
-	body = strings.ReplaceAll(body, "[nom]", candidature.FullName)
-	body = strings.ReplaceAll(body, "{{DateEntretien}}", req.InterviewDate)
-	body = strings.ReplaceAll(body, "{{HeureEntretien}}", req.InterviewTime)
-	body = strings.ReplaceAll(body, "[Date]", req.InterviewDate)
-	body = strings.ReplaceAll(body, "[Heure]", req.InterviewTime)
-	body = replaceRejectionReasonPlaceholders(body, req.RejectionReason)
-
-	googleMapsLink := asterOideaAddressLink()
-	body = strings.ReplaceAll(body, "{{LienGoogleMaps}}", googleMapsLink)
-	body = strings.ReplaceAll(body, "[LienGoogleMaps]", googleMapsLink)
-	body = strings.ReplaceAll(body, "[Adresse]", googleMapsLink)
-	body = strings.ReplaceAll(body, "{{LienQuiz}}", req.QuizLink)
-	body = strings.ReplaceAll(body, "[LienQuiz]", req.QuizLink)
-	body = strings.ReplaceAll(body, "{{QuizLink}}", req.QuizLink)
-	body = strings.ReplaceAll(body, "{{LienReunion}}", req.MeetingLink)
-	body = strings.ReplaceAll(body, "{{LienMeeting}}", req.MeetingLink)
-	body = strings.ReplaceAll(body, "[LienReunion]", req.MeetingLink)
-	body = strings.ReplaceAll(body, "{{DateDebut}}", req.StartDate)
-	body = strings.ReplaceAll(body, "{{DateStart}}", req.StartDate)
-	body = strings.ReplaceAll(body, "[DateDebut]", req.StartDate)
-	subject = strings.ReplaceAll(subject, "{{LienGoogleMaps}}", "Address")
-	subject = strings.ReplaceAll(subject, "[LienGoogleMaps]", "Address")
-	subject = strings.ReplaceAll(subject, "[Adresse]", "Address")
-	subject = strings.ReplaceAll(subject, "{{LienQuiz}}", req.QuizLink)
-	subject = strings.ReplaceAll(subject, "[LienQuiz]", req.QuizLink)
-	subject = strings.ReplaceAll(subject, "{{QuizLink}}", req.QuizLink)
-	subject = strings.ReplaceAll(subject, "{{LienReunion}}", req.MeetingLink)
-	subject = strings.ReplaceAll(subject, "{{LienMeeting}}", req.MeetingLink)
-	subject = strings.ReplaceAll(subject, "[LienReunion]", req.MeetingLink)
-	subject = strings.ReplaceAll(subject, "{{DateDebut}}", req.StartDate)
-	subject = strings.ReplaceAll(subject, "{{DateStart}}", req.StartDate)
-	subject = strings.ReplaceAll(subject, "[DateDebut]", req.StartDate)
+	body := renderEmailPlaceholders(template.Body, vars)
 
 	now := time.Now().Format("2006-01-02 15:04:05")
 
@@ -919,21 +921,26 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	}
 	mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
 
-	email := mailPkg.Email{
-		To:      recipients,
-		Subject: subject,
-		Body:    body,
-	}
-
-	sendErr := mailer.Send(email)
-	if sendErr != nil {
-		log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
-		emailLog.Status = "failed"
-		emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
-		if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
-			log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
+	// Send one email per member (binôme): even when the two addresses are
+	// identical (e.g. a pair sharing a mailbox), each member gets their own
+	// email instead of a single message with a duplicated To list.
+	for _, r := range recipients {
+		email := mailPkg.Email{
+			To:      []string{r},
+			Subject: subject,
+			Body:    body,
 		}
-		return fmt.Errorf("failed to send email: %w", sendErr)
+
+		sendErr := mailer.Send(email)
+		if sendErr != nil {
+			log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
+			emailLog.Status = "failed"
+			emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
+			if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+				log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
+			}
+			return fmt.Errorf("failed to send email: %w", sendErr)
+		}
 	}
 
 	emailLog.Status = "sent"
@@ -954,6 +961,77 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 
 	log.Info().Int("id", id).Str("status", status).Msg("Email sent and candidature status updated")
 	return nil
+}
+
+// BulkReject sends the rejection email to every candidature in ids with the
+// same rejection reason, then marks each row rejected. Each candidature goes
+// through the exact same path as a single rejection (template rendering, one
+// email per member for pairs, audit log, status update).
+func (s *CandidatureService) BulkReject(ctx context.Context, ids []int, rejectionReason string) (int, error) {
+	if len(ids) == 0 {
+		return 0, fmt.Errorf("no candidatures selected")
+	}
+	if strings.TrimSpace(rejectionReason) == "" {
+		return 0, fmt.Errorf("rejection reason is required")
+	}
+	sent := 0
+	for _, id := range ids {
+		if err := s.SendEmail(ctx, id, SendEmailRequest{Type: "disapproval", RejectionReason: rejectionReason}); err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Bulk reject failed for candidature")
+			return sent, fmt.Errorf("failed to reject candidature %d: %w", id, err)
+		}
+		sent++
+	}
+	log.Info().Int("count", sent).Str("reason", rejectionReason).Msg("Bulk rejection complete")
+	return sent, nil
+}
+
+// BulkAccept invites several candidatures to their own next pipeline step
+// with ONE shared payload. Type/Step come from the frontend using the exact
+// same mapping as the single-send modal, so each row goes through the
+// identical SendEmail path (same template, same links handling, same audit).
+// All ids must share the same current step, otherwise the template would
+// be ambiguous.
+func (s *CandidatureService) BulkAccept(ctx context.Context, ids []int, req BulkAcceptRequest) (int, error) {
+	if len(ids) == 0 {
+		return 0, fmt.Errorf("no candidatures selected")
+	}
+	if strings.TrimSpace(req.Type) == "" {
+		return 0, fmt.Errorf("email type is required")
+	}
+	expectedStep := -1
+	for _, id := range ids {
+		c, err := s.getStoredByID(ctx, id)
+		if err != nil {
+			return 0, err
+		}
+		if expectedStep == -1 {
+			expectedStep = currentIndex(c)
+		} else if currentIndex(c) != expectedStep {
+			return 0, fmt.Errorf("all selected candidatures must be in the same pipeline step")
+		}
+	}
+	sent := 0
+	for _, id := range ids {
+		single := SendEmailRequest{
+			Type:           req.Type,
+			Step:           req.Step,
+			QuizLink:       req.QuizLink,
+			MeetingLink:    req.MeetingLink,
+			F2FMeetingLink: req.F2FMeetingLink,
+			InterviewDate:  req.InterviewDate,
+			InterviewTime:  req.InterviewTime,
+			StartDate:      req.StartDate,
+			Body:           req.Body,
+		}
+		if err := s.SendEmail(ctx, id, single); err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Bulk accept failed for candidature")
+			return sent, fmt.Errorf("failed to invite candidature %d: %w", id, err)
+		}
+		sent++
+	}
+	log.Info().Int("count", sent).Msg("Bulk accept complete")
+	return sent, nil
 }
 
 // GetPipeline retourne, pour chacune des 5 étapes, les compteurs
@@ -1084,7 +1162,13 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 		query = query.Where("cnd.step = ?", params.Step)
 	}
 
-	err := query.Order("cnd.id DESC").Scan(ctx)
+	if sort := scoreSortClause(params.ScoreSortStep, params.ScoreSortDirection); sort != "" {
+		query = query.Order(sort)
+	} else {
+		query = query.Order("cnd.id DESC")
+	}
+
+	err := query.Scan(ctx)
 
 	headers := []string{"Step", "Type", "Full Name 1", "Full Name 2", "Project", "Start Date"}
 	pdfWidths := []float64{35, 25, 55, 55, 75, 32}

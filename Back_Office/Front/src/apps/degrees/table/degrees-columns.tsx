@@ -98,9 +98,9 @@ export function useDegreeColumns(): ColumnDef<Degree>[] {
               setCurrentDegreeId(data.id);
               setOpenDegree(DialogEnum.BLOCK);
             }}
-            canView={modulePermissions.degrees.canView}
-            canEdit={modulePermissions.degrees.canUpdate}
-            canDelete={modulePermissions.degrees.canDelete}
+            canView={modulePermissions.settings.canView}
+            canEdit={modulePermissions.settings.canUpdate}
+            canDelete={modulePermissions.settings.canUpdate}
           />
         );
       },

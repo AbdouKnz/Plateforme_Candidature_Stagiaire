@@ -17,7 +17,7 @@ export function QuickActions() {
     <Card className="border-border/40 rounded-2xl shadow-sm fade-in">
       <CardHeader className="px-6 pt-6 pb-0">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]">
             <Zap className="size-5" />
           </div>
           <div>
@@ -34,8 +34,8 @@ export function QuickActions() {
               variant={action.variant}
               className={`h-auto flex-col items-center gap-2.5 py-5 rounded-xl transition-all duration-200 hover:scale-[1.03] fade-in ${
                 action.variant === "default"
-                  ? "bg-violet-600 hover:bg-violet-700 text-white shadow-sm hover:shadow-md"
-                  : "border-border/50 hover:border-violet-200 dark:hover:border-violet-800 hover:bg-violet-50/50 dark:hover:bg-violet-500/5"
+                  ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md"
+                  : "border-border/50 hover:border-primary/30 dark:hover:border-primary/40 hover:bg-primary/5 dark:hover:bg-primary/10"
               }`}
               style={{ animationDelay: `${index * 60}ms` }}
             >

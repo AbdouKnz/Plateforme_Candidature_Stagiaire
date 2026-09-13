@@ -220,11 +220,11 @@ export function CandidaturesPerDay() {
             >
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#A78BFA" />
-                  <stop offset="100%" stopColor="#7C3AED" />
+                  <stop offset="0%" stopColor="#12b9da" />
+                  <stop offset="100%" stopColor="#1d7cc7" />
                 </linearGradient>
                 <filter id="barShadow">
-                  <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#7C3AED" floodOpacity="0.18" />
+                  <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#1d7cc7" floodOpacity="0.18" />
                 </filter>
               </defs>
 

@@ -9,11 +9,14 @@ import { getMailConfig, updateMailConfig, testMailConfig } from "@/service/mail-
 import { useState, useEffect } from "react";
 import { AlertEnum } from "@/models/alert-model";
 import { useAlertStore } from "@/stores/alert-store";
+import { usePermissions } from "@/hooks/use-permissions";
 
 export function MailConfigForm() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { showAlert } = useAlertStore();
+  const { modulePermissions } = usePermissions();
+  const canEditMailConfig = modulePermissions.settings.canUpdate;
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ host: "", port: 587, username: "", password: "", from: "", from_name: "" });
 
@@ -64,11 +67,11 @@ export function MailConfigForm() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="host">SMTP Host</Label>
-              <Input id="host" value={form.host} onChange={e => set("host", e.target.value)} placeholder="smtp.example.com" />
+              <Input id="host" value={form.host} onChange={e => set("host", e.target.value)} placeholder="smtp.example.com" disabled={!canEditMailConfig} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="port">Port</Label>
-              <Input id="port" type="number" value={form.port} onChange={e => set("port", parseInt(e.target.value) || 0)} placeholder="587" />
+              <Input id="port" type="number" value={form.port} onChange={e => set("port", parseInt(e.target.value) || 0)} placeholder="587" disabled={!canEditMailConfig} />
             </div>
           </div>
         </Card>
@@ -84,12 +87,12 @@ export function MailConfigForm() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
-              <Input id="username" value={form.username} onChange={e => set("username", e.target.value)} placeholder="user@example.com" />
+              <Input id="username" value={form.username} onChange={e => set("username", e.target.value)} placeholder="user@example.com" disabled={!canEditMailConfig} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? "text" : "password"} value={form.password} onChange={e => set("password", e.target.value)} placeholder="••••••••" />
+                <Input id="password" type={showPassword ? "text" : "password"} value={form.password} onChange={e => set("password", e.target.value)} placeholder="••••••••" disabled={!canEditMailConfig} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
@@ -110,22 +113,24 @@ export function MailConfigForm() {
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="from">From Email</Label>
-            <Input id="from" value={form.from} onChange={e => set("from", e.target.value)} placeholder="noreply@example.com" />
+            <Input id="from" value={form.from} onChange={e => set("from", e.target.value)} placeholder="noreply@example.com" disabled={!canEditMailConfig} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="from_name">From Name</Label>
-            <Input id="from_name" value={form.from_name} onChange={e => set("from_name", e.target.value)} placeholder="no-reply" />
+            <Input id="from_name" value={form.from_name} onChange={e => set("from_name", e.target.value)} placeholder="no-reply" disabled={!canEditMailConfig} />
           </div>
         </div>
       </Card>
 
-      {/* Actions */}
-      <div className="flex justify-end">
-        <Button type="button" onClick={handleTestAndSave} disabled={combinedMutation.isPending}>
-          {combinedMutation.isPending ? <Loader2 className="size-4 animate-spin me-1.5" /> : null}
-          {combinedMutation.isPending ? (t("testing") || "Testing...") : (t("test_save") || "Test & Save")}
-        </Button>
-      </div>
+      {/* Actions — edit access only */}
+      {canEditMailConfig && (
+        <div className="flex justify-end">
+          <Button type="button" onClick={handleTestAndSave} disabled={combinedMutation.isPending}>
+            {combinedMutation.isPending ? <Loader2 className="size-4 animate-spin me-1.5" /> : null}
+            {combinedMutation.isPending ? (t("testing") || "Testing...") : (t("test_save") || "Test & Save")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

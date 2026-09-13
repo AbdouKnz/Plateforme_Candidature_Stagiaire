@@ -98,9 +98,9 @@ export function useProfileColumns(): ColumnDef<Profile>[] {
               setCurrentProfileId(data.id);
               setOpenProfile(DialogEnum.BLOCK);
             }}
-            canView={modulePermissions.profiles.canView}
-            canEdit={modulePermissions.profiles.canUpdate}
-            canDelete={modulePermissions.profiles.canDelete}
+            canView={modulePermissions.settings.canView}
+            canEdit={modulePermissions.settings.canUpdate}
+            canDelete={modulePermissions.settings.canUpdate}
           />
         );
       },

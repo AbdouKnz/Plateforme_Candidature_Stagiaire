@@ -28,7 +28,7 @@ const badgeVariants = cva(
           'bg-[var(--color-success-accent,var(--color-green-500))] text-[var(--color-success-foreground,var(--color-white))]',
         warning:
           'bg-[var(--color-warning-accent,var(--color-yellow-500))] text-[var(--color-warning-foreground,var(--color-white))]',
-        info: 'bg-[var(--color-info-accent,var(--color-violet-500))] text-[var(--color-info-foreground,var(--color-white))]',
+        info: 'bg-[var(--color-info-accent,var(--color-sky-500))] text-[var(--color-info-foreground,var(--color-white))]',
         outline: 'bg-transparent border border-border text-secondary-foreground',
         destructive: 'bg-destructive text-destructive-foreground',
       },
@@ -81,7 +81,7 @@ const badgeVariants = cva(
         variant: 'info',
         appearance: 'light',
         className:
-          'text-[var(--color-info-accent,var(--color-violet-700))] bg-[var(--color-info-soft,var(--color-violet-100))] dark:bg-[var(--color-info-soft,var(--color-violet-950))] dark:text-[var(--color-info-soft,var(--color-violet-400))]',
+          'text-[var(--color-info-accent,var(--color-sky-700))] bg-[var(--color-info-soft,var(--color-sky-100))] dark:bg-[var(--color-info-soft,var(--color-sky-950))] dark:text-[var(--color-info-soft,var(--color-sky-400))]',
       },
       {
         variant: 'destructive',
@@ -112,7 +112,7 @@ const badgeVariants = cva(
         variant: 'info',
         appearance: 'outline',
         className:
-          'text-[var(--color-info-accent,var(--color-violet-700))] border-[var(--color-info-soft,var(--color-violet-100))] bg-[var(--color-info-soft,var(--color-violet-50))] dark:bg-[var(--color-info-soft,var(--color-violet-950))] dark:border-[var(--color-info-soft,var(--color-violet-900))] dark:text-[var(--color-info-soft,var(--color-violet-400))]',
+          'text-[var(--color-info-accent,var(--color-sky-700))] border-[var(--color-info-soft,var(--color-sky-100))] bg-[var(--color-info-soft,var(--color-sky-50))] dark:bg-[var(--color-info-soft,var(--color-sky-950))] dark:border-[var(--color-info-soft,var(--color-sky-900))] dark:text-[var(--color-info-soft,var(--color-sky-400))]',
       },
       {
         variant: 'destructive',
@@ -144,7 +144,7 @@ const badgeVariants = cva(
       {
         variant: 'info',
         appearance: 'ghost',
-        className: 'text-[var(--color-info-accent,var(--color-violet-500))]',
+        className: 'text-[var(--color-info-accent,var(--color-sky-500))]',
       },
       {
         variant: 'destructive',

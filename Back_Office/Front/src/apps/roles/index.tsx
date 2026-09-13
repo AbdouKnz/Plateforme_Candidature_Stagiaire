@@ -76,6 +76,7 @@ export function Roles() {
             columns={columns}
             toolbarProps={toolbarProps}
             selectedRowId={selectedRoleId}
+            getRowId={(row) => row.role_id}
           />
         </div>
       </Main>

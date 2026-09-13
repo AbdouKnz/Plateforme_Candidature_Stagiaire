@@ -5,7 +5,8 @@
 @custom-variant fine-hover (@media (hover: hover) and (pointer: fine) &);
 
 @theme inline {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Poppins', ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   --color-ring: var(--ring);
   --color-input: var(--input);
@@ -36,47 +37,55 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(0.92 0.05 300);
-  --foreground: oklch(0.14 0.01 290);
-  --card: oklch(0.94 0.035 300);
-  --card-foreground: oklch(0.14 0.01 290);
-  --popover: oklch(0.94 0.035 300);
-  --popover-foreground: oklch(0.14 0.01 290);
-  --primary: oklch(0.45 0.28 290);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.58 0.28 290);
-  --secondary-foreground: oklch(0.99 0 0);
-  --muted: oklch(0.94 0.035 300);
-  --muted-foreground: oklch(0.5 0.02 290);
-  --accent: oklch(0.68 0.22 290);
-  --accent-foreground: oklch(0.14 0.01 290);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.82 0.08 300);
-  --input: oklch(0.82 0.08 300);
-  --ring: oklch(0.45 0.28 290);
+
+  /* Brand palette */
+  --color-primary: #1d7cc7;
+  --color-accent: #12b9da;
+  --color-secondary: #647988;
+  --color-white: #ffffff;
+  --color-text: #24243c;
+
+  --background: #ffffff;
+  --foreground: #24243c;
+  --card: #ffffff;
+  --card-foreground: #24243c;
+  --popover: #ffffff;
+  --popover-foreground: #24243c;
+  --primary: #1d7cc7;
+  --primary-foreground: #ffffff;
+  --secondary: #647988;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f4f8;
+  --muted-foreground: #647988;
+  --accent: #12b9da;
+  --accent-foreground: #24243c;
+  --destructive: #d64545;
+  --border: #dce3ea;
+  --input: #c9d4df;
+  --ring: #1d7cc7;
   --radius: 0.75rem;
 }
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.2 0.08 300);
-  --foreground: oklch(0.96 0.02 300);
-  --card: oklch(0.25 0.07 300);
-  --card-foreground: oklch(0.96 0.02 300);
-  --popover: oklch(0.25 0.07 300);
-  --popover-foreground: oklch(0.96 0.02 300);
-  --primary: oklch(0.68 0.26 300);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.68 0.22 290);
-  --secondary-foreground: oklch(0.99 0 0);
-  --muted: oklch(0.29 0.06 300);
-  --muted-foreground: oklch(0.7 0.04 300);
-  --accent: oklch(0.7 0.2 300);
-  --accent-foreground: oklch(0.14 0.04 300);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.86 0.1 300 / 18%);
-  --input: oklch(0.86 0.1 300 / 22%);
-  --ring: oklch(0.68 0.26 300);
+  --background: #151a26;
+  --foreground: #e7ebf3;
+  --card: #1b2231;
+  --card-foreground: #e7ebf3;
+  --popover: #1b2231;
+  --popover-foreground: #e7ebf3;
+  --primary: #1d7cc7;
+  --primary-foreground: #ffffff;
+  --secondary: #647988;
+  --secondary-foreground: #ffffff;
+  --muted: #222a3c;
+  --muted-foreground: #93a1b2;
+  --accent: #12b9da;
+  --accent-foreground: #0b2533;
+  --destructive: #e25c55;
+  --border: #2c3650;
+  --input: #222a3c;
+  --ring: #1d7cc7;
 }
 
 @layer base {
@@ -85,6 +94,20 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-weight: 300;
+    line-height: 1.6;
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -168,35 +191,35 @@
   }
 
   .aurora-wave-1 {
-    background: radial-gradient(ellipse 900px 650px at 50% 20%, rgba(139, 92, 246, 0.55) 0%, rgba(167, 139, 250, 0.2) 40%, transparent 70%);
+    background: radial-gradient(ellipse 900px 650px at 50% 20%, rgba(29, 124, 199, 0.4) 0%, rgba(18, 185, 218, 0.15) 40%, transparent 70%);
   }
 
   .aurora-wave-2 {
-    background: radial-gradient(ellipse 700px 450px at 80% 30%, rgba(124, 58, 237, 0.45) 0%, rgba(192, 132, 252, 0.15) 40%, transparent 70%);
+    background: radial-gradient(ellipse 700px 450px at 80% 30%, rgba(29, 124, 199, 0.3) 0%, rgba(29, 124, 199, 0.12) 40%, transparent 70%);
   }
 
   .aurora-wave-3 {
-    background: radial-gradient(ellipse 800px 550px at 20% 60%, rgba(168, 85, 247, 0.4) 0%, rgba(216, 180, 254, 0.15) 40%, transparent 70%);
+    background: radial-gradient(ellipse 800px 550px at 20% 60%, rgba(18, 185, 218, 0.28) 0%, rgba(18, 185, 218, 0.1) 40%, transparent 70%);
   }
 
   .aurora-wave-4 {
-    background: radial-gradient(ellipse 1000px 350px at 60% 80%, rgba(109, 40, 217, 0.35) 0%, rgba(167, 139, 250, 0.12) 40%, transparent 70%);
+    background: radial-gradient(ellipse 1000px 350px at 60% 80%, rgba(36, 36, 60, 0.25) 0%, rgba(100, 121, 136, 0.1) 40%, transparent 70%);
   }
 
   .dark .aurora-wave-1 {
-    background: radial-gradient(ellipse 800px 600px at 50% 20%, rgba(167, 139, 250, 0.45) 0%, transparent 50%);
+    background: radial-gradient(ellipse 800px 600px at 50% 20%, rgba(29, 124, 199, 0.35) 0%, transparent 50%);
   }
 
   .dark .aurora-wave-2 {
-    background: radial-gradient(ellipse 600px 400px at 80% 30%, rgba(192, 132, 252, 0.5) 0%, transparent 50%);
+    background: radial-gradient(ellipse 600px 400px at 80% 30%, rgba(29, 124, 199, 0.4) 0%, transparent 50%);
   }
 
   .dark .aurora-wave-3 {
-    background: radial-gradient(ellipse 700px 500px at 20% 60%, rgba(216, 180, 254, 0.28) 0%, transparent 50%);
+    background: radial-gradient(ellipse 700px 500px at 20% 60%, rgba(18, 185, 218, 0.22) 0%, transparent 50%);
   }
 
   .dark .aurora-wave-4 {
-    background: radial-gradient(ellipse 900px 300px at 60% 80%, rgba(139, 92, 246, 0.35) 0%, transparent 50%);
+    background: radial-gradient(ellipse 900px 300px at 60% 80%, rgba(36, 36, 60, 0.35) 0%, transparent 50%);
   }
 
   .scrollbar-hide {
@@ -208,14 +231,14 @@
   }
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-color: var(--border) transparent;
   }
   .scrollbar-thin::-webkit-scrollbar {
     height: 6px;
     width: 6px;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+    background: var(--border);
     border-radius: 9999px;
   }
   .scrollbar-thin::-webkit-scrollbar-track {

@@ -24,6 +24,7 @@ type Candidature struct {
 	Methode               string `bun:"methode" json:"methode"`
 	StartDate             string `bun:"start_date" json:"start_date"`
 	SubjectName           string `bun:"subject_name" json:"subject_name"`
+	SubjectCode           string `bun:"subject_code,default:''" json:"subject_code"`
 	University            string `bun:"university" json:"university"`
 	University2           string `bun:"university2" json:"university2"`
 	DateApplication       string `bun:"date_application" json:"date_application"`

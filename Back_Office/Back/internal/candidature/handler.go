@@ -200,6 +200,54 @@ func (h *CandidatureHandler) SendEmailHandler(c *gin.Context) {
 	pkg.SuccessL(c, "email_sent_successfully", nil)
 }
 
+func (h *CandidatureHandler) BulkRejectHandler(c *gin.Context) {
+	var req BulkRejectRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pkg.BadRequest(c, err.Error())
+		return
+	}
+
+	if len(req.Ids) == 0 {
+		pkg.BadRequest(c, "ids are required")
+		return
+	}
+	if req.RejectionReason == "" {
+		pkg.BadRequest(c, "rejection_reason is required")
+		return
+	}
+
+	sent, err := h.Service.BulkReject(c.Request.Context(), req.Ids, req.RejectionReason)
+	if err != nil {
+		log.Error().Err(err).Ints("ids", req.Ids).Msg("BulkReject failed")
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	pkg.OK(c, map[string]int{"sent": sent}, nil)
+}
+
+func (h *CandidatureHandler) BulkAcceptHandler(c *gin.Context) {
+	var req BulkAcceptRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pkg.BadRequest(c, err.Error())
+		return
+	}
+
+	if len(req.Ids) == 0 {
+		pkg.BadRequest(c, "ids are required")
+		return
+	}
+
+	sent, err := h.Service.BulkAccept(c.Request.Context(), req.Ids, req)
+	if err != nil {
+		log.Error().Err(err).Ints("ids", req.Ids).Msg("BulkAccept failed")
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	pkg.OK(c, map[string]int{"sent": sent}, nil)
+}
+
 func (h *CandidatureHandler) GetByIDHandler(c *gin.Context) {
 	id, ok := pkg.ParseID(c, "id")
 	if !ok {
@@ -217,15 +265,17 @@ func (h *CandidatureHandler) GetByIDHandler(c *gin.Context) {
 
 func (h *CandidatureHandler) ParseCandidatureParams(c *gin.Context) CandidatureParams {
 	return CandidatureParams{
-		Search:          c.DefaultQuery("search", ""),
-		FileType:        c.DefaultQuery("file_type", "pdf"),
-		FullName:        c.DefaultQuery("full_name", ""),
-		CandidatureType: c.DefaultQuery("candidature_type", ""),
-		Gender:          c.DefaultQuery("gender", ""),
-		Degree:          c.DefaultQuery("degree", ""),
-		SubjectName:     c.DefaultQuery("subject_name", ""),
-		Status:          c.DefaultQuery("status", ""),
-		Step:            c.DefaultQuery("step", ""),
+		Search:            c.DefaultQuery("search", ""),
+		FileType:          c.DefaultQuery("file_type", "pdf"),
+		FullName:          c.DefaultQuery("full_name", ""),
+		CandidatureType:   c.DefaultQuery("candidature_type", ""),
+		Gender:            c.DefaultQuery("gender", ""),
+		Degree:            c.DefaultQuery("degree", ""),
+		SubjectName:       c.DefaultQuery("subject_name", ""),
+		Status:            c.DefaultQuery("status", ""),
+		Step:              c.DefaultQuery("step", ""),
+		ScoreSortStep:     c.DefaultQuery("score_sort_step", ""),
+		ScoreSortDirection: c.DefaultQuery("score_sort_direction", ""),
 	}
 }
 

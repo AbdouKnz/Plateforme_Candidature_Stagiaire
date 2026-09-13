@@ -64,7 +64,7 @@ export function ProfilesActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   const { modulePermissions } = usePermissions();
-  const canUpdateProfile = modulePermissions.profiles.canUpdate;
+  const canUpdateProfile = modulePermissions.settings.canUpdate;
 
   const { mutate: createProfile, isPending: isCreating } = useCreateProfile();
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();

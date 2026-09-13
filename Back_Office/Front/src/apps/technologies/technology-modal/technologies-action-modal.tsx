@@ -64,7 +64,7 @@ export function TechnologiesActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   const { modulePermissions } = usePermissions();
-  const canUpdateTechnology = modulePermissions.technologies.canUpdate;
+  const canUpdateTechnology = modulePermissions.settings.canUpdate;
 
   const { mutate: createTechnology, isPending: isCreating } = useCreateTechnology();
   const { mutate: updateTechnology, isPending: isUpdating } = useUpdateTechnology();

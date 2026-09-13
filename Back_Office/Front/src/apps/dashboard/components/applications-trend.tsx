@@ -52,7 +52,7 @@ export function ApplicationsTrend() {
       <CardHeader className="px-6 pt-6 pb-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]">
               <CalendarDays className="size-5" />
             </div>
             <div>
@@ -111,7 +111,7 @@ export function ApplicationsTrend() {
               dataKey="applications"
               fill="currentColor"
               radius={[6, 6, 0, 0]}
-              className="fill-violet-500 dark:fill-violet-400"
+              className="fill-[#1d7cc7] dark:fill-[#5aa3d8]"
             />
           </BarChart>
         </ResponsiveContainer>

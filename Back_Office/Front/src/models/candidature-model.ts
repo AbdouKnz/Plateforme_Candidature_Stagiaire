@@ -41,6 +41,7 @@ export interface Candidature {
   score_f2f_meeting?: number;
   score_final_decision?: number;
   notes?: string;
+  rejection_reason?: string;
   created_at: string;
   updated_at: string;
 }
@@ -53,6 +54,9 @@ export interface CandidatureQueryParams {
   gender?: string;
   degree?: string;
   subject_name?: string;
+  score_sort?: string;
+  score_sort_step?: string;
+  score_sort_direction?: string;
 }
 
 export interface RejectionReason {

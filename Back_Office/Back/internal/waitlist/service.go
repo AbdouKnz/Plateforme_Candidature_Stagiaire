@@ -145,11 +145,7 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 		}
 
 		for _, sub := range subs {
-			body := template.Body
-			body = strings.ReplaceAll(body, "{{NomCandidat}}", sub.Email)
-			body = strings.ReplaceAll(body, "{{PlateformeLien}}", frontOfficeURL)
-			body = strings.ReplaceAll(body, "{{NomEntreprise}}", "Asteroidea")
-			body = strings.ReplaceAll(body, "{{EmailEntreprise}}", smtpCfg.From)
+			body := strings.ReplaceAll(template.Body, "[Link]", frontOfficeURL)
 
 			email := mailPkg.Email{
 				To:      []string{sub.Email},

@@ -9,7 +9,7 @@ export const useProfileToolbarProps = () => {
   const { setOpenProfile, setQueryParams } = useProfilesStore();
   const { modulePermissions } = usePermissions();
 
-  const canCreateProfile = modulePermissions.profiles?.canCreate;
+  const canCreateProfile = modulePermissions.settings?.canUpdate;
 
   return {
     tableSearchProps: {

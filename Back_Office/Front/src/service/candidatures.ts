@@ -5,6 +5,20 @@ import type { FileType } from "@/models/export-model";
 
 const CANDIDATURE_ENDPOINT = `/candidatures`;
 
+// The filter UI collects score sort as a single combined value "step:direction".
+// Translate it into the two query params the backend expects.
+const toBackendSort = (params?: CandidatureQueryParams): CandidatureQueryParams | undefined => {
+  if (!params) return params;
+  const result = { ...params };
+  if (result.score_sort && result.score_sort.includes(":")) {
+    const [score_sort_step, score_sort_direction] = result.score_sort.split(":");
+    delete result.score_sort;
+    result.score_sort_step = score_sort_step;
+    result.score_sort_direction = score_sort_direction;
+  }
+  return result;
+};
+
 export const getRecentCandidatures = async (): Promise<Candidature[]> => {
   const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/recent");
   return response?.data?.data;
@@ -18,7 +32,7 @@ export const getPipeline = async (): Promise<PipelineStage[]> => {
 };
 
 export const getCandidatures = async (params?: CandidatureQueryParams): Promise<Candidature[]> => {
-  const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/", { params });
+  const response = await axiosApi.get(CANDIDATURE_ENDPOINT + "/", { params: toBackendSort(params) });
   return response?.data?.data;
 };
 
@@ -93,8 +107,31 @@ export const getRejectionReasons = async (): Promise<Record<string, RejectionRea
   return response?.data?.data;
 };
 
+export const bulkRejectEmails = async (ids: number[], rejectionReason: string): Promise<{ sent: number }> => {
+  const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/bulk-reject`, { ids, rejection_reason: rejectionReason });
+  return response?.data?.data;
+};
+
+export interface BulkAcceptPayload {
+  ids: number[];
+  type: string;
+  step?: string;
+  quiz_link?: string;
+  meeting_link?: string;
+  f2f_meeting_link?: string;
+  interview_date?: string;
+  interview_time?: string;
+  start_date?: string;
+  body?: string;
+}
+
+export const bulkAcceptEmails = async (payload: BulkAcceptPayload): Promise<{ sent: number }> => {
+  const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/bulk-accept`, payload);
+  return response?.data?.data;
+};
+
 export const exportCandidatures = async (fileType: FileType, params?: CandidatureQueryParams): Promise<void> => {
-  const queryParams = new URLSearchParams(params as Record<string, string>).toString();
+  const queryParams = new URLSearchParams(toBackendSort(params) as Record<string, string>).toString();
   const url = `${CANDIDATURE_ENDPOINT}/export?file_type=${fileType}${queryParams ? `&${queryParams}` : ""}`;
   const response = await axiosApi.post(url, null, { responseType: "blob" });
   const contentDisposition = response.headers["content-disposition"];

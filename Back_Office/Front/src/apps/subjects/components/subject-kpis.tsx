@@ -19,14 +19,14 @@ import { useCandidatures } from "@/hooks/use-candidatures";
 
 // Maximally distinct categorical palette so every data item gets its own color.
 const STAT_COLORS = [
-  "bg-blue-600",
+  "bg-[#1d7cc7]",
   "bg-orange-500",
   "bg-emerald-500",
   "bg-rose-500",
-  "bg-violet-500",
+  "bg-[#12b9da]",
   "bg-amber-500",
   "bg-teal-500",
-  "bg-fuchsia-500",
+  "bg-sky-500",
   "bg-cyan-500",
   "bg-lime-600",
   "bg-indigo-500",
@@ -251,7 +251,7 @@ export function SubjectKpis() {
         </p>
       ) : (
         <Card className="relative w-full overflow-hidden rounded-xl border-border/50 shadow-lg transition-all hover:shadow-xl">
-          <div className="h-0.5 w-full bg-gradient-to-r from-blue-600 via-emerald-500 to-orange-500" />
+          <div className="h-0.5 w-full bg-gradient-to-r from-[#1d7cc7] via-[#12b9da] to-[#647988]" />
 
           <CardHeader className="border-b border-border/40 py-3 pr-52">
             <div className="flex min-w-0 items-center gap-2.5">

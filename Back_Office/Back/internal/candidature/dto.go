@@ -119,6 +119,7 @@ type CandidatureResponse struct {
 	ScoreF2FMeeting       int     `json:"score_f2f_meeting"`
 	ScoreFinalDecision    int     `json:"score_final_decision"`
 	Notes                 string  `json:"notes"`
+	RejectionReason       string  `json:"rejection_reason"`
 	CreatedAt             string  `json:"created_at"`
 	UpdatedAt             string  `json:"updated_at"`
 }
@@ -133,6 +134,11 @@ type CandidatureParams struct {
 	SubjectName     string `json:"subject_name" form:"subject_name"`
 	Status          string `json:"status" form:"status"`
 	Step            string `json:"step" form:"step"`
+	// ScoreSortStep picks which step's score column orders the list
+	// (cv_screening | online_quiz | online_meeting | f2f_meeting | final_decision).
+	ScoreSortStep string `json:"score_sort_step" form:"score_sort_step"`
+	// ScoreSortDirection is "asc" or "desc" (default "asc").
+	ScoreSortDirection string `json:"score_sort_direction" form:"score_sort_direction"`
 }
 
 type SendEmailRequest struct {
@@ -148,6 +154,33 @@ type SendEmailRequest struct {
 	// Body is an optional override. When non-empty it is used as-is instead
 	// of the template-generated body, so the HR can edit the email content.
 	Body string `json:"body"`
+}
+
+// BulkRejectRequest lets HR reject several candidatures at once with a single
+// rejection reason. One rejection email is sent per candidature (one per
+// member for pairs, even when both addresses are identical).
+type BulkRejectRequest struct {
+	Ids             []int  `json:"ids" binding:"required"`
+	RejectionReason string `json:"rejection_reason" binding:"required"`
+}
+
+// BulkAcceptRequest invites several candidatures to their next pipeline
+// step at once. The frontend shows ONE preview card (first candidature +
+// shared fields like links/date) and sends the same payload to every id.
+// Type/Step are the EXACT same values the single-send modal computes
+// (step-dependent template: online_quiz / online_meeting / f2f_meeting /
+// final_decision / acceptance+step), so bulk and single send identical mails.
+type BulkAcceptRequest struct {
+	Ids            []int  `json:"ids" binding:"required"`
+	Type           string `json:"type" binding:"required"`
+	Step           string `json:"step,omitempty"`
+	QuizLink       string `json:"quiz_link,omitempty"`
+	MeetingLink    string `json:"meeting_link,omitempty"`
+	F2FMeetingLink string `json:"f2f_meeting_link,omitempty"`
+	InterviewDate  string `json:"interview_date,omitempty"`
+	InterviewTime  string `json:"interview_time,omitempty"`
+	StartDate      string `json:"start_date,omitempty"`
+	Body           string `json:"body,omitempty"`
 }
 
 type EmailPreviewResponse struct {
@@ -223,6 +256,7 @@ func ToResponse(c *domain.Candidature) CandidatureResponse {
 		ScoreF2FMeeting:       c.ScoreF2FMeeting,
 		ScoreFinalDecision:    c.ScoreFinalDecision,
 		Notes:                 c.Notes,
+		RejectionReason:       c.RejectionReason,
 		CreatedAt:             c.CreatedAt,
 		UpdatedAt:             c.UpdatedAt,
 	}

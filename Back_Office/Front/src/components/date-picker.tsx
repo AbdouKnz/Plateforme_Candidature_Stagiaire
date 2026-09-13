@@ -76,6 +76,10 @@ export function DatePicker({
           fromYear={fromYear}
           toYear={toYear}
           disabled={(date: Date) => {
+            if (fromDate) {
+              const from = new Date(fromDate.toDateString())
+              if (date < from) return true
+            }
             if (disablePast && date < today) return true
             if (disableWeekends) {
               const day = date.getDay()

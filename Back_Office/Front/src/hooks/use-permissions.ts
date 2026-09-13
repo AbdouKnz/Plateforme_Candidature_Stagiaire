@@ -117,35 +117,41 @@ export function usePermissions() {
       canUpdate: helpers.canUpdate("payments"),
       canDelete: helpers.canDelete("payments"),
     },
+    // Consolidated Settings permissions (RBAC): every Settings submodule
+    // (degrees, technologies, profiles, durations, types, email templates,
+    // mail config, front office) is governed by the single `settings` module.
+    // VIEW = read-only, EDIT = full access (create/update/delete).
+    // These aliases are kept so any leftover consumer still enforces `settings`;
+    // settings pages should use `modulePermissions.settings` directly.
     degrees: {
-      canView: helpers.canAccess(ModuleEnum.Degrees),
-      canCreate: helpers.canCreate(ModuleEnum.Degrees),
-      canUpdate: helpers.canUpdate(ModuleEnum.Degrees),
-      canDelete: helpers.canDelete(ModuleEnum.Degrees),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
     technologies: {
-      canView: helpers.canAccess(ModuleEnum.Technologies),
-      canCreate: helpers.canCreate(ModuleEnum.Technologies),
-      canUpdate: helpers.canUpdate(ModuleEnum.Technologies),
-      canDelete: helpers.canDelete(ModuleEnum.Technologies),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
     profiles: {
-      canView: helpers.canAccess(ModuleEnum.Profiles),
-      canCreate: helpers.canCreate(ModuleEnum.Profiles),
-      canUpdate: helpers.canUpdate(ModuleEnum.Profiles),
-      canDelete: helpers.canDelete(ModuleEnum.Profiles),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
     durations: {
-      canView: helpers.canAccess(ModuleEnum.Durations),
-      canCreate: helpers.canCreate(ModuleEnum.Durations),
-      canUpdate: helpers.canUpdate(ModuleEnum.Durations),
-      canDelete: helpers.canDelete(ModuleEnum.Durations),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
     types: {
-      canView: helpers.canAccess(ModuleEnum.Types),
-      canCreate: helpers.canCreate(ModuleEnum.Types),
-      canUpdate: helpers.canUpdate(ModuleEnum.Types),
-      canDelete: helpers.canDelete(ModuleEnum.Types),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
     subjects: {
       canView: helpers.canAccess(ModuleEnum.Subjects),
@@ -160,10 +166,10 @@ export function usePermissions() {
       canDelete: helpers.canDelete(ModuleEnum.Candidatures),
     },
     email_templates: {
-      canView: helpers.canAccess(ModuleEnum.EmailTemplates),
-      canCreate: helpers.canCreate(ModuleEnum.EmailTemplates),
-      canUpdate: helpers.canUpdate(ModuleEnum.EmailTemplates),
-      canDelete: helpers.canDelete(ModuleEnum.EmailTemplates),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
     settings: {
       canView: helpers.canAccess(ModuleEnum.Settings),
@@ -172,10 +178,10 @@ export function usePermissions() {
       canDelete: helpers.canDelete(ModuleEnum.Settings),
     },
     frontOfficeMessages: {
-      canView: helpers.canAccess(ModuleEnum.FrontOfficeMessages),
-      canCreate: helpers.canCreate(ModuleEnum.FrontOfficeMessages),
-      canUpdate: helpers.canUpdate(ModuleEnum.FrontOfficeMessages),
-      canDelete: helpers.canDelete(ModuleEnum.FrontOfficeMessages),
+      canView: helpers.canAccess(ModuleEnum.Settings),
+      canCreate: helpers.canUpdate(ModuleEnum.Settings),
+      canUpdate: helpers.canUpdate(ModuleEnum.Settings),
+      canDelete: helpers.canUpdate(ModuleEnum.Settings),
     },
      pos: {
       canView: helpers.canAccess("pos"),

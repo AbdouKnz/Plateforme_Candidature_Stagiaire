@@ -10,6 +10,7 @@ import { useTranslation } from "@/context/language-context"
 interface SuccessScreenProps {
   fullName: string
   email: string
+  email2?: string
   onReset: () => void
 }
 
@@ -77,7 +78,7 @@ function SuccessIllustration() {
   )
 }
 
-export function SuccessScreen({ fullName, email, onReset }: SuccessScreenProps) {
+export function SuccessScreen({ fullName, email, email2, onReset }: SuccessScreenProps) {
   const t = useTranslation()
   const firstName = fullName.trim().split(" ")[0] || "there"
 
@@ -110,9 +111,16 @@ export function SuccessScreen({ fullName, email, onReset }: SuccessScreenProps) 
               <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 {t("success.confirmationSentTo")}
               </span>
-              <span className="truncate text-sm font-semibold text-foreground">
-                {email}
-              </span>
+              {email2 ? (
+                <span className="flex min-w-0 flex-col gap-0.5 break-words text-sm font-semibold leading-snug text-foreground">
+                  <span>{email}</span>
+                  <span>{email2}</span>
+                </span>
+              ) : (
+                <span className="truncate text-sm font-semibold text-foreground">
+                  {email}
+                </span>
+              )}
             </div>
           </div>
 

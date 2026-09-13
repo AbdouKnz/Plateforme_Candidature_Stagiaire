@@ -14,15 +14,14 @@ func TechnologiesRoutes(r *gin.RouterGroup, db *bun.DB) {
 
 	technologyGroup := r.Group("/technologies")
 	technologyGroup.Use(middleware.AuthMiddleware())
+	// Consolidated Settings permission: GET requires "view" or higher,
+	// POST/PUT/DELETE require "edit" (enforced via the settings mask).
+	technologyGroup.Use(middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		technologyGroup.GET("/", handler.GetAllTechnologiesHandler)
-
-		technologyGroup.Use(middleware.PermissionMiddleware(pkg.TECHNOLOGIES_PERMISSIONS))
-		{
-			technologyGroup.POST("/", handler.CreateTechnologyHandler)
-			technologyGroup.GET("/:id", handler.GetTechnologyByIDHandler)
-			technologyGroup.DELETE("/:id", handler.DeleteTechnologyHandler)
-			technologyGroup.PUT("/:id", handler.UpdateTechnologyHandler)
-		}
+		technologyGroup.POST("/", handler.CreateTechnologyHandler)
+		technologyGroup.GET("/:id", handler.GetTechnologyByIDHandler)
+		technologyGroup.DELETE("/:id", handler.DeleteTechnologyHandler)
+		technologyGroup.PUT("/:id", handler.UpdateTechnologyHandler)
 	}
 }

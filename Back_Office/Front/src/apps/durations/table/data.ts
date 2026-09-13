@@ -9,7 +9,7 @@ export const useDurationToolbarProps = () => {
   const { setOpenDuration, setQueryParams } = useDurationsStore();
   const { modulePermissions } = usePermissions();
 
-  const canCreateDuration = modulePermissions.durations?.canCreate;
+  const canCreateDuration = modulePermissions.settings?.canUpdate;
 
   return {
     tableSearchProps: {

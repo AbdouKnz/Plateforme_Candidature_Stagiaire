@@ -31,10 +31,10 @@ const badgeVariants = cva(
           "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 border border-yellow-400 text-yellow-600",
 
         blue: "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 bg-[#3B82F6] text-white dark:bg-blue-600/10 dark:text-blue-400 dark:border-blue-500/50",
-        info: "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 bg-[#BA85FF] text-white dark:bg-purple-600/10 dark:text-purple-400 dark:border-purple-500/50",
+        info: "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 bg-[#1d7cc7] text-white dark:bg-[#1d7cc7]/10 dark:text-[#5aa3d8] dark:border-[#1d7cc7]/50",
 
         info_outline:
-          "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 border border-[#BA85FF] text-purple-600",
+          "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 border border-[#1d7cc7] text-[#1d7cc7]",
 
         login:
           "text-xs font-medium px-3 py-1 rounded-b-2xl rounded-tl-2xl inline-flex items-center gap-1 border-gray-500/30 bg-gray-100 text-gray-700 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-200 [a&]:hover:bg-gray-200 [a&]:hover:text-gray-800 dark:[a&]:hover:bg-gray-700 dark:[a&]:hover:text-gray-100",

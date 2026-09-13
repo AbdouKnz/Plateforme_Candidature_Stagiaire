@@ -29,7 +29,6 @@ export function EmailLogs() {
 
   const typeItems = [
     { label: t("email_template_type_confirmation"), value: "confirmation" },
-    { label: t("email_template_type_acceptance"), value: "acceptance" },
     { label: t("email_template_type_online_quiz"), value: "online_quiz" },
     { label: t("email_template_type_online_meeting"), value: "online_meeting" },
     { label: t("email_template_type_f2f_meeting"), value: "f2f_meeting" },

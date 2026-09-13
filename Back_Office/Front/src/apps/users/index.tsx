@@ -130,6 +130,7 @@ export function Users() {
             setQueryParams={setQueryParams}
             pagination={pagination}
             selectedRowId={selectedUserId}
+            getRowId={(row) => row.user_id}
           />
         </div>
       </Main>

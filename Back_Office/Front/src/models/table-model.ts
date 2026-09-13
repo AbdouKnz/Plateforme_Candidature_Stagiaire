@@ -1,5 +1,6 @@
-import { ApiSearchParams } from "./api";
-import { FileType } from "./export-model";
+import type { ReactNode } from 'react'
+import { ApiSearchParams } from './api'
+import { FileType } from './export-model'
 
 export interface TableSearchProps {
   placeholder?: string;
@@ -41,7 +42,7 @@ export interface ToolbarProps {
 }
 
 export interface FilterItem {
-  label: string;
+  label: ReactNode;
   value: string;
 }
 

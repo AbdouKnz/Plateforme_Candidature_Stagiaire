@@ -215,6 +215,7 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				methode VARCHAR(50) DEFAULT '',
 				start_date VARCHAR(100) DEFAULT '',
 			subject_name VARCHAR(255) DEFAULT '',
+			subject_code VARCHAR(255) DEFAULT '',
 			university VARCHAR(255) DEFAULT '',
 			university2 VARCHAR(255) DEFAULT '',
 			date_application VARCHAR(100) DEFAULT '',
@@ -235,6 +236,8 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				score_online_meeting INT NOT NULL DEFAULT 0,
 				score_f2f_meeting INT NOT NULL DEFAULT 0,
 				score_final_decision INT NOT NULL DEFAULT 0,
+				notes TEXT DEFAULT '',
+				rejection_reason TEXT DEFAULT '',
 				created_at TIMESTAMP DEFAULT current_timestamp,
 				updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 			)
@@ -266,6 +269,7 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS methode VARCHAR(50) DEFAULT '',
 				ADD COLUMN IF NOT EXISTS start_date VARCHAR(100) DEFAULT '',
 			ADD COLUMN IF NOT EXISTS subject_name VARCHAR(255) DEFAULT '',
+			ADD COLUMN IF NOT EXISTS subject_code VARCHAR(255) DEFAULT '',
 			ADD COLUMN IF NOT EXISTS university VARCHAR(255) DEFAULT '',
 			ADD COLUMN IF NOT EXISTS university2 VARCHAR(255) DEFAULT '',
 			ADD COLUMN IF NOT EXISTS date_application VARCHAR(100) DEFAULT '',
@@ -286,6 +290,8 @@ func MigrateCandidatureTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS score_online_meeting INT NOT NULL DEFAULT 0,
 				ADD COLUMN IF NOT EXISTS score_f2f_meeting INT NOT NULL DEFAULT 0,
 				ADD COLUMN IF NOT EXISTS score_final_decision INT NOT NULL DEFAULT 0,
+				ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '',
+				ADD COLUMN IF NOT EXISTS rejection_reason TEXT DEFAULT '',
 				ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT current_timestamp
 		`)
 		if err != nil {
@@ -536,13 +542,44 @@ func MigrateEmailTemplateTable(ctx context.Context, db *bun.DB) error {
 	db.ExecContext(ctx, `ALTER TABLE email_templates DROP COLUMN IF EXISTS confirmation_mail`)
 	db.ExecContext(ctx, `ALTER TABLE email_templates DROP COLUMN IF EXISTS invitation_mail`)
 	db.ExecContext(ctx, `ALTER TABLE email_templates DROP COLUMN IF EXISTS disapproval_mail`)
+
+	// Online Meeting & Face to Face Meeting templates must carry ONLY the
+	// [Link] placeholder (HR sends a meeting link only, no date/time/maps).
+	// These rewrites are idempotent: once the date/time/maps lines are gone,
+	// subsequent runs leave the body untouched. It only touches the lines that
+	// contain the placeholders, so localized surrounding text is preserved.
+	if _, err := db.ExecContext(ctx, `
+		UPDATE email_templates SET body = regexp_replace(
+			regexp_replace(body, '\[[Dd]ate\][^\n]*', 'Meeting link: [Link]', 'g'),
+			'\[[Mm]aps\][^\n]*', '', 'g'
+		) WHERE type = 'Face to Face Meeting'
+	`); err != nil {
+		log.Error().Err(err).Msg("Failed to normalize Face to Face Meeting template placeholders")
+	} else {
+		log.Info().Msg("Normalized Face to Face Meeting template placeholders")
+	}
+
+	if _, err := db.ExecContext(ctx, `
+		UPDATE email_templates SET body = regexp_replace(
+			regexp_replace(
+				regexp_replace(body, '\[[Dd]ate\][^\n]*', '', 'g'),
+				'\[[Tt]ime\][^\n]*', '', 'g'
+			),
+			'\[[Mm]aps\][^\n]*', '', 'g'
+		) WHERE type = 'Online Meeting'
+	`); err != nil {
+		log.Error().Err(err).Msg("Failed to normalize Online Meeting template placeholders")
+	} else {
+		log.Info().Msg("Normalized Online Meeting template placeholders")
+	}
+
 	return nil
 }
 
 func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 	log.Info().Msg("Re-seeding default email templates...")
 
-	defaultTypes := []string{"Acknowledgment of receipt of your application", "CV Screening", "Online Quiz", "online_meeting", "Face to Face Meeting", "Final Decision", "Disapproval", "Reopening"}
+	defaultTypes := []string{"Acknowledgment of receipt of your application", "CV Screening", "Online Quiz", "Online Meeting", "Face to Face Meeting", "Final Decision", "disapproval", "reopening"}
 
 	_, err := db.NewDelete().Model((*domain.EmailTemplate)(nil)).Where("type IN (?)", bun.In(defaultTypes)).Exec(ctx)
 	if err != nil {
@@ -557,7 +594,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "Acknowledgment of receipt of your application",
 			Step:      "",
 			Subject:   "Acknowledgment of receipt of your application",
-			Body:      "Dear {{NomCandidat}},\n\nThank you for your interest in our company.\n\nWe confirm the receipt of your application for the PFE subject {{TitreSujet}}. Your file is currently under review by our team.\n\nWe will contact you as soon as possible to inform you about the next steps of the selection process.\n\nThank you for your trust and we wish you an excellent day.\n\nBest regards,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Body:      "Dear applicant,\n\nThank you for your interest in our company.\n\nWe confirm the receipt of your application for a PFE internship. Your file is currently under review by our team.\n\nWe will contact you as soon as possible to inform you about the next steps of the selection process.\n\nThank you for your trust and we wish you an excellent day.\n\nBest regards,\n\nAsteroidea",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -566,7 +603,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:    "CV Screening",
 			Step:    "CV Screening",
 			Subject: "CV Screening",
-			Body:    "Dear {{NomCandidat}},\n\nCongratulations, your application for {{TitreSujet}} has passed the CV Screening stage.\n\nYou are invited to the next stage.\n\nBest regards,\n\n{{NomEntreprise}}",
+			Body:    "Dear applicant,\n\nCongratulations, your application has passed the CV Screening stage.\n\nYou are invited to the next stage.\n\nBest regards,\n\nAsteroidea",
 
 			Status:    true,
 			CreatedAt: now,
@@ -576,7 +613,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "Online Quiz",
 			Step:      "Online Quiz",
 			Subject:   "Online Quiz",
-			Body:      "Dear {{NomCandidat}},\n\nYou are invited to take the online quiz for {{TitreSujet}}.\n\nQuiz link: {{LienQuiz}}\n\nGood luck!\n\nBest regards,\n\n{{NomEntreprise}}",
+			Body:      "Dear applicant,\n\nYou are invited to take the online quiz.\n\nQuiz link: [Link]\n\nGood luck!\n\nBest regards,\n\nAsteroidea",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -585,7 +622,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "Online Meeting",
 			Step:      "Online Meeting",
 			Subject:   "Online Meeting",
-			Body:      "Dear {{NomCandidat}},\n\nYou are invited to an online meeting for {{TitreSujet}}.\n\n{{LienMeeting}}\n\nBest regards,\n\n{{NomEntreprise}}",
+			Body:      "Dear applicant,\n\nYou are invited to an online meeting.\n\nMeeting link: [Link]\n\nBest regards,\n\nAsteroidea",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -594,7 +631,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "Face to Face Meeting",
 			Step:      "Face to Face Meeting",
 			Subject:   "Face to Face Meeting",
-			Body:      "Dear {{NomCandidat}},\n\nYou are invited to a face-to-face interview for {{TitreSujet}}.\n\nDate: {{DateEntretien}} at {{HeureEntretien}}\n{{LienGoogleMaps}}\n\nBest regards,\n\n{{NomEntreprise}}",
+			Body:      "Dear applicant,\n\nYou are invited to a face-to-face interview.\n\nMeeting link: [Link]\n\nBest regards,\n\nAsteroidea",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -603,7 +640,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "Final Decision",
 			Step:      "Final Decision",
 			Subject:   "Final Decision",
-			Body:      "Dear {{NomCandidat}},\n\nCongratulations! Your application for {{TitreSujet}} has been accepted.\n\nStart date: {{DateDebut}}\n\nWelcome to Asteroidea!\n\nBest regards,\n\n{{NomEntreprise}}",
+			Body:      "Dear applicant,\n\nCongratulations! Your application has been accepted.\n\nStart date: [Date]\n\nWelcome to Asteroidea!\n\nBest regards,",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -612,7 +649,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "disapproval",
 			Step:      "",
 			Subject:   "Rejection of your application",
-			Body:      "Dear {{NomCandidat}},\n\nThank you for the interest you have shown in our company and for the time you devoted to your application for the PFE subject {{TitreSujet}}.\n\nAfter a careful review of the applications received, we regret to inform you that your application has not been selected for this opportunity.\n\nReason for rejection: {{MotifRefus}}\n\nThis decision does not call into question the quality of your profile. The large number of applications has led us to make a selection according to the specific needs of the project.\n\nWe wish you every success in your studies and in your future professional projects.\n\nBest regards,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Body:      "Dear applicant,\n\nThank you for the interest you have shown in our company and for the time you devoted to your application.\n\nAfter a careful review of the applications received, we regret to inform you that your application has not been selected for this opportunity.\n\nReason for rejection: [Reason]\n\nThis decision does not call into question the quality of your profile. The large number of applications has led us to make a selection according to the specific needs of the project.\n\nWe wish you every success in your studies and in your future professional projects.\n\nBest regards,\n\nAsteroidea",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -621,7 +658,7 @@ func SeedDefaultEmailTemplates(ctx context.Context, db *bun.DB) error {
 			Type:      "reopening",
 			Step:      "",
 			Subject:   "Asteroidea applications are open again",
-			Body:      "Dear {{NomCandidat}},\n\nWe are pleased to inform you that our application platform is open again!\n\nYou can now apply to the various PFE subjects offered by our team.\n\nTo submit your application, click on the link below:\n{{PlateformeLien}}\n\nWe look forward to receiving your application and discovering your profile.\n\nBest regards,\n\n{{NomEntreprise}}\n{{ServiceRH}}\n{{EmailEntreprise}}",
+			Body:      "Dear applicant,\n\nWe are pleased to inform you that our application platform is open again!\n\nYou can now apply to the various PFE subjects offered by our team.\n\nTo submit your application, click on the link below:\n[Link]\n\nWe look forward to receiving your application and discovering your profile.\n\nBest regards,\n\nAsteroidea",
 			Status:    true,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -748,6 +785,11 @@ func AddDefaultData(db *bun.DB) error {
 
 	}
 
+	// migrate legacy per-submodule settings permissions onto the consolidated module
+	if err := MigrateSettingsPermissions(context.Background(), db); err != nil {
+		log.Error().Err(err).Msg("Failed to migrate settings permissions")
+	}
+
 	// init user
 	if err := CreateDefaultAdmin(context.Background(), db); err != nil {
 		log.Error().Err(err).Msg("Failed to initialize default users")
@@ -831,23 +873,18 @@ func CreateDefaultAdminRole(ctx context.Context, db *bun.DB) error {
 	if existingRoleCount == 0 {
 		log.Info().Msg("No super admin role found, creating a default one ...")
 
+		// Settings submodules (degrees, technologies, profiles, durations, types,
+		// email templates, mail config, front office) are consolidated under the
+		// single "settings" module (view = read-only, edit = full access).
 		defaultPermissions := map[string]string{
-			pkg.DASHBORD_PERMISSIONS:       "1111",
-			pkg.ROLES_PERMISSIONS:          "1111",
-			pkg.SETTINGS_PERMISSIONS:       "1111",
-			pkg.USERS_PERMISSIONS:          "1111",
-			pkg.AUDITS_PERMISSIONS:         "1111",
-			pkg.DEGREES_PERMISSIONS:        "1111",
-			pkg.TECHNOLOGIES_PERMISSIONS:   "1111",
-			pkg.PROFILES_PERMISSIONS:       "1111",
-			pkg.DURATIONS_PERMISSIONS:      "1111",
-			pkg.TYPES_PERMISSIONS:          "1111",
-			pkg.SUBJECTS_PERMISSIONS:       "1111",
-			pkg.CANDIDATURES_PERMISSIONS:   "1111",
-			pkg.FRONT_OFFICE_MESSAGES:      "1111",
-			pkg.EMAIL_TEMPLATE_PERMISSIONS: "1111",
-			pkg.EMAIL_LOGS_PERMISSIONS:     "1111",
-			pkg.MAIL_CONFIG_PERMISSIONS:    "1111",
+			pkg.DASHBORD_PERMISSIONS:     "1111",
+			pkg.ROLES_PERMISSIONS:        "1111",
+			pkg.SETTINGS_PERMISSIONS:     pkg.SETTINGS_EDIT_PERMISSIONS,
+			pkg.USERS_PERMISSIONS:        "1111",
+			pkg.AUDITS_PERMISSIONS:       "1111",
+			pkg.SUBJECTS_PERMISSIONS:     "1111",
+			pkg.CANDIDATURES_PERMISSIONS: "1111",
+			pkg.EMAIL_LOGS_PERMISSIONS:   "1111",
 		}
 
 		role := &domain.Role{
@@ -881,17 +918,9 @@ func CreateDefaultAdminRole(ctx context.Context, db *bun.DB) error {
 		pkg.SETTINGS_PERMISSIONS,
 		pkg.USERS_PERMISSIONS,
 		pkg.AUDITS_PERMISSIONS,
-		pkg.DEGREES_PERMISSIONS,
-		pkg.TECHNOLOGIES_PERMISSIONS,
-		pkg.PROFILES_PERMISSIONS,
-		pkg.DURATIONS_PERMISSIONS,
-		pkg.TYPES_PERMISSIONS,
 		pkg.SUBJECTS_PERMISSIONS,
 		pkg.CANDIDATURES_PERMISSIONS,
-		pkg.FRONT_OFFICE_MESSAGES,
-		pkg.EMAIL_TEMPLATE_PERMISSIONS,
 		pkg.EMAIL_LOGS_PERMISSIONS,
-		pkg.MAIL_CONFIG_PERMISSIONS,
 	}
 
 	for _, role := range roles {
@@ -910,6 +939,95 @@ func CreateDefaultAdminRole(ctx context.Context, db *bun.DB) error {
 			}
 			log.Info().Int("role_id", role.ID).Str("role_name", role.Name).Msg("Updated all permissions for role")
 		}
+	}
+
+	return nil
+}
+
+// MigrateSettingsPermissions maps legacy per-submodule Settings permissions
+// onto the consolidated "settings" module:
+//   - any write permission (create/update/delete) on ANY settings submodule
+//     (or on settings itself) → "edit" (full access) on "settings"
+//   - only read/view and no write anywhere → "view" (read-only) on "settings"
+//   - none → no "settings" entry
+//
+// Legacy per-submodule keys are removed from each role afterwards.
+func MigrateSettingsPermissions(ctx context.Context, db *bun.DB) error {
+	log.Info().Msg("Migrating legacy settings submodule permissions...")
+
+	var roles []*domain.Role
+	if err := db.NewSelect().Model(&roles).Scan(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to fetch roles for settings migration")
+		return fmt.Errorf("could not fetch roles: %w", err)
+	}
+
+	hasWriteBit := func(mask string) bool {
+		for _, i := range []int{1, 2, 3} {
+			if len(mask) > i && mask[i] == '1' {
+				return true
+			}
+		}
+		return false
+	}
+	hasViewBit := func(mask string) bool {
+		return len(mask) > 0 && mask[0] == '1'
+	}
+
+	for _, role := range roles {
+		if role.Permissions == nil {
+			role.Permissions = map[string]string{}
+		}
+		hasWrite := false
+		hasView := false
+		changed := false
+
+		keys := append(append([]string{}, pkg.SettingsConsolidatedModules...), pkg.SETTINGS_PERMISSIONS)
+		for _, key := range keys {
+			mask, exists := role.Permissions[key]
+			if !exists {
+				continue
+			}
+			if hasWriteBit(mask) {
+				hasWrite = true
+			}
+			if hasViewBit(mask) {
+				hasView = true
+			}
+		}
+
+		for _, key := range pkg.SettingsConsolidatedModules {
+			if _, exists := role.Permissions[key]; exists {
+				delete(role.Permissions, key)
+				changed = true
+			}
+		}
+
+		var want string
+		var wantSet bool
+		if hasWrite {
+			want, wantSet = pkg.SETTINGS_EDIT_PERMISSIONS, true
+		} else if hasView {
+			want, wantSet = pkg.SETTINGS_VIEW_PERMISSIONS, true
+		}
+		current, exists := role.Permissions[pkg.SETTINGS_PERMISSIONS]
+		if wantSet {
+			if !exists || current != want {
+				role.Permissions[pkg.SETTINGS_PERMISSIONS] = want
+				changed = true
+			}
+		} else if exists {
+			delete(role.Permissions, pkg.SETTINGS_PERMISSIONS)
+			changed = true
+		}
+
+		if !changed {
+			continue
+		}
+		if _, err := db.NewUpdate().Model(role).Set("permissions = ?", role.Permissions).Set("updated_at = ?", pkg.GetFormatedLocalTime("datetime")).Where("id = ?", role.ID).Exec(ctx); err != nil {
+			log.Error().Err(err).Int("role_id", role.ID).Msg("Failed to migrate settings permissions for role")
+			return fmt.Errorf("could not migrate role %d: %w", role.ID, err)
+		}
+		log.Info().Int("role_id", role.ID).Str("role_name", role.Name).Msg("Migrated settings permissions for role")
 	}
 
 	return nil
@@ -966,23 +1084,30 @@ func CreateDefaultAdmin(ctx context.Context, db *bun.DB) error {
 
 func InitializeModules(ctx context.Context, db *bun.DB) error {
 	log.Info().Msg("Checking for default modules...")
+	// Settings submodules (degrees, technologies, profiles, durations, types,
+	// email templates, front office messages, mail config) are consolidated
+	// under the single "settings" module (view = read-only, edit = full access).
 	defaultModules := []domain.ModulePermissions{
 		{ModuleName: "dashboard", View: 1, Create: 0, Edit: 0, Delete: 0, ModuleIcon: "IconLayoutDashboard", ModuleIconColor: "text-blue-500"},
 		{ModuleName: "roles", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconShieldLock", ModuleIconColor: "text-purple-500"},
 		{ModuleName: "users", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconUser", ModuleIconColor: "text-green-500"},
 		{ModuleName: "audits", View: 1, Create: 0, Edit: 0, Delete: 0, ModuleIcon: "IconFileSearch", ModuleIconColor: "text-red-500"},
 		{ModuleName: "settings", View: 1, Create: 0, Edit: 1, Delete: 0, ModuleIcon: "IconSettings", ModuleIconColor: "text-gray-600"},
-		{ModuleName: "degrees", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconCapProjecting", ModuleIconColor: "text-yellow-500"},
-		{ModuleName: "technologies", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconDeviceLaptop", ModuleIconColor: "text-cyan-500"},
-		{ModuleName: "profiles", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconIdBadge", ModuleIconColor: "text-orange-500"},
-		{ModuleName: "durations", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconClock", ModuleIconColor: "text-indigo-500"},
-		{ModuleName: "types", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconTags", ModuleIconColor: "text-teal-500"},
 		{ModuleName: "subjects", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconNotebook", ModuleIconColor: "text-rose-500"},
 		{ModuleName: "candidatures", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconFileDescription", ModuleIconColor: "text-blue-500"},
-		{ModuleName: "email_templates", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconMail", ModuleIconColor: "text-purple-500"},
-		{ModuleName: "front_office_messages", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconMessage", ModuleIconColor: "text-pink-500"},
 		{ModuleName: "email_logs", View: 1, Create: 0, Edit: 0, Delete: 0, ModuleIcon: "IconSend", ModuleIconColor: "text-green-500"},
-		{ModuleName: "mail_config", View: 1, Create: 0, Edit: 1, Delete: 0, ModuleIcon: "IconMailForward", ModuleIconColor: "text-sky-500"},
+	}
+
+	// Remove legacy per-submodule Settings entries consolidated into "settings".
+	if _, err := db.NewDelete().Model((*domain.ModulePermissions)(nil)).Where("module_name IN (?)", bun.In(pkg.SettingsConsolidatedModules)).Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to remove legacy settings submodule entries")
+		return fmt.Errorf("could not remove legacy settings modules: %w", err)
+	}
+
+	// Enforce the two-level settings module (view = read-only, edit = full access).
+	if _, err := db.NewUpdate().Model((*domain.ModulePermissions)(nil)).Set("view = ?", 1).Set("create = ?", 0).Set("edit = ?", 1).Set("delete = ?", 0).Where("module_name = ?", pkg.SETTINGS_PERMISSIONS).Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to enforce settings module levels")
+		return fmt.Errorf("could not enforce settings module levels: %w", err)
 	}
 
 	for _, m := range defaultModules {

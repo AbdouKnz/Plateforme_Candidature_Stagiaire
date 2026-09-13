@@ -98,9 +98,9 @@ export function useTechnologyColumns(): ColumnDef<Technology>[] {
               setCurrentTechnologyId(data.id);
               setOpenTechnology(DialogEnum.BLOCK);
             }}
-            canView={modulePermissions.technologies.canView}
-            canEdit={modulePermissions.technologies.canUpdate}
-            canDelete={modulePermissions.technologies.canDelete}
+            canView={modulePermissions.settings.canView}
+            canEdit={modulePermissions.settings.canUpdate}
+            canDelete={modulePermissions.settings.canUpdate}
           />
         );
       },

@@ -74,11 +74,16 @@ function isPairApplicationType(value?: string) {
   return normalized === "pair" || normalized === "binome" || normalized === "par binome"
 }
 
+function RequiredStar() {
+  return <span className="text-destructive">*</span>
+}
+
 export function ApplicationForm() {
   const t = useTranslation()
   const [submitted, setSubmitted] = React.useState<{
     fullName: string
     email: string
+    email2?: string
   } | null>(null)
   const [fileSelectedAt, setFileSelectedAt] = React.useState<Partial<Record<UploadField, string>>>({})
 
@@ -210,7 +215,7 @@ export function ApplicationForm() {
   const applicationTypeSelector = (
     <Controller control={control} name="applicationType" render={({ field }) => (
       <Field data-invalid={!!errors.applicationType}>
-        <FieldLabel className="text-sm font-semibold">{t("label.applicationType")}</FieldLabel>
+        <FieldLabel className="text-sm font-semibold">{t("label.applicationType")}<RequiredStar /></FieldLabel>
         <OptionCards
           name="applicationType"
           ariaLabel={t("label.applicationType")}
@@ -310,6 +315,11 @@ export function ApplicationForm() {
     formData.append("methode", data.workingMethod)
     formData.append("start_date", data.startDate)
     formData.append("subject_name", data.subjects.join(", "))
+    // Stable subject identity for duplicate detection (names can be renamed).
+    const subjectCodes = (data.subjects ?? [])
+      .map((name) => subjects.find((s) => s.name === name)?.code?.trim())
+      .filter((code): code is string => !!code)
+    formData.append("subject_code", subjectCodes.join(", "))
 
     if (data.cv) {
       formData.append("cv", data.cv)
@@ -347,13 +357,29 @@ export function ApplicationForm() {
       toast.success(t("toast.submitted"), {
         description: t("toast.submittedDesc"),
       })
-      setSubmitted({ fullName, email: data.email })
+      setSubmitted({
+        fullName,
+        email: data.email,
+        email2: isPairApplicationType(data.applicationType) ? data.email2?.trim() || undefined : undefined,
+      })
       window.scrollTo({ top: 0, behavior: "smooth" })
     } catch (err) {
       console.error("Submission failed:", err)
-      toast.error("Submission failed", {
-        description: err instanceof Error ? err.message : "Please try again.",
-      })
+      const apiErr = err as Error & { status?: number; code?: string }
+      const rawMessage = apiErr instanceof Error ? apiErr.message : ""
+      const isDuplicate =
+        apiErr?.code === "duplicate_candidature" ||
+        apiErr?.status === 409 ||
+        rawMessage.toLowerCase().includes("already applied")
+      if (isDuplicate) {
+        toast.error(t("toast.duplicate"), {
+          description: t("error.duplicate"),
+        })
+      } else {
+        toast.error(t("toast.submitFailed"), {
+          description: rawMessage || t("toast.submitFailedDesc"),
+        })
+      }
     }
   }
 
@@ -368,6 +394,7 @@ export function ApplicationForm() {
       <SuccessScreen
         fullName={submitted.fullName}
         email={submitted.email}
+        email2={submitted.email2}
         onReset={() => {
           reset()
           setFileSelectedAt({})
@@ -411,6 +438,7 @@ export function ApplicationForm() {
           nextButtonText={t("nav.next")}
           beforeNext={goNext}
           disableStepIndicators={false}
+          stepLabels={[t("stepper.step1"), t("stepper.step2"), t("stepper.step3")]}
           footerClassName={isConfirmStep ? "stepper-footer-hidden" : ""}
         >
           <Step>
@@ -452,18 +480,18 @@ export function ApplicationForm() {
                           <div className={cn("grid grid-cols-1 gap-x-8 gap-y-5", isPair && "lg:grid-cols-2")}>
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.firstName}>
-                                <FieldLabel htmlFor="firstName">{t("label.firstName")}</FieldLabel>
+                                <FieldLabel htmlFor="firstName">{t("label.firstName")}<RequiredStar /></FieldLabel>
                                 <Input id="firstName" placeholder={t("placeholder.firstName")} autoComplete="given-name" maxLength={80} aria-invalid={!!errors.firstName} {...register("firstName")} />
                                 <FieldError errors={[errors.firstName]} />
                               </Field>
                               <Field data-invalid={!!errors.lastName}>
-                                <FieldLabel htmlFor="lastName">{t("label.lastName")}</FieldLabel>
+                                <FieldLabel htmlFor="lastName">{t("label.lastName")}<RequiredStar /></FieldLabel>
                                 <Input id="lastName" placeholder={t("placeholder.lastName")} autoComplete="family-name" maxLength={80} aria-invalid={!!errors.lastName} {...register("lastName")} />
                                 <FieldError errors={[errors.lastName]} />
                               </Field>
                               <Controller control={control} name="gender" render={({ field }) => (
                                 <Field data-invalid={!!errors.gender}>
-                                  <FieldLabel htmlFor="gender">{t("label.gender")}</FieldLabel>
+                                  <FieldLabel htmlFor="gender">{t("label.gender")}<RequiredStar /></FieldLabel>
                                   <Select value={field.value || undefined} onValueChange={field.onChange}>
                                     <SelectTrigger id="gender" aria-invalid={!!errors.gender}>
                                       <SelectValue placeholder={t("placeholder.gender")} />
@@ -482,18 +510,18 @@ export function ApplicationForm() {
                             {isPair && (
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.firstName2}>
-                                <FieldLabel htmlFor="firstName2">{t("label.firstName2")}</FieldLabel>
+                                <FieldLabel htmlFor="firstName2">{t("label.firstName2")}<RequiredStar /></FieldLabel>
                                 <Input id="firstName2" placeholder={t("placeholder.firstName2")} autoComplete="given-name" maxLength={80} aria-invalid={!!errors.firstName2} {...register("firstName2")} />
                                 <FieldError errors={[errors.firstName2]} />
                               </Field>
                               <Field data-invalid={!!errors.lastName2}>
-                                <FieldLabel htmlFor="lastName2">{t("label.lastName2")}</FieldLabel>
+                                <FieldLabel htmlFor="lastName2">{t("label.lastName2")}<RequiredStar /></FieldLabel>
                                 <Input id="lastName2" placeholder={t("placeholder.lastName2")} autoComplete="family-name" maxLength={80} aria-invalid={!!errors.lastName2} {...register("lastName2")} />
                                 <FieldError errors={[errors.lastName2]} />
                               </Field>
                               <Controller control={control} name="gender2" render={({ field }) => (
                                 <Field data-invalid={!!errors.gender2}>
-                                  <FieldLabel htmlFor="gender2">{t("label.gender2")}</FieldLabel>
+                                  <FieldLabel htmlFor="gender2">{t("label.gender2")}<RequiredStar /></FieldLabel>
                                   <Select value={field.value || undefined} onValueChange={field.onChange}>
                                     <SelectTrigger id="gender2" aria-invalid={!!errors.gender2}>
                                       <SelectValue placeholder={t("placeholder.gender")} />
@@ -513,12 +541,12 @@ export function ApplicationForm() {
 
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.email}>
-                                <FieldLabel htmlFor="email">{t("label.email")}</FieldLabel>
-                                <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email} {...register("email")} />
+                                <FieldLabel htmlFor="email">{t("label.email")}<RequiredStar /></FieldLabel>
+                                <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email} {...register("email", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
                                 <FieldError errors={[errors.email]} />
                               </Field>
                               <Field data-invalid={!!errors.phone}>
-                                <FieldLabel htmlFor="phone">{t("label.phone")}</FieldLabel>
+                                <FieldLabel htmlFor="phone">{t("label.phone")}<RequiredStar /></FieldLabel>
                                 <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone} {...register("phone")} />
                                 <FieldError errors={[errors.phone]} />
                               </Field>
@@ -526,12 +554,12 @@ export function ApplicationForm() {
                             {isPair && (
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.email2}>
-                                <FieldLabel htmlFor="email2">{t("label.email2")}</FieldLabel>
-                                <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email2} {...register("email2")} />
+                                <FieldLabel htmlFor="email2">{t("label.email2")}<RequiredStar /></FieldLabel>
+                                <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email2} {...register("email2", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
                                 <FieldError errors={[errors.email2]} />
                               </Field>
                               <Field data-invalid={!!errors.phone2}>
-                                <FieldLabel htmlFor="phone2">{t("label.phone2")}</FieldLabel>
+                                <FieldLabel htmlFor="phone2">{t("label.phone2")}<RequiredStar /></FieldLabel>
                                 <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone2} {...register("phone2")} />
                                 <FieldError errors={[errors.phone2]} />
                               </Field>
@@ -540,7 +568,7 @@ export function ApplicationForm() {
 
                             <Controller control={control} name="university" render={({ field }) => (
                               <Field data-invalid={!!errors.university}>
-                                <FieldLabel htmlFor="university">{t("label.university")}</FieldLabel>
+                                <FieldLabel htmlFor="university">{t("label.university")}<RequiredStar /></FieldLabel>
                                 <SearchableSelect
                                   value={field.value || ""}
                                   onValueChange={field.onChange}
@@ -555,7 +583,7 @@ export function ApplicationForm() {
                             {isPair && (
                             <Controller control={control} name="university2" render={({ field }) => (
                               <Field data-invalid={!!errors.university2}>
-                                <FieldLabel htmlFor="university2">{t("label.university2")}</FieldLabel>
+                                <FieldLabel htmlFor="university2">{t("label.university2")}<RequiredStar /></FieldLabel>
                                 <SearchableSelect
                                   value={field.value || ""}
                                   onValueChange={field.onChange}
@@ -571,7 +599,7 @@ export function ApplicationForm() {
 
                             <Controller control={control} name="degreeLevel" render={({ field }) => (
                               <Field data-invalid={!!errors.degreeLevel}>
-                                <FieldLabel htmlFor="degreeLevel">{t("label.degreeLevel")}</FieldLabel>
+                                <FieldLabel htmlFor="degreeLevel">{t("label.degreeLevel")}<RequiredStar /></FieldLabel>
                                 <Select value={field.value || undefined} onValueChange={field.onChange} disabled={loadingOptions}>
                                   <SelectTrigger id="degreeLevel" aria-invalid={!!errors.degreeLevel}>
                                     <SelectValue placeholder={loadingOptions ? "Loading..." : t("placeholder.degreeLevel")} />
@@ -590,7 +618,7 @@ export function ApplicationForm() {
                             {isPair && (
                             <Controller control={control} name="degree2" render={({ field }) => (
                               <Field data-invalid={!!errors.degree2}>
-                                <FieldLabel htmlFor="degree2">{t("label.degreeLevel2")}</FieldLabel>
+                                <FieldLabel htmlFor="degree2">{t("label.degreeLevel2")}<RequiredStar /></FieldLabel>
                                 <Select value={field.value || undefined} onValueChange={field.onChange} disabled={loadingOptions}>
                                   <SelectTrigger id="degree2" aria-invalid={!!errors.degree2}>
                                     <SelectValue placeholder={loadingOptions ? "Loading..." : t("placeholder.degreeLevel2")} />
@@ -610,7 +638,7 @@ export function ApplicationForm() {
 
                             <Controller control={control} name="cv" render={({ field }) => (
                               <Field data-invalid={!!errors.cv}>
-                                <FieldLabel htmlFor="cv">{t("label.cv")}<span className="text-destructive">*</span></FieldLabel>
+                                <FieldLabel htmlFor="cv">{t("label.cv")}<RequiredStar /></FieldLabel>
                                 <FileDropzone id="cv" value={field.value as File | null} onChange={(file) => handleFileSelection("cv", file, field.onChange)} onBlur={field.onBlur} invalid={!!errors.cv} describedBy="cv-help" />
 
                                 <FieldError errors={[errors.cv]} />
@@ -619,7 +647,7 @@ export function ApplicationForm() {
                             {isPair && (
                             <Controller control={control} name="cv2" render={({ field }) => (
                               <Field data-invalid={!!errors.cv2}>
-                                <FieldLabel htmlFor="cv2">{t("label.cv2")}<span className="text-destructive">*</span></FieldLabel>
+                                <FieldLabel htmlFor="cv2">{t("label.cv2")}<RequiredStar /></FieldLabel>
                                 <FileDropzone id="cv2" value={field.value as File | null} onChange={(file) => handleFileSelection("cv2", file, field.onChange)} onBlur={field.onBlur} invalid={!!errors.cv2} />
                                 <FieldError errors={[errors.cv2]} />
                               </Field>
@@ -628,7 +656,7 @@ export function ApplicationForm() {
 
                             <Controller control={control} name="motivationLetter" render={({ field }) => (
                               <Field data-invalid={!!errors.motivationLetter}>
-                                <FieldLabel htmlFor="motivationLetter">{t("label.motivationLetter")}<span className="text-muted-foreground font-normal"> {t("label.motivationLetter.optional")}</span></FieldLabel>
+                                <FieldLabel htmlFor="motivationLetter">{t("label.motivationLetter")}</FieldLabel>
                                 <FileDropzone id="motivationLetter" value={field.value as File | null} onChange={(file) => handleFileSelection("motivationLetter", file, field.onChange)} onBlur={field.onBlur} invalid={!!errors.motivationLetter} />
                                 <FieldError errors={[errors.motivationLetter]} />
                               </Field>
@@ -636,7 +664,7 @@ export function ApplicationForm() {
                             {isPair && (
                             <Controller control={control} name="motivationLetter2" render={({ field }) => (
                               <Field data-invalid={!!errors.motivationLetter2}>
-                                <FieldLabel htmlFor="motivationLetter2">{t("label.motivationLetter2")}<span className="text-muted-foreground font-normal"> {t("label.motivationLetter2.optional")}</span></FieldLabel>
+                                <FieldLabel htmlFor="motivationLetter2">{t("label.motivationLetter2")}</FieldLabel>
                                 <FileDropzone id="motivationLetter2" value={field.value as File | null} onChange={(file) => handleFileSelection("motivationLetter2", file, field.onChange)} onBlur={field.onBlur} invalid={!!errors.motivationLetter2} />
                                 <FieldError errors={[errors.motivationLetter2]} />
                               </Field>
@@ -669,7 +697,7 @@ export function ApplicationForm() {
                             const selectedSubjects = subjects.filter((s) => field.value?.includes(s.name))
                             return (
                               <Field data-invalid={!!errors.subjects}>
-                                <FieldLabel className="text-sm font-semibold">{t("label.subjects")}</FieldLabel>
+                                <FieldLabel className="text-sm font-semibold">{t("label.subjects")}<RequiredStar /></FieldLabel>
                                 <SubjectSelect
                                   options={subjects.map((s) => ({
                                     id: s.name,
@@ -717,7 +745,7 @@ export function ApplicationForm() {
                           {/* Earliest start date */}
                           <Controller control={control} name="startDate" render={({ field }) => (
                             <Field data-invalid={!!errors.startDate} className="@md/field-group:max-w-xs">
-                              <FieldLabel htmlFor="startDate" className="text-sm font-semibold">{t("label.startDate")}</FieldLabel>
+                              <FieldLabel htmlFor="startDate" className="text-sm font-semibold">{t("label.startDate")}<RequiredStar /></FieldLabel>
                               <MondayPicker value={field.value || undefined} onChange={field.onChange} onBlur={field.onBlur} fieldName="startDate" min={startMin} max={startMax} invalid={!!errors.startDate} />
                               <FieldError errors={[errors.startDate]} />
                             </Field>
@@ -726,7 +754,7 @@ export function ApplicationForm() {
                           {/* Working method */}
                           <Controller control={control} name="workingMethod" render={({ field }) => (
                             <Field data-invalid={!!errors.workingMethod}>
-                              <FieldLabel className="text-sm font-semibold">{t("label.workingMethod")}</FieldLabel>
+                              <FieldLabel className="text-sm font-semibold">{t("label.workingMethod")}<RequiredStar /></FieldLabel>
                               <OptionCards
                                 name="workingMethod"
                                 ariaLabel="Preferred working method"

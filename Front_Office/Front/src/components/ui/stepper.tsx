@@ -32,6 +32,7 @@ interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   backButtonText?: string
   nextButtonText?: string
   disableStepIndicators?: boolean
+  stepLabels?: string[]
   renderStepIndicator?: (args: {
     step: number
     currentStep: number
@@ -56,6 +57,7 @@ const Stepper = forwardRef<StepperHandle, StepperProps>(function Stepper(
     backButtonText = "Back",
     nextButtonText = "Continue",
     disableStepIndicators = false,
+    stepLabels,
     renderStepIndicator,
     beforeNext,
     ...rest
@@ -131,6 +133,7 @@ const Stepper = forwardRef<StepperHandle, StepperProps>(function Stepper(
                 ) : (
                   <StepIndicator
                     step={stepNumber}
+                    label={stepLabels?.[index]}
                     disableStepIndicators={disableStepIndicators}
                     currentStep={currentStep}
                     onClickStep={(clicked) => {
@@ -233,11 +236,13 @@ function StepIndicator({
   currentStep,
   onClickStep,
   disableStepIndicators,
+  label,
 }: {
   step: number
   currentStep: number
   onClickStep: (step: number) => void
   disableStepIndicators: boolean
+  label?: string
 }) {
   const status = currentStep === step ? "active" : currentStep < step ? "inactive" : "complete"
 
@@ -277,6 +282,15 @@ function StepIndicator({
           <span className="step-number">{step}</span>
         )}
       </motion.div>
+      {label && (
+        <span
+          className={`step-indicator-label ${
+            status === "active" ? "active" : status === "complete" ? "complete" : ""
+          }`}
+        >
+          {label}
+        </span>
+      )}
     </motion.div>
   )
 }

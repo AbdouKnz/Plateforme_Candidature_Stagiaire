@@ -83,6 +83,11 @@ axiosApi.interceptors.response.use(
     // 401 UNAUTHORIZED - Token Expired
     // ========================================
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // No session exists yet on the login endpoint: a 401 here means wrong
+      // credentials, so just reject and let the login form show the message.
+      if (originalRequest.url?.includes("/auth/login")) {
+        return Promise.reject(error);
+      }
       // Don't retry refresh endpoint itself
       if (originalRequest.url?.includes("/auth/refresh-token")) {
         handleSessionExpired();

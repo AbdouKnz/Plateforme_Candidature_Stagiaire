@@ -1,6 +1,7 @@
 package public
 
 import (
+	"errors"
 	"regexp"
 	"strings"
 
@@ -21,12 +22,12 @@ func NewPublicHandler(service *PublicService) *PublicHandler {
 }
 
 func (h *PublicHandler) GetFrontOfficeStatusHandler(c *gin.Context) {
-	isEnabled, reopeningDate, err := h.Service.GetFrontOfficeStatus(c.Request.Context())
+	isEnabled, reopeningDate, year, internshipTitle, err := h.Service.GetFrontOfficeStatus(c.Request.Context())
 	if err != nil {
 		pkg.InternalError(c, err.Error())
 		return
 	}
-	pkg.OK(c, FrontOfficeStatusResponse{IsEnabled: isEnabled, ReopeningDate: reopeningDate}, nil)
+	pkg.OK(c, FrontOfficeStatusResponse{IsEnabled: isEnabled, ReopeningDate: reopeningDate, Year: year, InternshipTitle: internshipTitle}, nil)
 }
 
 func (h *PublicHandler) GetActiveDegreesHandler(c *gin.Context) {
@@ -119,6 +120,7 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 		Methode:     c.PostForm("methode"),
 		StartDate:   c.PostForm("start_date"),
 		SubjectName: c.PostForm("subject_name"),
+		SubjectCode: c.PostForm("subject_code"),
 		University:  c.PostForm("university"),
 	}
 
@@ -165,6 +167,11 @@ func (h *PublicHandler) CreateCandidatureHandler(c *gin.Context) {
 
 	created, err := h.Service.CreateCandidature(c.Request.Context(), candidature)
 	if err != nil {
+		var dupErr *ErrDuplicateCandidature
+		if errors.As(err, &dupErr) {
+			pkg.ConflictWithCode(c, dupErr.Code(), dupErr.Error())
+			return
+		}
 		pkg.InternalError(c, err.Error())
 		return
 	}

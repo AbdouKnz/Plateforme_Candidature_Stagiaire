@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/date-picker";
-import { format, nextMonday } from 'date-fns'
+import { format } from 'date-fns'
 import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Candidature, RejectionReason } from "@/models/candidature-model";
@@ -86,11 +86,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   // modified the body, so clickable links are preserved in the real email.
   const [displayBody, setDisplayBody] = useState("");
   const [bodyModified, setBodyModified] = useState(false);
-  const [interviewDate, setInterviewDate] = useState("");
-  const [interviewHour, setInterviewHour] = useState("");
-  const [interviewMinute, setInterviewMinute] = useState("");
-  const [pendingHour, setPendingHour] = useState("08");
-  const [pendingMinute, setPendingMinute] = useState("00");
   const [rejectionReasons, setRejectionReasons] = useState<RejectionReason[] | null>(null);
   const [selectedRejectionReason, setSelectedRejectionReason] = useState("");
   const [quizLink, setQuizLink] = useState("");
@@ -123,19 +118,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   }, [isAcceptance, nextStep]);
   const updateCandidatureMutation = useUpdateCandidature();
 
-  const interviewTime = useMemo(() => {
-    if (!interviewHour || !interviewMinute) return "";
-    return `${interviewHour}:${interviewMinute}`;
-  }, [interviewHour, interviewMinute]);
-
-  const formattedDate = useMemo(() => formatDate(interviewDate), [interviewDate]);
   const formattedStartDate = useMemo(() => formatDate(startDate), [startDate]);
-
-  const interviewDateObj = useMemo(() => {
-    if (!interviewDate) return undefined;
-    const d = new Date(interviewDate + "T00:00:00");
-    return isNaN(d.getTime()) ? undefined : d;
-  }, [interviewDate]);
 
   const startDateObj = useMemo(() => {
     if (!startDate) return undefined;
@@ -144,7 +127,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   }, [startDate]);
 
   const minDate = useMemo(() => {
-    const d = nextMonday(new Date());
+    const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
@@ -154,14 +137,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   // scroll through the months without being capped at December of this year.
   const currentYear = new Date().getFullYear();
   const maxYear = currentYear + 20;
-
-  const handleDateSelect = useCallback((date: Date | undefined) => {
-    if (!date) {
-      setInterviewDate("");
-      return;
-    }
-    setInterviewDate(format(date, "yyyy-MM-dd"));
-  }, []);
 
   const handleStartDateSelect = useCallback((date: Date | undefined) => {
     if (!date) {
@@ -175,7 +150,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     setLoading(true);
     setError(null);
     try {
-      const preview = await getEmailPreview(candidature.id, emailTypeForRequest, effectiveStepForRequest, formattedDate, interviewTime, selectedRejectionReason, quizLink, meetingLink, formattedStartDate, f2fLink);
+      const preview = await getEmailPreview(candidature.id, emailTypeForRequest, effectiveStepForRequest, "", "", selectedRejectionReason, quizLink, meetingLink, f2fLink, formattedStartDate);
       setEditedSubject(preview.subject);
       setEditedBody(preview.body || "");
       setDisplayBody(stripHtml(preview.body || ""));
@@ -185,7 +160,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     } finally {
       setLoading(false);
     }
-  }, [candidature.id, emailTypeForRequest, effectiveStepForRequest, formattedDate, interviewTime, selectedRejectionReason, quizLink, meetingLink, formattedStartDate, f2fLink, t]);
+  }, [candidature.id, emailTypeForRequest, effectiveStepForRequest, selectedRejectionReason, quizLink, meetingLink, f2fLink, formattedStartDate, t]);
 
   useEffect(() => {
     if (open) loadPreview();
@@ -264,8 +239,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
       await sendEmail(candidature.id, { 
         type: emailTypeForRequest,
         step: effectiveStepForRequest,
-        interview_date: (isOnlineMeeting || isF2F) ? formattedDate : "",
-        interview_time: (isOnlineMeeting || isF2F) ? interviewTime : "",
         rejection_reason: templateType === "disapproval" ? selectedRejectionReason : "",
         quiz_link: isQuiz ? quizLink : "",
         meeting_link: isOnlineMeeting ? meetingLink : "",
@@ -294,7 +267,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
           queryClient.setQueryData<any[]>(queryKey, (old) =>
             old?.map((c) => {
               if (c.id !== candidature.id) return c;
-              if (templateType === "disapproval") return { ...c, status: "rejected" as const };
+              if (templateType === "disapproval") return { ...c, status: "rejected" as const, rejection_reason: selectedRejectionReason };
               if (templateType === "acceptance" && effectiveStep) {
                 const isFinalStep = effectiveStep === "final_decision";
                 return { ...c, step: effectiveStep, status: isFinalStep ? "accepted" as const : "pending" as const };
@@ -323,8 +296,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     if (sending || loading || !!error) return true;
     if (templateType === "disapproval" && (rejectionReasons?.length ?? 0) > 0 && !selectedRejectionReason) return true;
     if (isQuiz && !quizLink) return true;
-    if (isOnlineMeeting && (!meetingLink || !formattedDate || !interviewTime)) return true;
-    if (isF2F && (!formattedDate || !interviewTime)) return true;
+    if (isOnlineMeeting && !meetingLink) return true;
+    if (isF2F && !f2fLink) return true;
     if (isFinal && !formattedStartDate) return true;
     return false;
   })();
@@ -404,136 +377,6 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                 )}
               </div>
             )}
-            {isOnlineMeeting && (
-              <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-muted/20">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <IconCalendarEvent className="size-4" />
-                    {t("interview_date")}
-                    </Label>
-                    <DatePicker
-                      selected={interviewDateObj}
-                      onSelect={handleDateSelect}
-                      placeholder={t("interview_date")}
-                      disabled={sending}
-                      fromDate={minDate}
-                      fromYear={currentYear}
-                      toYear={maxYear}
-                      disableWeekends
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-1">
-                      <IconCalendarEvent className="size-4" />
-                      {t("interview_time")}
-                    </Label>
-                    <div className="flex gap-1">
-                      <Select value={pendingHour} onValueChange={setPendingHour}>
-                        <SelectTrigger className="flex-1 h-9 text-sm">
-                          <SelectValue placeholder="HH" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <ScrollArea className="h-48">
-                            {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")).map(h => (
-                              <SelectItem key={h} value={h}>{h}</SelectItem>
-                            ))}
-                          </ScrollArea>
-                        </SelectContent>
-                      </Select>
-                      <span className="flex items-center text-muted-foreground">:</span>
-                      <Select value={pendingMinute} onValueChange={setPendingMinute}>
-                        <SelectTrigger className="flex-1 h-9 text-sm">
-                          <SelectValue placeholder="MM" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <ScrollArea className="h-48">
-                            {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, "0")).map(m => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </ScrollArea>
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-9 px-3"
-                        onClick={() => {
-                          setInterviewHour(pendingHour);
-                          setInterviewMinute(pendingMinute);
-                        }}
-                        disabled={sending}
-                      >
-                        {t("validate")}
-                      </Button>
-                    </div>
-                  </div>
-              </div>
-            )}
-            {isF2F && (
-              <div className="grid grid-cols-2 gap-4 p-3 border rounded-lg bg-muted/20">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <IconCalendarEvent className="size-4" />
-                    {t("interview_date")}
-                  </Label>
-                  <DatePicker
-                    selected={interviewDateObj}
-                    onSelect={handleDateSelect}
-                    placeholder={t("interview_date")}
-                    disabled={sending}
-                    fromDate={minDate}
-                    fromYear={currentYear}
-                    toYear={maxYear}
-                    disableWeekends
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-1">
-                    <IconCalendarEvent className="size-4" />
-                    {t("interview_time")}
-                  </Label>
-                  <div className="flex gap-1">
-                    <Select value={pendingHour} onValueChange={setPendingHour}>
-                      <SelectTrigger className="flex-1 h-9 text-sm">
-                        <SelectValue placeholder="HH" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <ScrollArea className="h-48">
-                          {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")).map(h => (
-                            <SelectItem key={h} value={h}>{h}</SelectItem>
-                          ))}
-                        </ScrollArea>
-                      </SelectContent>
-                    </Select>
-                    <span className="flex items-center text-muted-foreground">:</span>
-                    <Select value={pendingMinute} onValueChange={setPendingMinute}>
-                      <SelectTrigger className="flex-1 h-9 text-sm">
-                        <SelectValue placeholder="MM" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <ScrollArea className="h-48">
-                          {Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, "0")).map(m => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
-                          ))}
-                        </ScrollArea>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="h-9 px-3"
-                      onClick={() => {
-                        setInterviewHour(pendingHour);
-                        setInterviewMinute(pendingMinute);
-                      }}
-                      disabled={sending}
-                    >
-                      {t("validate")}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
             {isFinal && (
               <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
                 <Label className="flex items-center gap-1">
@@ -554,8 +397,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
               </div>
             )}
             {isAcceptance && !isQuiz && !isOnlineMeeting && !isF2F && !isFinal && (
-              <div className="p-3 border rounded-lg bg-violet-500/5 border-violet-500/10">
-                <p className="text-sm text-violet-700 dark:text-violet-300">
+              <div className="p-3 border rounded-lg bg-[#1d7cc7]/5 border-[#1d7cc7]/10">
+                <p className="text-sm text-[#155a8a] dark:text-[#8fc3e5]">
                   {t("email_will_be_sent_from_template")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">

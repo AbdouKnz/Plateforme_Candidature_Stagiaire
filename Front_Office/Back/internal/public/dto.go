@@ -7,8 +7,10 @@ type SubscribeWaitlistRequest struct {
 }
 
 type FrontOfficeStatusResponse struct {
-	IsEnabled     bool   `json:"is_enabled"`
-	ReopeningDate string `json:"reopening_date,omitempty"`
+	IsEnabled       bool   `json:"is_enabled"`
+	ReopeningDate   string `json:"reopening_date,omitempty"`
+	Year            string `json:"year,omitempty"`
+	InternshipTitle string `json:"internship_title,omitempty"`
 }
 
 type DegreeResponse struct {

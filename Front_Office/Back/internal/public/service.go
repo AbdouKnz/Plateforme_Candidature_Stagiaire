@@ -14,7 +14,23 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
+
+// ErrDuplicateCandidature is returned when the (email, subject) uniqueness
+// guard rejects an application that was already submitted.
+type ErrDuplicateCandidature struct {
+	Email   string
+	Subject string
+}
+
+func (e *ErrDuplicateCandidature) Error() string {
+	return "You've already applied for this subject with this email"
+}
+
+func (e *ErrDuplicateCandidature) Code() string {
+	return "duplicate_candidature"
+}
 
 type smtpConfig struct {
 	Host     string
@@ -190,6 +206,17 @@ func (s *PublicService) GetActiveSubjects(ctx context.Context) ([]*domain.Subjec
 
 func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candidature) (*domain.Candidature, error) {
 	log.Info().Str("full_name", c.FullName).Msg("Creating candidature from front office...")
+	// Normalize the applicant email so "John@x.com" and "john@x.com" are the
+	// same identity for the (email, subject code) uniqueness guard.
+	c.Email1 = strings.ToLower(strings.TrimSpace(c.Email1))
+	// Subject CODE (not the editable name) is the stable subject identity.
+	c.SubjectCode = strings.ToUpper(strings.TrimSpace(c.SubjectCode))
+	if c.SubjectCode == "" && strings.TrimSpace(c.SubjectName) != "" {
+		var code string
+		if err := s.db.NewSelect().Table("subject").Column("code").Where("name = ?", strings.TrimSpace(c.SubjectName)).Limit(1).Scan(ctx, &code); err == nil && code != "" {
+			c.SubjectCode = strings.ToUpper(strings.TrimSpace(code))
+		}
+	}
 	c.DateApplication = time.Now().Format("2006-01-02")
 	c.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 	c.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
@@ -202,14 +229,14 @@ func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candida
 		INSERT INTO candidature (
 			first_name, last_name, full_name, email1, gender1, phone1, degree1,
 			first_name2, last_name2, full_name2, email2, gender2, phone2, degree2,
-			duration, methode, start_date, subject_name, university, university2,
+			duration, methode, start_date, subject_name, subject_code, university, university2,
 			date_application, path_cv, path_lettre_motivation,
 			path_cv2, path_lettre_motivation2,
 			status, current_step, step1_status, created_at, updated_at
 		) VALUES (
 			?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?, ?,
-			?, ?, ?, ?, ?, ?,
+			?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?,
 			?, ?,
 			?, 1, 'pending', ?, ?
@@ -218,12 +245,17 @@ func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candida
 	`,
 		c.FirstName, c.LastName, c.FullName, c.Email1, c.Gender1, c.Phone1, c.Degree1,
 		c.FirstName2, c.LastName2, c.FullName2, c.Email2, c.Gender2, c.Phone2, c.Degree2,
-		c.Duration, c.Methode, c.StartDate, c.SubjectName, c.University, c.University2,
+		c.Duration, c.Methode, c.StartDate, c.SubjectName, c.SubjectCode, c.University, c.University2,
 		c.DateApplication, c.PathCV, c.PathLettreMotivation,
 		c.PathCV2, c.PathLettreMotivation2,
 		c.Status, c.CreatedAt, c.UpdatedAt,
 	).Scan(ctx, &id)
 	if err != nil {
+		var pgErr pgdriver.Error
+		if errors.As(err, &pgErr) && pgErr.Field('C') == "23505" {
+			log.Warn().Str("email", c.Email1).Str("subject", c.SubjectName).Msg("Duplicate candidature rejected")
+			return nil, &ErrDuplicateCandidature{Email: c.Email1, Subject: c.SubjectName}
+		}
 		log.Error().Err(err).Str("full_name", c.FullName).Msg("Could not create candidature")
 		return nil, fmt.Errorf("could not create candidature: %w", err)
 	}
@@ -255,19 +287,21 @@ func (s *PublicService) ensureWasEnabledSetting(ctx context.Context, initialValu
 	}
 }
 
-func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string, error) {
+func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string, string, string, error) {
 	var settings []*domain.FrontOfficeStatus
 	err := s.db.NewSelect().Model(&settings).
 		Where("st.group = ?", "front_office").
-		Where("st.key IN (?)", bun.In([]string{"enabled", "reopening_date", "was_enabled"})).
+		Where("st.key IN (?)", bun.In([]string{"enabled", "reopening_date", "was_enabled", "year", "internship_title"})).
 		Scan(ctx)
 	if err != nil {
-		return true, "", err
+		return true, "", "", "", err
 	}
 
 	var isEnabled = true
 	var wasEnabled *bool
 	var reopeningDate string
+	var year string
+	var internshipTitle string
 	for _, setting := range settings {
 		switch setting.Key {
 		case "enabled":
@@ -277,6 +311,10 @@ func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string,
 			wasEnabled = &v
 		case "reopening_date":
 			reopeningDate = setting.Value
+		case "year":
+			year = setting.Value
+		case "internship_title":
+			internshipTitle = setting.Value
 		}
 	}
 
@@ -317,7 +355,7 @@ func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string,
 		}
 	}
 
-	return isEnabled, reopeningDate, nil
+	return isEnabled, reopeningDate, year, internshipTitle, nil
 }
 
 func (s *PublicService) SubscribeWaitlist(ctx context.Context, email string) error {
@@ -349,11 +387,16 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 		return
 	}
 
-	subject := strings.ReplaceAll(template.Subject, "{{NomCandidat}}", c.FullName)
-	subject = strings.ReplaceAll(subject, "{{TitreSujet}}", c.SubjectName)
+	subject := template.Subject
+	// Automatic acknowledgment: none of the five tokens are applicable here.
+	for _, tok := range []string{"[Reason]", "[Date]", "[Time]", "[Link]", "[Maps]"} {
+		subject = strings.ReplaceAll(subject, tok, "")
+	}
 
-	body := strings.ReplaceAll(template.Body, "{{NomCandidat}}", c.FullName)
-	body = strings.ReplaceAll(body, "{{TitreSujet}}", c.SubjectName)
+	body := template.Body
+	for _, tok := range []string{"[Reason]", "[Date]", "[Time]", "[Link]", "[Maps]"} {
+		body = strings.ReplaceAll(body, tok, "")
+	}
 
 	m, err := s.getSMTPConfig(ctx)
 	if err != nil {
@@ -363,9 +406,17 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 
 	now := time.Now().Format("2006-01-02 15:04:05")
 
+	// Pair application (binôme) : acknowledge BOTH recipients, even when the
+	// two addresses are identical.
+	recipients := []string{c.Email1}
+	if email2 := strings.TrimSpace(c.Email2); email2 != "" {
+		recipients = append(recipients, email2)
+	}
+	to := strings.Join(recipients, ", ")
+
 	emailLog := &domain.EmailLog{
 		CandidatureID: c.ID,
-		Recipient:     c.Email1,
+		Recipient:     to,
 		Subject:       subject,
 		Body:          body,
 		TemplateType:  "confirmation",
@@ -381,13 +432,13 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 	mailer := mail.NewMailer(m.Host, m.Port, m.Username, m.Password, m.From, m.FromName)
 
 	email := mail.Email{
-		To:      []string{c.Email1},
+		To:      recipients,
 		Subject: subject,
 		Body:    body,
 	}
 
 	if sendErr := mailer.Send(email); sendErr != nil {
-		log.Warn().Err(sendErr).Str("full_name", c.FullName).Str("email", c.Email1).Msg("Failed to send confirmation email")
+		log.Warn().Err(sendErr).Str("full_name", c.FullName).Str("email", to).Msg("Failed to send confirmation email")
 		emailLog.Status = "failed"
 		s.db.NewUpdate().Model(emailLog).Column("status").Where("id = ?", emailLog.ID).Exec(ctx)
 		return
@@ -398,5 +449,5 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 		log.Warn().Err(uErr).Str("full_name", c.FullName).Msg("Failed to update email log status")
 	}
 
-	log.Info().Str("full_name", c.FullName).Str("email", c.Email1).Msg("Confirmation email sent successfully")
+	log.Info().Str("full_name", c.FullName).Str("email", to).Msg("Confirmation email sent successfully")
 }

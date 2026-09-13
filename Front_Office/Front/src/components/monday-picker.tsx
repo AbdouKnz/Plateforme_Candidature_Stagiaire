@@ -198,7 +198,7 @@ export function MondayPicker({
             {DAY_KEYS.map((key) => (
               <div
                 key={key}
-                className="py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
+                className="py-1 text-xs font-bold uppercase tracking-wide text-muted-foreground"
               >
                 {t(key)}
               </div>

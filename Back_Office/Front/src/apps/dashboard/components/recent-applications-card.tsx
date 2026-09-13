@@ -9,7 +9,7 @@ import { ArrowRight, CalendarDays, Clock, Eye, FolderKanban } from "lucide-react
 import { cn } from "@/lib/utils";
 
 const avatarColors = [
-  "from-violet-500 to-purple-600",
+  "from-[#1d7cc7] to-[#12b9da]",
   "from-sky-500 to-blue-600",
   "from-emerald-500 to-teal-600",
   "from-amber-500 to-orange-600",
@@ -60,7 +60,7 @@ export function RecentApplicationsCard() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]">
               <Clock className="size-4" />
             </div>
             {t("recent_applications")}

@@ -24,7 +24,7 @@ export function useToggleFrontOffice() {
   const queryClient = useQueryClient();
   const { showAlert } = useAlertStore();
 
-  return useMutation<unknown, Error, { is_enabled: boolean; reopening_date?: string }>({
+  return useMutation<unknown, Error, { is_enabled: boolean; reopening_date?: string; year?: string; internship_title?: string }>({
     mutationFn: toggleFrontOffice,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["front_office_status"] });

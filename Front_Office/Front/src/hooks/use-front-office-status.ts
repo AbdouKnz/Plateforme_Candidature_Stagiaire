@@ -4,6 +4,8 @@ interface FrontOfficeStatus {
   is_enabled: boolean
   closed_message?: string
   reopening_date?: string
+  year?: string
+  internship_title?: string
 }
 
 export function useFrontOfficeStatus() {

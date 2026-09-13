@@ -87,6 +87,33 @@ const (
 	WAITLIST_PERMISSIONS       = "waitlist"
 )
 
+// Consolidated Settings permission levels.
+//
+// All Settings submodules (degrees, durations, profiles, technologies, types,
+// email templates, mail config, front office) are governed by the single
+// "settings" module instead of per-submodule permission entries.
+//   - SETTINGS_VIEW_PERMISSIONS ("1000"): read-only across every Settings submodule.
+//   - SETTINGS_EDIT_PERMISSIONS ("1111"): full access (create, update, delete)
+//     across every Settings submodule.
+const (
+	SETTINGS_VIEW_PERMISSIONS = "1000"
+	SETTINGS_EDIT_PERMISSIONS = "1111"
+)
+
+// SettingsConsolidatedModules lists the legacy per-submodule permission keys
+// that were consolidated into SETTINGS_PERMISSIONS. Kept for the one-time
+// role-permission migration (see db.MigrateSettingsPermissions).
+var SettingsConsolidatedModules = []string{
+	DEGREES_PERMISSIONS,
+	TECHNOLOGIES_PERMISSIONS,
+	PROFILES_PERMISSIONS,
+	DURATIONS_PERMISSIONS,
+	TYPES_PERMISSIONS,
+	EMAIL_TEMPLATE_PERMISSIONS,
+	FRONT_OFFICE_MESSAGES,
+	MAIL_CONFIG_PERMISSIONS,
+}
+
 // AllModules contains all available audit modules
 var AllModules = []string{
 	USER_MODULE,

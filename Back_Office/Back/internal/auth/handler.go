@@ -3,6 +3,7 @@ package auth
 import (
 	"astro-backend/middleware"
 	"astro-backend/pkg"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -45,6 +46,12 @@ func (h *AuthHandler) LoginHandler(c *gin.Context) {
 
 	user, accessToken, refreshToken, err := h.Service.Login(c.Request.Context(), credentials.Email, credentials.Password)
 	if err != nil {
+		// Authentication failures (wrong credentials, blocked account) are
+		// client errors, not server errors.
+		if errors.Is(err, ErrInvalidCredentials) || errors.Is(err, ErrInvalidPassword) || errors.Is(err, ErrAccountBlocked) {
+			pkg.Unauthorized(c, err.Error())
+			return
+		}
 		pkg.InternalError(c, err.Error())
 		return
 	}

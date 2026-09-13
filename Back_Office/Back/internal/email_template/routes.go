@@ -14,15 +14,14 @@ func EmailTemplateRoutes(r *gin.RouterGroup, db *bun.DB) {
 
 	emailTemplateGroup := r.Group("/email-templates")
 	emailTemplateGroup.Use(middleware.AuthMiddleware())
+	// Consolidated Settings permission: GET requires "view" or higher,
+	// POST/PUT/DELETE require "edit" (enforced via the settings mask).
+	emailTemplateGroup.Use(middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		emailTemplateGroup.GET("/", handler.GetAllHandler)
-
-		emailTemplateGroup.Use(middleware.PermissionMiddleware(pkg.EMAIL_TEMPLATE_PERMISSIONS))
-		{
-			emailTemplateGroup.POST("/", handler.CreateHandler)
-			emailTemplateGroup.GET("/:id", handler.GetByIDHandler)
-			emailTemplateGroup.PUT("/:id", handler.UpdateHandler)
-			emailTemplateGroup.DELETE("/:id", handler.DeleteHandler)
-		}
+		emailTemplateGroup.POST("/", handler.CreateHandler)
+		emailTemplateGroup.GET("/:id", handler.GetByIDHandler)
+		emailTemplateGroup.PUT("/:id", handler.UpdateHandler)
+		emailTemplateGroup.DELETE("/:id", handler.DeleteHandler)
 	}
 }

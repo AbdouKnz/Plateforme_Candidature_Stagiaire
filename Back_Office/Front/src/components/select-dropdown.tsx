@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Loader } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FormControl } from '@/components/ui/form'
@@ -14,7 +15,7 @@ type SelectDropdownProps = {
   defaultValue: string | undefined
   placeholder?: string
   isPending?: boolean
-  items: { label: string; value: string }[] | undefined
+  items: { label: ReactNode; value: string }[] | undefined
   disabled?: boolean
   className?: string
   isControlled?: boolean

@@ -5,7 +5,7 @@ import { useCandidatures } from "@/hooks/use-candidatures";
 import { useMemo } from "react";
 import { PieChart as PieChartIcon } from "lucide-react";
 
-const COLORS = ["#f59e0b", "#6D5EF5", "#ef4444"];
+const COLORS = ["#f59e0b", "#1d7cc7", "#ef4444"];
 const LABELS = ["Pending", "Accepted", "Rejected"];
 
 export function StatusDistribution() {
@@ -32,7 +32,7 @@ export function StatusDistribution() {
     <Card className="border-border/40 rounded-2xl shadow-sm fade-in h-full">
       <CardHeader className="px-6 pt-6 pb-0">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]">
             <PieChartIcon className="size-5" />
           </div>
           <div>

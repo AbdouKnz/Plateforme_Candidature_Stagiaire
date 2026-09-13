@@ -13,7 +13,7 @@ export const DEFAULT_STEP = "cv_screening";
 export const STEP_VARIANTS: Record<string, string> = {
   cv_screening: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
   online_quiz: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  online_meeting: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  online_meeting: "bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]",
   f2f_meeting: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
   final_decision: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
 };

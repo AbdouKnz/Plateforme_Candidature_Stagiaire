@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IconEye, IconFile, IconTrash, IconCheck, IconLoader2, IconLock, IconChartBar, IconTrendingUp, IconFileText, IconListDetails, IconVideo, IconUsersGroup, IconAward, IconDeviceFloppy } from "@tabler/icons-react";
+import { IconEye, IconFile, IconTrash, IconCheck, IconLoader2, IconLock, IconChartBar, IconTrendingUp, IconFileText, IconListDetails, IconVideo, IconUsersGroup, IconAward, IconDeviceFloppy, IconBan } from "@tabler/icons-react";
 import { type Candidature } from "@/models/candidature-model";
 import { DialogEnum, type DialogType } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -19,6 +19,7 @@ import { useUpdateCandidature } from "@/hooks/use-candidatures";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { stepPosition, STEP_VARIANTS, type PipelineStep } from "../pipeline";
+import { usePermissions } from "@/hooks/use-permissions";
 
 type ScoreField =
   | "score_cv_screening"
@@ -80,6 +81,8 @@ export function CandidatureActionModal({
 }: CandidatureActionModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { modulePermissions } = usePermissions();
+  const canUpdateCandidatures = modulePermissions.candidatures.canUpdate;
   const { mutate: updateCandidature, isPending: isSavingNotes } = useUpdateCandidature();
   const { mutate: saveScores, isPending: isSavingScores } = useUpdateCandidature();
 
@@ -228,6 +231,9 @@ export function CandidatureActionModal({
               <TabsTrigger value="details">{t("details")}</TabsTrigger>
               <TabsTrigger value="notes">{t("notes_feedback")}</TabsTrigger>
               <TabsTrigger value="scoring">{t("scoring")}</TabsTrigger>
+              {displayStatus === "rejected" && (
+                <TabsTrigger value="rejection"><span className="flex items-center gap-1"><IconBan className="size-3.5" />{t("rejection_reason")}</span></TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="details" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
         <div className="space-y-4">
@@ -382,6 +388,7 @@ export function CandidatureActionModal({
                   <textarea
                     id="candidature-notes"
                     value={notes}
+                    readOnly={!canUpdateCandidatures}
                     onChange={(e) => {
                       setNotes(e.target.value);
                       setNotesSaved(false);
@@ -401,9 +408,9 @@ export function CandidatureActionModal({
                 );
                 const totalPct = Math.round((totalScore / 20) * 100);
                 const scoreMeta: Record<ScoreField, { titleKey: string; descKey: string; accent: string; iconWrap: string; iconColor: string; sliderClass: string }> = {
-                  score_cv_screening: { titleKey: "pipeline_step_cv_screening", descKey: "scoring_desc_cv_screening", accent: "border-l-violet-500", iconWrap: "bg-violet-500/10 border-violet-500/20", iconColor: "text-violet-600 dark:text-violet-400", sliderClass: "accent-violet-600" },
+                  score_cv_screening: { titleKey: "pipeline_step_cv_screening", descKey: "scoring_desc_cv_screening", accent: "border-l-[#1d7cc7]", iconWrap: "bg-[#1d7cc7]/10 border-[#1d7cc7]/20", iconColor: "text-[#1d7cc7] dark:text-[#5aa3d8]", sliderClass: "accent-[#1d7cc7]" },
                   score_online_quiz: { titleKey: "pipeline_step_online_quiz", descKey: "scoring_desc_online_quiz", accent: "border-l-sky-500", iconWrap: "bg-sky-500/10 border-sky-500/20", iconColor: "text-sky-600 dark:text-sky-400", sliderClass: "accent-sky-600" },
-                  score_online_meeting: { titleKey: "pipeline_step_online_meeting", descKey: "scoring_desc_online_meeting", accent: "border-l-violet-500", iconWrap: "bg-violet-500/10 border-violet-500/20", iconColor: "text-violet-600 dark:text-violet-400", sliderClass: "accent-violet-600" },
+                  score_online_meeting: { titleKey: "pipeline_step_online_meeting", descKey: "scoring_desc_online_meeting", accent: "border-l-[#12b9da]", iconWrap: "bg-[#12b9da]/10 border-[#12b9da]/20", iconColor: "text-[#0e9db8] dark:text-[#4fd2e6]", sliderClass: "accent-[#12b9da]" },
                   score_f2f_meeting: { titleKey: "pipeline_step_f2f_meeting", descKey: "scoring_desc_f2f_meeting", accent: "border-l-amber-500", iconWrap: "bg-amber-500/10 border-amber-500/20", iconColor: "text-amber-600 dark:text-amber-400", sliderClass: "accent-amber-600" },
                   score_final_decision: { titleKey: "pipeline_step_final_decision", descKey: "scoring_desc_final_decision", accent: "border-l-emerald-500", iconWrap: "bg-emerald-500/10 border-emerald-500/20", iconColor: "text-emerald-600 dark:text-emerald-400", sliderClass: "accent-emerald-600" },
                 };
@@ -431,7 +438,7 @@ export function CandidatureActionModal({
                             key={field}
                             className={cn(
                               "group relative flex flex-col gap-3 rounded-2xl border bg-card p-5 shadow-sm transition-all hover:shadow-md",
-                              isHighlighted ? "border-violet-500/30 ring-1 ring-violet-500/15 shadow-violet-500/10" : "border-border",
+                              isHighlighted ? "border-[#1d7cc7]/30 ring-1 ring-[#1d7cc7]/15 shadow-[#1d7cc7]/10" : "border-border",
                               locked && "opacity-60",
                               `border-l-4 ${meta.accent}`
                             )}
@@ -443,7 +450,7 @@ export function CandidatureActionModal({
                               {locked ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-muted border px-2.5 py-1 text-xs text-muted-foreground"><IconLock className="size-3" /> {t("locked_step")}</span>
                               ) : isHighlighted ? (
-                                <span className="inline-flex items-center rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-2.5 py-1 text-[11px] font-medium">{t("current_step")}</span>
+                                <span className="inline-flex items-center rounded-full bg-[#1d7cc7]/10 text-[#1d7cc7] dark:text-[#5aa3d8] border border-[#1d7cc7]/20 px-2.5 py-1 text-[11px] font-medium">{t("current_step")}</span>
                               ) : numeric > 0 ? (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-1 text-xs"><IconCheck className="size-3" /> {t("scored")}</span>
                               ) : (
@@ -462,7 +469,7 @@ export function CandidatureActionModal({
                               min={0}
                               max={20}
                               step={1}
-                              disabled={locked}
+                              disabled={locked || !canUpdateCandidatures}
                               value={numeric}
                               onChange={(e) => { setScoreDraft((prev) => ({ ...prev, [field]: e.target.value })); setScoresSaved(false); }}
                               className={cn("h-1.5 w-full cursor-pointer appearance-none rounded-full bg-muted disabled:cursor-not-allowed", !locked && meta.sliderClass)}
@@ -477,13 +484,39 @@ export function CandidatureActionModal({
                 );
               })()}
             </TabsContent>
+            <TabsContent value="rejection" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
+              <div className="relative overflow-hidden rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="flex items-start justify-between gap-4 pb-1">
+                  <div className="flex items-start gap-3">
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">{t("rejection_reason")}</h3>
+                    </div>
+                  </div>
+                  {candidature.rejection_reason && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-2.5 py-1 text-[11px] font-medium">
+                      <IconBan className="size-3" />
+                      {t("candidature_status_rejected")}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-4">
+                  {candidature.rejection_reason ? (
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                      <p className="text-sm leading-6 text-foreground">{candidature.rejection_reason}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">{t("no_rejection_reason_recorded")}</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
         <DialogFooter className="shrink-0">
           <div className="flex items-center gap-2">
             <Button variant="outline" type="button" onClick={handleClose}>
               {t("close")}
             </Button>
-            {activeTab === "notes" && (
+            {activeTab === "notes" && canUpdateCandidatures && (
               <>
                 {notesSaved && (
                   <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">
@@ -496,7 +529,7 @@ export function CandidatureActionModal({
                 </Button>
               </>
             )}
-            {activeTab === "scoring" && (
+            {activeTab === "scoring" && canUpdateCandidatures && (
               <>
                 {scoresSaved && (
                   <span className="flex items-center gap-1 text-xs font-medium text-emerald-600">

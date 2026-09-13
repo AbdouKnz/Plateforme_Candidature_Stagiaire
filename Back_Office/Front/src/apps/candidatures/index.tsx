@@ -9,7 +9,8 @@ import {
 } from "@tabler/icons-react";
 import { useCandidatureColumns } from "./table/candidatures-columns";
 import { CandidatureModals } from "./candidature-modal";
-import { SendEmailModal } from "./candidature-modal/send-email-modal";
+import { BulkAcceptModal } from "./candidature-modal/bulk-accept-modal";
+import { BulkRejectModal } from "./candidature-modal/bulk-reject-modal";
 import { useTranslation } from "react-i18next";
 import { useCallback, useMemo, useState } from "react";
 import { useCandidatureToolbarProps } from "./table/data";
@@ -25,15 +26,10 @@ import { cn } from "@/lib/utils";
 
 type BulkTemplateType = "acceptance" | "disapproval";
 
-interface BulkState {
-  queue: Candidature[];
-  index: number;
-  templateType: BulkTemplateType;
-}
-
 import { PIPELINE_STEPS, DEFAULT_STEP } from "./pipeline";
-import { hasCurrentStepScore } from "./scoring";
+import { hasCurrentStepScore, currentStepScore, stepScoreField } from "./scoring";
 import { PipelineNav } from "./pipeline-nav";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const statusTabs = [
   { value: "all", labelKey: "all", color: "text-foreground" },
@@ -50,9 +46,30 @@ export function Candidatures() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [stepFilter, setStepFilter] = useState("all");
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
-  const [bulk, setBulk] = useState<BulkState | null>(null);
+  const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
 
-  const { data: candidatures } = useCandidatures(queryParams);
+  // Status filtering is owned exclusively by the status tabs below (per-step,
+  // client-side). Never send `status` to the server: its overall-status filter
+  // would hide candidates whose status in the selected step differs.
+  // Same for score sorting: the toolbar only picks a direction, each step tab
+  // sorts by its own score column client-side.
+  const {
+    status: _ignoredServerStatusFilter,
+    score_sort: _ignoredServerScoreSort,
+    score_sort_step: _ignoredServerScoreStep,
+    score_sort_direction: _ignoredServerScoreDir,
+    ...fetchParams
+  } = queryParams;
+  const { data: candidatures } = useCandidatures(fetchParams);
+  const rawScoreSort = queryParams.score_sort ?? "";
+  const scoreDirection =
+    rawScoreSort === "desc" || rawScoreSort.endsWith(":desc")
+      ? "desc"
+      : rawScoreSort === "asc" || rawScoreSort.endsWith(":asc")
+        ? "asc"
+        : null;
+  const { modulePermissions } = usePermissions();
+  const canUpdateCandidatures = modulePermissions.candidatures.canUpdate;
   const allData = useMemo(() => candidatures ?? [], [candidatures]);
 
   // Statuts par étape réels (colonnes step1..step5_status) : une ligne apparaît
@@ -111,48 +128,61 @@ export function Candidatures() {
     return stepData.filter((d) => displayStatus(d) === statusFilter);
   }, [stepData, statusFilter, displayStatus]);
 
+  // Score sort, applied automatically per step tab: on a step tab rows are
+  // ordered by that step's score column; on "all" each row uses its own
+  // current-step score.
+  const sortedData = useMemo(() => {
+    if (!scoreDirection) return data;
+    const scoreOf = (d: Candidature): number => {
+      if (stepFilter === "all") return currentStepScore(d);
+      const field = stepScoreField(stepFilter) as keyof Candidature;
+      const v = d[field];
+      return typeof v === "number" ? v : Number(v) || 0;
+    };
+    const mul = scoreDirection === "asc" ? 1 : -1;
+    return [...data].sort((a, b) => (scoreOf(a) - scoreOf(b)) * mul);
+  }, [data, scoreDirection, stepFilter]);
+
   const selectedRows = useMemo(
     () => data.filter((c) => rowSelection[String(c.id)]),
     [data, rowSelection]
   );
 
+  const [bulkAcceptOpen, setBulkAcceptOpen] = useState(false);
+
+  const pendingSelected = useMemo(
+    () => selectedRows.filter((c) => displayStatus(c) === "pending"),
+    [selectedRows, displayStatus]
+  );
+
   const startBulk = (templateType: BulkTemplateType) => {
-    const queue = selectedRows.filter(
-      (c) => displayStatus(c) === "pending"
-    );
-    if (queue.length === 0) {
+    if (pendingSelected.length === 0) {
       showAlert({ message: t("no_pending_selected"), type: AlertEnum.INFO });
       return;
     }
-    if (!queue.every(hasCurrentStepScore)) {
+    if (!pendingSelected.every(hasCurrentStepScore)) {
       showAlert({ message: t("score_required_bulk"), type: AlertEnum.WARNING });
       return;
     }
-    setBulk({ queue, index: 0, templateType });
-  };
-
-  const handleBulkSent = () => {
-    if (!bulk) return;
-    const isLast = bulk.index + 1 >= bulk.queue.length;
-    if (isLast) {
-      setBulk(null);
-      setRowSelection({});
-    } else {
-      setBulk({ ...bulk, index: bulk.index + 1 });
+    if (templateType === "disapproval") {
+      // Bulk rejection: a single email view + one rejection reason applies
+      // to the whole selection, so the task is done once instead of once per
+      // candidate.
+      setBulkRejectOpen(true);
+      return;
     }
-  };
-
-  const handleBulkClose = () => {
-    setBulk(null);
-    setRowSelection({});
+    // Bulk acceptance: ONE email view for the whole selection; a single Send
+    // click invites every selected row (no per-candidate clicking).
+    setBulkAcceptOpen(true);
   };
 
   const columns = useCandidatureColumns(
     (candidature) => {
       setStepFilter(candidature.step || DEFAULT_STEP);
     },
-    stepFilter !== "all",
-    displayStatus
+    stepFilter !== "all" && canUpdateCandidatures,
+    displayStatus,
+    stepFilter === "all" ? undefined : stepFilter
   );
   const toolbarProps = useCandidatureToolbarProps();
 
@@ -190,39 +220,41 @@ export function Candidatures() {
                 {t("clear_selection")}
               </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!!bulk}
-                className="text-green-600 hover:border-green-300 hover:text-green-700"
-                onClick={() => startBulk("acceptance")}
-                title={t("send_confirmation_email")}
-              >
-                <IconCheck size={16} />
-                {t("bulk_invite")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!!bulk}
-                className="text-red-600 hover:border-red-300 hover:text-red-700"
-                onClick={() => startBulk("disapproval")}
-              >
-                <IconX size={16} />
-                {t("bulk_reject")}
-              </Button>
-            </div>
+            {canUpdateCandidatures && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={bulkAcceptOpen || bulkRejectOpen}
+                  className="text-green-600 hover:border-green-300 hover:text-green-700"
+                  onClick={() => startBulk("acceptance")}
+                  title={t("send_confirmation_email")}
+                >
+                  <IconCheck size={16} />
+                  {t("bulk_invite")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={bulkAcceptOpen || bulkRejectOpen}
+                  className="text-red-600 hover:border-red-300 hover:text-red-700"
+                  onClick={() => startBulk("disapproval")}
+                >
+                  <IconX size={16} />
+                  {t("bulk_reject")}
+                </Button>
+              </div>
+            )}
           </Card>
         )}
 
         <div className="-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12">
           <DataTable
-            data={data}
+            data={sortedData}
             columns={columns}
             toolbarProps={toolbarProps}
             selectedRowId={selectedCandidatureId}
-            enableRowSelection={stepFilter !== "all"}
+            enableRowSelection={stepFilter !== "all" && canUpdateCandidatures}
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}
             toolbarCenter={
@@ -243,15 +275,34 @@ export function Candidatures() {
         </div>
       </Main>
       <CandidatureModals />
-      {bulk && bulk.index < bulk.queue.length && (
-        <SendEmailModal
+      {bulkAcceptOpen && (
+        <BulkAcceptModal
           open
-          onClose={handleBulkClose}
-          onSent={handleBulkSent}
-          candidature={bulk.queue[bulk.index]}
-          templateType={bulk.templateType}
-          bulkIndex={bulk.index}
-          bulkTotal={bulk.queue.length}
+          onClose={() => {
+            setBulkAcceptOpen(false);
+            setRowSelection({});
+          }}
+          onSent={() => {
+            setBulkAcceptOpen(false);
+            setRowSelection({});
+          }}
+          candidatures={pendingSelected}
+          step={stepFilter}
+        />
+      )}
+      {bulkRejectOpen && (
+        <BulkRejectModal
+          open
+          onClose={() => {
+            setBulkRejectOpen(false);
+            setRowSelection({});
+          }}
+          onSent={() => {
+            setBulkRejectOpen(false);
+            setRowSelection({});
+          }}
+          candidatures={selectedRows}
+          step={stepFilter}
         />
       )}
     </>

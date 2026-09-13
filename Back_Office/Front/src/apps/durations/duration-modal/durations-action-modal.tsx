@@ -64,7 +64,7 @@ export function DurationsActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   const { modulePermissions } = usePermissions();
-  const canUpdateDuration = modulePermissions.durations.canUpdate;
+  const canUpdateDuration = modulePermissions.settings.canUpdate;
 
   const { mutate: createDuration, isPending: isCreating } = useCreateDuration();
   const { mutate: updateDuration, isPending: isUpdating } = useUpdateDuration();

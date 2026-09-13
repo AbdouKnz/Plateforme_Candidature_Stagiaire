@@ -13,7 +13,8 @@ func FrontOfficeRoutes(r *gin.RouterGroup, db *bun.DB) {
 	handler := NewFrontOfficeHandler(service)
 
 	toggleGroup := r.Group("/front-office")
-	toggleGroup.Use(middleware.AuthMiddleware(), middleware.PermissionMiddleware(pkg.FRONT_OFFICE_MESSAGES))
+	// Consolidated Settings permission: PUT requires "edit" (enforced via the settings mask).
+	toggleGroup.Use(middleware.AuthMiddleware(), middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		toggleGroup.PUT("/toggle", handler.ToggleFrontOfficeHandler)
 	}

@@ -16,6 +16,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Sentinel errors for authentication failures. These map to 401 Unauthorized
+// (not 500) in the handler.
+var (
+	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrInvalidPassword    = errors.New("e-mail ou mot de passe invalide")
+	ErrAccountBlocked     = errors.New("your access is blocked")
+)
+
 type AuthService struct {
 	db    *bun.DB
 	audit *audit.AuditService
@@ -39,7 +47,7 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 
 	if err != nil {
 		log.Error().Err(err).Str("email", email).Msg("Error: User not found")
-		return nil, "", "", fmt.Errorf("invalid email or password")
+		return nil, "", "", ErrInvalidCredentials
 	}
 
 	log.Info().
@@ -51,13 +59,13 @@ func (s *AuthService) Login(ctx context.Context, email string, password string) 
 
 	if !user.Status {
 		log.Warn().Str("email", email).Msg("Login blocked: user account is inactive")
-		return nil, "", "", fmt.Errorf("your access is blocked")
+		return nil, "", "", ErrAccountBlocked
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		log.Warn().Msg("Invalid password")
-		return nil, "", "", fmt.Errorf("e-mail ou mot de passe invalide")
+		return nil, "", "", ErrInvalidPassword
 	}
 
 	log.Info().Msg("Password matched")

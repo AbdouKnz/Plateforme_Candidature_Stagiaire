@@ -1,6 +1,0 @@
-﻿OVHCloud_Logo.png : all transparent sample
-NVIDIA_Logo.png : all transparent sample
-EIT_Logo.png : all transparent sample
-BPA_Logo.png : all transparent sample
-Terna_Logo.png : all transparent sample
-EPA_Logo.png : all transparent sample

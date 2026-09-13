@@ -34,7 +34,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import type { MultiSelectOption } from "@/components/ui/multi-select";
 import { IconEdit, IconPlus, IconEye, IconTrash } from "@tabler/icons-react";
 import { Subject } from "@/models/subject-model";
-import { useCreateSubject, useUpdateSubject } from "@/hooks/use-subjects";
+import { useCreateSubject, useUpdateSubject, useSubjects } from "@/hooks/use-subjects";
 import { useDurations } from "@/hooks/use-durations";
 import { useTechnologies } from "@/hooks/use-technologies";
 import { useProfiles } from "@/hooks/use-profiles";
@@ -57,10 +57,22 @@ const formSchema = z.object({
     .string()
     .nonempty({ message: "Description is required." })
     .min(10, { message: "Description must be at least 10 characters long." }),
-  online_quiz_link: z.string(),
-  online_meeting_link: z.string(),
-  f2f_meeting_link: z.string(),
-  duration_id: z.number().nullable(),
+  online_quiz_link: z
+    .string()
+    .nonempty({ message: "Online quiz link is required." })
+    .url({ message: "Must be a valid URL." }),
+  online_meeting_link: z
+    .string()
+    .nonempty({ message: "Online meeting link is required." })
+    .url({ message: "Must be a valid URL." }),
+  f2f_meeting_link: z
+    .string()
+    .nonempty({ message: "F2F meeting link is required." })
+    .url({ message: "Must be a valid URL." }),
+  duration_id: z.preprocess(
+    (val) => (val == null || val === "") ? NaN : Number(val),
+    z.number().refine((val) => !Number.isNaN(val) && val >= 1, { message: "Project period is required." })
+  ),
   image_path: z.string().optional(),
 });
 
@@ -99,6 +111,7 @@ export function SubjectsActionModal({
   const { data: technologies = [] } = useTechnologies({ status: true });
   const { data: profiles = [] } = useProfiles({ status: true });
   const { data: durations = [] } = useDurations({ status: true });
+  const { data: existingSubjects = [] } = useSubjects();
 
   const handleClose = () => {
     form.reset();
@@ -124,7 +137,7 @@ export function SubjectsActionModal({
       online_quiz_link: subject?.online_quiz_link || "",
       online_meeting_link: subject?.online_meeting_link || "",
       f2f_meeting_link: subject?.f2f_meeting_link || "",
-      duration_id: subject?.duration_id ?? null,
+      duration_id: subject?.duration_id ?? undefined as unknown as number,
     },
   });
 
@@ -164,6 +177,27 @@ export function SubjectsActionModal({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   function onSubmit(data: FormData) {
+    if (isAdd && !imageFile) {
+      form.setError("image_path", { message: "Subject image is required." });
+      return;
+    }
+
+    const duplicateCode = existingSubjects.find(
+      (s) => s.code === data.code && s.id !== subject?.id
+    );
+    if (duplicateCode) {
+      form.setError("code", { message: "A subject with this code already exists." });
+      return;
+    }
+
+    const duplicateName = existingSubjects.find(
+      (s) => s.name === data.name && s.id !== subject?.id
+    );
+    if (duplicateName) {
+      form.setError("name", { message: "A subject with this name already exists." });
+      return;
+    }
+
     const payload = { ...data, image: imageFile } as typeof data & { image: File | null };
     if (isEdit && subject) {
       updateSubject(
@@ -186,7 +220,7 @@ export function SubjectsActionModal({
         online_quiz_link: subject.online_quiz_link || "",
         online_meeting_link: subject.online_meeting_link || "",
         f2f_meeting_link: subject.f2f_meeting_link || "",
-        duration_id: subject.duration_id ?? null,
+        duration_id: subject.duration_id ?? undefined as unknown as number,
         image_path: subject.image_path || "",
       });
       setImageFile(null);
@@ -201,7 +235,7 @@ export function SubjectsActionModal({
         online_quiz_link: "",
         online_meeting_link: "",
         f2f_meeting_link: "",
-        duration_id: null,
+        duration_id: undefined as unknown as number,
         image_path: "",
       });
       setImageFile(null);
@@ -472,11 +506,11 @@ export function SubjectsActionModal({
                           </FormLabel>
                           <FormControl>
                             <Select
-                              value={field.value ? String(field.value) : "none"}
+                              value={field.value ? String(field.value) : ""}
                               onValueChange={(val) =>
                                 form.setValue(
                                   "duration_id",
-                                  val === "none" ? null : Number(val),
+                                  Number(val),
                                   { shouldValidate: true },
                                 )
                               }
@@ -486,7 +520,6 @@ export function SubjectsActionModal({
                                 <SelectValue placeholder={t("select_project_period")} />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="none">{t("no_project_period")}</SelectItem>
                                 {durations.map((d) => (
                                   <SelectItem key={d.id} value={String(d.id)}>
                                     {d.name}
@@ -523,6 +556,7 @@ export function SubjectsActionModal({
                               const file = e.target.files?.[0] ?? null;
                               setImageFile(file);
                               setImagePreview(null);
+                              if (file) form.clearErrors("image_path");
                             }}
                           />
                           <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
@@ -541,6 +575,11 @@ export function SubjectsActionModal({
                         <span className="text-sm text-muted-foreground">—</span>
                       )}
                     </div>
+                    {form.formState.errors.image_path && (
+                      <p className="text-sm text-destructive mt-1.5">
+                        {form.formState.errors.image_path.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

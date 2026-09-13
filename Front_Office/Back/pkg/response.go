@@ -11,6 +11,7 @@ type Response struct {
 	Message string      `json:"message"`
 	Data    interface{} `json:"data"`
 	Error   string      `json:"error,omitempty"`
+	Code    string      `json:"code,omitempty"`
 }
 
 func Respond(c *gin.Context, status int, message string, data interface{}) {
@@ -28,6 +29,14 @@ func HttpError(c *gin.Context, status int, err string) {
 	})
 }
 
+func HttpErrorWithCode(c *gin.Context, status int, code string, err string) {
+	c.JSON(status, Response{
+		Status: status,
+		Error:  err,
+		Code:   code,
+	})
+}
+
 func Created(c *gin.Context, message string, data interface{}) {
 	Respond(c, http.StatusCreated, message, data)
 }
@@ -42,4 +51,12 @@ func BadRequest(c *gin.Context, err string) {
 
 func InternalError(c *gin.Context, err string) {
 	HttpError(c, http.StatusInternalServerError, err)
+}
+
+func Conflict(c *gin.Context, err string) {
+	HttpError(c, http.StatusConflict, err)
+}
+
+func ConflictWithCode(c *gin.Context, code string, err string) {
+	HttpErrorWithCode(c, http.StatusConflict, code, err)
 }

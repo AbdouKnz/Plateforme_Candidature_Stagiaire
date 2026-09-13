@@ -25,7 +25,7 @@ const typeVariants: Record<string, string> = {
   confirmation: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   online_quiz: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   disapproval: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-  reopening: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  reopening: "bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]",
   online_meeting: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
   f2f_meeting: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   final_decision: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
@@ -130,9 +130,9 @@ export function EmailTemplates() {
   const debouncedSearchTerm = useDebounce(searchTerm, 150) || "";
   const [page, setPage] = useState(0);
 
-  const canCreate = modulePermissions.email_templates?.canCreate;
-  const canEdit = modulePermissions.email_templates?.canUpdate;
-  const canDelete = modulePermissions.email_templates?.canDelete;
+  const canCreate = modulePermissions.settings?.canUpdate;
+  const canEdit = modulePermissions.settings?.canUpdate;
+  const canDelete = modulePermissions.settings?.canUpdate;
 
   useEffect(() => {
     setQueryParams({ search: debouncedSearchTerm });

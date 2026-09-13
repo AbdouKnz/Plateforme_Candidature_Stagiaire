@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card-1
 import { cn } from '@/lib/utils';
 
 const STAT_COLORS = [
-  { bar: 'bg-violet-500', text: 'text-violet-600 dark:text-violet-400', chip: 'bg-violet-500/15 text-violet-700 dark:text-violet-300' },
+  { bar: 'bg-[#1d7cc7]', text: 'text-[#1d7cc7] dark:text-[#5aa3d8]', chip: 'bg-[#1d7cc7]/15 text-[#155a8a] dark:text-[#8fc3e5]' },
   { bar: 'bg-sky-500', text: 'text-sky-600 dark:text-sky-400', chip: 'bg-sky-500/15 text-sky-700 dark:text-sky-300' },
   { bar: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', chip: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
   { bar: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', chip: 'bg-amber-500/15 text-amber-700 dark:text-amber-300' },
@@ -99,7 +99,7 @@ export function StatisticCard5({
 
   return (
     <Card className="w-full rounded-xl border-border/50 shadow-lg transition-all hover:shadow-xl">
-      <div className="h-0.5 w-full bg-gradient-to-r from-violet-500 via-sky-500 to-emerald-500" />
+      <div className="h-0.5 w-full bg-gradient-to-r from-[#1d7cc7] via-[#12b9da] to-[#647988]" />
 
       <CardHeader className="border-0 pb-2 pt-5">
         <CardTitle className="text-base font-semibold text-foreground">{title}</CardTitle>

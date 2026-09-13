@@ -54,6 +54,22 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+// Legacy per-submodule Settings permission keys consolidated into `settings`.
+const SETTINGS_CONSOLIDATED_MODULES = [
+  "degrees",
+  "technologies",
+  "profiles",
+  "durations",
+  "types",
+  "email_templates",
+  "front_office_messages",
+  "mail_config",
+];
+
+const SETTINGS_VIEW = "1000";
+const SETTINGS_EDIT = "1111";
+const SETTINGS_NONE = "0000";
+
 interface RolesActionModalProps {
   role?: Role;
   modules: Module[];
@@ -83,7 +99,13 @@ export function RolesActionModal({
   const { mutate: createRole, isPending: isCreating } = useCreateRole();
   const { mutate: updateRole, isPending: isUpdating } = useUpdateRole();
 
-  const permissionModules = modules;
+  // Consolidated Settings permission (RBAC): every Settings submodule
+  // (degrees, technologies, profiles, durations, types, email templates,
+  // mail config, front office) is governed by the single `settings` module.
+  // view ("1000") = read-only, edit ("1111") = full access.
+  const permissionModules = modules.filter(
+    (m) => !SETTINGS_CONSOLIDATED_MODULES.includes(m.module_name),
+  );
 
   const actions = ["view", "create", "edit", "delete"];
   const handleClose = () => {
@@ -117,6 +139,11 @@ export function RolesActionModal({
     module: Module,
     shouldEnable: boolean,
   ): string => {
+    // Settings only supports the two consolidated levels.
+    if (module.module_name === "settings") {
+      return shouldEnable ? SETTINGS_EDIT : SETTINGS_NONE;
+    }
+
     let permissionString = "0000";
 
     if (shouldEnable) {
@@ -165,6 +192,23 @@ export function RolesActionModal({
     checked: boolean,
   ) => {
     if (isView) return;
+
+    // Settings only supports the two consolidated levels:
+    // View checkbox = read-only ("1000"), Edit checkbox = full access ("1111").
+    if (moduleName === "settings") {
+      if (action === "view") {
+        setModulePermissions(
+          "settings",
+          checked ? SETTINGS_VIEW : SETTINGS_NONE,
+        );
+      } else if (action === "edit") {
+        setModulePermissions(
+          "settings",
+          checked ? SETTINGS_EDIT : SETTINGS_VIEW,
+        );
+      }
+      return;
+    }
 
     const current = getModulePermissions(moduleName);
     const index = actions.indexOf(action);

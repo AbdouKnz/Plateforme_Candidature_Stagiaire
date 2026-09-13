@@ -74,7 +74,7 @@ export function TypesActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   const { modulePermissions } = usePermissions();
-  const canUpdateType = modulePermissions.types.canUpdate;
+  const canUpdateType = modulePermissions.settings.canUpdate;
 
   const { data: allTypes = [] } = useTypes({});
   const { mutate: createType, isPending: isCreating } = useCreateType();

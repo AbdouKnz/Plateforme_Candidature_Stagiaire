@@ -98,9 +98,9 @@ export function useDurationColumns(): ColumnDef<Duration>[] {
               setCurrentDurationId(data.id);
               setOpenDuration(DialogEnum.BLOCK);
             }}
-            canView={modulePermissions.durations.canView}
-            canEdit={modulePermissions.durations.canUpdate}
-            canDelete={modulePermissions.durations.canDelete}
+            canView={modulePermissions.settings.canView}
+            canEdit={modulePermissions.settings.canUpdate}
+            canDelete={modulePermissions.settings.canUpdate}
           />
         );
       },

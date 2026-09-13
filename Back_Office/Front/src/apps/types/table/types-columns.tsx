@@ -87,7 +87,7 @@ export function useTypeColumns(): ColumnDef<Type>[] {
               setOpenType(DialogEnum.BLOCK);
             }}
             canView={false}
-            canEdit={modulePermissions.types.canUpdate}
+            canEdit={modulePermissions.settings.canUpdate}
             canDelete={false}
           />
         );

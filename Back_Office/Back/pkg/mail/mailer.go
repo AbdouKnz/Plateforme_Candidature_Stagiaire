@@ -221,35 +221,35 @@ func buildHTML(body string) string {
 <!-- Location -->
 <td style="padding:0 10px;">
 <a href="https://www.google.com/maps/place/Asteroidea/@36.7683782,10.2420193,909m/data=!3m2!1e3!4b1!4m6!3m5!1s0x12fd370003d7b35b:0xba18eae5e43a8557!8m2!3d36.7683739!4d10.2445942!16s%%2Fg%%2F11vy5k2_b2?entry=ttu&amp;g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%%3D%%3D" target="_blank" style="text-decoration:none;">
-			<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/location.png" width="24" height="24" alt="Location" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
+<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/location.png" width="24" height="24" alt="Location" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
 </a>
 </td>
 
 <!-- Phone -->
 <td style="padding:0 10px;">
 <a href="tel:+21626342040" target="_blank" style="text-decoration:none;">
-			<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/phone.png" width="24" height="24" alt="Phone" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
+<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/phone.png" width="24" height="24" alt="Phone" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
 </a>
 </td>
 
 <!-- Email -->
 <td style="padding:0 10px;">
-<a href="mailto:info@asteroidea.co" target="_blank" style="text-decoration:none;">
-			<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/email.png" width="24" height="24" alt="Email" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
+<a href="mailto:info@parkandcharge.io" target="_blank" style="text-decoration:none;">
+<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/email.png" width="24" height="24" alt="Email" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
 </a>
 </td>
 
 <!-- LinkedIn -->
 <td style="padding:0 10px;">
-<a href="https://www.linkedin.com/company/asteroidea-co/posts/?feedView=all" target="_blank" style="text-decoration:none;">
-			<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/linkedin.png" width="24" height="24" alt="LinkedIn" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
+<a href="https://www.linkedin.com/company/park-and-charge-tn/" target="_blank" style="text-decoration:none;">
+<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/linkedin.png" width="24" height="24" alt="LinkedIn" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
 </a>
 </td>
 
 <!-- Website -->
 <td style="padding:0 10px;">
-<a href="https://asteroidea.co/" target="_blank" style="text-decoration:none;">
-			<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/website.png" width="24" height="24" alt="Website" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
+<a href="https://parkandcharge.io/" target="_blank" style="text-decoration:none;">
+<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/WhiteBlueCircle.png" width="24" height="24" alt="Website" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
 </a>
 </td>
 
@@ -259,7 +259,7 @@ func buildHTML(body string) string {
 </tr>
 <tr>
 <td align="center" style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#9CA3AF;line-height:1.5;">
-&copy; 2026 Asteroidea. All rights reserved.
+&copy; 2026 Park & Charge. All rights reserved.
 </td>
 </tr>
 </table>

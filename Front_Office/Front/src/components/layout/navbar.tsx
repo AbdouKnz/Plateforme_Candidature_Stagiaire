@@ -4,7 +4,6 @@ import { motion } from "motion/react"
 import { MenuIcon, XIcon } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
-import { useTheme } from "@/context/theme-context"
 import { useTranslation } from "@/context/language-context"
 import { useFrontOfficeStatus } from "@/hooks/use-front-office-status"
 import { cn } from "@/lib/utils"
@@ -13,22 +12,16 @@ function useNavLinks() {
   const { status } = useFrontOfficeStatus()
   const isClosed = status && !status.is_enabled
   if (isClosed) {
-    return [
-      { to: "/", labelKey: "home.nav.home" },
-      { to: "/about", labelKey: "home.nav.about" },
-    ]
+    return [{ to: "/", labelKey: "home.nav.home" }]
   }
   return [
     { to: "/", labelKey: "home.nav.home" },
-    { to: "/about", labelKey: "home.nav.about" },
     { to: "/pfe-book", labelKey: "pfeBook" },
-    { to: "/form", labelKey: "home.applyNow" },
   ]
 }
 
 export function Navbar() {
   const t = useTranslation()
-  const { resolvedTheme } = useTheme()
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -59,7 +52,7 @@ export function Navbar() {
       <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-8 lg:px-16">
         <Link to="/" className="shrink-0 flex items-center">
           <img
-            src={`/${resolvedTheme === "dark" ? "DarkMode" : "LightMode"}.png`}
+            src="/PC_Logo.png"
             alt="Asteroidea"
             width={200}
             height={200}
@@ -75,7 +68,7 @@ export function Navbar() {
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  "relative px-4 py-2 text-sm font-medium rounded-lg transition-colors",
+                  "relative px-4 py-2 text-sm font-bold rounded-lg transition-colors",
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
@@ -122,7 +115,7 @@ export function Navbar() {
                   key={link.to}
                   to={link.to}
                   className={cn(
-                    "px-4 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                    "px-4 py-2.5 text-sm font-bold rounded-lg transition-colors",
                     isActive
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",

@@ -24,6 +24,7 @@ type Candidature struct {
 	Methode               string  `bun:"methode" json:"methode"`
 	StartDate             string  `bun:"start_date" json:"start_date"`
 	SubjectName           string  `bun:"subject_name" json:"subject_name"`
+	SubjectCode           string  `bun:"subject_code,default:''" json:"subject_code"`
 	University            string  `bun:"university" json:"university"`
 	University2           string  `bun:"university2" json:"university2"`
 	DateApplication       string  `bun:"date_application" json:"date_application"`
@@ -45,6 +46,7 @@ type Candidature struct {
 	ScoreF2FMeeting       int     `bun:"score_f2f_meeting,notnull,default:0" json:"score_f2f_meeting"`
 	ScoreFinalDecision    int     `bun:"score_final_decision,notnull,default:0" json:"score_final_decision"`
 	Notes                 string  `bun:"notes" json:"notes"`
+	RejectionReason       string  `bun:"rejection_reason" json:"rejection_reason"`
 	CreatedAt             string  `bun:"created_at,nullzero,default:current_timestamp" json:"created_at"`
 	UpdatedAt             string  `bun:"updated_at,notnull,default:current_timestamp" json:"updated_at"`
 }

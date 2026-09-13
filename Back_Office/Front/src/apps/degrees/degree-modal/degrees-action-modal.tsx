@@ -64,7 +64,7 @@ export function DegreesActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   const { modulePermissions } = usePermissions();
-  const canUpdateDegree = modulePermissions.degrees.canUpdate;
+  const canUpdateDegree = modulePermissions.settings.canUpdate;
 
   const { mutate: createDegree, isPending: isCreating } = useCreateDegree();
   const { mutate: updateDegree, isPending: isUpdating } = useUpdateDegree();

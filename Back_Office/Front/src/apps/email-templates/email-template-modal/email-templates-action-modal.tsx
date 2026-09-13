@@ -22,6 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -52,24 +53,39 @@ const typeLabelMap: Record<string, Record<string, string>> = {
   en: { confirmation: "Acknowledgment of Receipt", online_quiz: "Online Quiz", disapproval: "Disapproval", reopening: "Reopening", online_meeting: "Online Meeting", f2f_meeting: "Face to Face Meeting", final_decision: "Final Decision" },
 };
 
-const subjectOptions = [
-  { label: "Acknowledgment of Receipt", type: "confirmation", subject: "Acknowledgment of Receipt" },
-  { label: "Online Quiz", type: "online_quiz", subject: "Online Quiz" },
-  { label: "Disapproval", type: "disapproval", subject: "Disapproval" },
-  { label: "Reopening", type: "reopening", subject: "Reopening" },
-  { label: "Online Meeting", type: "online_meeting", subject: "Online Meeting" },
-  { label: "Face to Face Meeting", type: "f2f_meeting", subject: "Face to Face Meeting" },
-  { label: "Final Decision", type: "final_decision", subject: "Final Decision" },
+const templateTypes = [
+  "confirmation",
+  "online_quiz",
+  "online_meeting",
+  "f2f_meeting",
+  "final_decision",
+  "disapproval",
+  "reopening",
 ] as const;
 
 const viewTypeVariants: Record<string, string> = {
   confirmation: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   online_quiz: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   disapproval: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
-  reopening: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+  reopening: "bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]",
   online_meeting: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
   f2f_meeting: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
   final_decision: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+};
+
+const placeholderInfo: Record<string, { token: string; meaning: string }[]> = {
+  online_quiz: [
+    { token: "[Link]", meaning: "ph_link" }
+  ],
+  online_meeting: [
+    { token: "[Link]", meaning: "ph_link" },
+  ],
+  f2f_meeting: [
+    { token: "[Link]", meaning: "ph_link" },
+  ],
+  final_decision: [
+    { token: "[Date]", meaning: "ph_date" },
+  ],
 };
 
 const formSchema = z.object({
@@ -99,7 +115,7 @@ export function EmailTemplatesActionModal({
   onConfirm,
   isDeleting,
 }: EmailTemplatesActionModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isEdit = mode === DialogEnum.EDIT;
   const isView = mode === DialogEnum.VIEW;
   const isAdd = mode === DialogEnum.ADD;
@@ -107,11 +123,11 @@ export function EmailTemplatesActionModal({
 
   const { data: existingTemplates } = useEmailTemplates();
   const { modulePermissions } = usePermissions();
-  const canUpdateEmailTemplate = modulePermissions.email_templates.canUpdate;
+  const canUpdateEmailTemplate = modulePermissions.settings.canUpdate;
 
-  const availableSubjectOptions = isAdd
-    ? subjectOptions.filter((opt) => !existingTemplates?.some((t) => t.type === opt.type))
-    : subjectOptions;
+  const availableTypes = isAdd
+    ? templateTypes.filter((type) => !existingTemplates?.some((t) => t.type === type))
+    : templateTypes;
 
   const { mutate: createEmailTemplate, isPending: isCreating } = useCreateEmailTemplate();
   const { mutate: updateEmailTemplate, isPending: isUpdating } = useUpdateEmailTemplate();
@@ -124,6 +140,8 @@ export function EmailTemplatesActionModal({
       body: emailTemplate?.body || "",
       },
   });
+  const selectedType = form.watch("type");
+  const selectedPlaceholders = selectedType ? placeholderInfo[selectedType] : undefined;
 
   const handleClose = () => {
     form.reset();
@@ -135,7 +153,7 @@ export function EmailTemplatesActionModal({
       (t) => t.type === data.type && t.id !== emailTemplate?.id
     );
     if (duplicate) {
-      form.setError("type", { message: t("email_subject_exists") || "This subject is already used by another template" });
+      form.setError("type", { message: t("email_type_exists") });
       return;
     }
     if (isEdit && emailTemplate) {
@@ -230,27 +248,21 @@ export function EmailTemplatesActionModal({
                 render={({ field }) => (
                   <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
                     <FormLabel className="col-span-2 text-right">
-                      {t("subject")}
+                      {t("email_template_type")}
                     </FormLabel>
                     <FormControl>
                       <Select
                         disabled={isView}
                         value={field.value || ""}
-                        onValueChange={(value) => {
-                          const option = subjectOptions.find((o) => o.type === value);
-                          if (option) {
-                            form.setValue("type", option.type);
-                            form.setValue("subject", option.subject);
-                          }
-                        }}
+                        onValueChange={(value) => form.setValue("type", value)}
                       >
                         <SelectTrigger className="col-span-4">
-                          <SelectValue placeholder={t("placeholder_email_subject")} />
+                          <SelectValue placeholder={t("email_template_type_placeholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableSubjectOptions.map((opt) => (
-                            <SelectItem key={opt.type} value={opt.type}>
-                              {opt.label}
+                          {availableTypes.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {i18n.language?.startsWith("fr") ? typeLabelMap.fr[type] : typeLabelMap.en[type]}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -260,6 +272,42 @@ export function EmailTemplatesActionModal({
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="subject"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1">
+                    <FormLabel className="col-span-2 text-right">
+                      {t("subject")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={t("placeholder_email_subject")}
+                        className="col-span-4 h-9 text-sm"
+                        disabled={isView}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage className="col-span-4 col-start-3" />
+                  </FormItem>
+                )}
+              />
+              {!isView && selectedPlaceholders && selectedPlaceholders.length > 0 ? (
+                <div className="grid grid-cols-6 items-start gap-y-1 gap-x-4">
+                  <div className="col-span-2" />
+                  <div className="col-span-4 rounded-lg border bg-muted/30 px-3 py-2 text-xs">
+                    <p className="mb-1 font-medium">{t("available_placeholders")}</p>
+                    <ul className="space-y-0.5">
+                      {selectedPlaceholders.map((h) => (
+                        <li key={h.token} className="flex items-baseline gap-2">
+                          <code className="font-semibold text-primary">{h.token}</code>
+                          <span className="text-muted-foreground">— {t(h.meaning)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : null}
               <FormField
                 control={form.control}
                 name="body"

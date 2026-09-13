@@ -3,9 +3,11 @@ import axiosApi from "@/lib/axios";
 export interface FrontOfficeStatus {
   is_enabled: boolean;
   reopening_date?: string;
+  year?: string;
+  internship_title?: string;
 }
 
-export const toggleFrontOffice = async (data: { is_enabled: boolean; reopening_date?: string }) => {
+export const toggleFrontOffice = async (data: { is_enabled: boolean; reopening_date?: string; year?: string; internship_title?: string }) => {
   const response = await axiosApi.put("/front-office/toggle", data);
   return response?.data;
 };

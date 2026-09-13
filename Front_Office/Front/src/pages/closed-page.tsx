@@ -55,14 +55,14 @@ function CountdownCircle({ value, label, max, isDark }: { value: number; label: 
             cy={82}
             r={radius}
             fill="none"
-            stroke="url(#purpleGrad)"
+            stroke="url(#brandGrad)"
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset: offset }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.3))" }}
+            style={{ filter: "drop-shadow(0 0 6px rgba(18,185,218,0.3))" }}
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -71,13 +71,13 @@ function CountdownCircle({ value, label, max, isDark }: { value: number; label: 
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className={`text-4xl font-bold tabular-nums sm:text-5xl ${isDark ? "text-white" : "text-gray-900"}`}
+            className={`text-4xl font-bold tabular-nums sm:text-5xl ${isDark ? "text-white" : "text-foreground"}`}
           >
             {String(value).padStart(2, "0")}
           </motion.span>
         </div>
       </div>
-      <span className={`mt-3 text-[11px] font-semibold tracking-[0.15em] uppercase ${isDark ? "text-white/50" : "text-gray-500"}`}>
+      <span className={`mt-3 text-xs font-bold tracking-[0.15em] uppercase ${isDark ? "text-white/50" : "text-muted-foreground"}`}>
         {label}
       </span>
     </motion.div>
@@ -155,9 +155,9 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
     <AuroraBackground className="min-h-svh">
       <svg width="0" height="0" className="absolute">
         <defs>
-          <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="100%" stopColor="#6D28D9" />
+          <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#12B9DA" />
+            <stop offset="100%" stopColor="#1D7CC7" />
           </linearGradient>
         </defs>
       </svg>
@@ -172,7 +172,7 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className={`mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[11px] font-medium tracking-wider ${isDark ? "border-white/10 bg-white/5 text-white/60" : "border-purple-200 bg-purple-50 text-purple-700"}`}
+          className={`mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium tracking-wider ${isDark ? "border-white/10 bg-white/5 text-white/60" : "border-primary/20 bg-primary/10 text-primary"}`}
         >
           {reopeningDate ? `${t("closed.reopeningDate")} ${formatDate(reopeningDate)}` : t("closed.title")}
         </motion.div>
@@ -181,7 +181,7 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className={`text-center text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl ${isDark ? "text-white" : "text-gray-900"}`}
+          className={`text-center text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl ${isDark ? "text-white" : "text-foreground"}`}
         >
           {t("closed.title")}
         </motion.h1>
@@ -204,7 +204,7 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
-            className={`mt-10 text-sm text-center max-w-md ${isDark ? "text-white/40" : "text-gray-500"}`}
+            className={`mt-10 text-sm text-center max-w-md ${isDark ? "text-white/40" : "text-muted-foreground"}`}
           >
             {t("closed.noDate")}
           </motion.p>
@@ -217,11 +217,11 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           className="mt-8 text-center"
         >
           {subscribeState === "success" ? (
-            <p className={`text-sm font-medium ${isDark ? "text-green-400" : "text-green-600"}`}>
+            <p className={`text-sm font-bold ${isDark ? "text-accent" : "text-primary"}`}>
               {t("closed.subscribeSuccess")}
             </p>
           ) : subscribeState === "already" ? (
-            <p className={`text-sm font-medium ${isDark ? "text-amber-400" : "text-amber-600"}`}>
+            <p className={`text-sm font-bold ${isDark ? "text-accent" : "text-accent"}`}>
               {t("closed.subscribeSuccess")}
             </p>
           ) : (
@@ -230,14 +230,14 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setErrorMsg("") }}
+                  onChange={(e) => { setEmail(e.target.value.replace(/:/g, "")); setErrorMsg("") }}
                   placeholder={t("closed.emailPlaceholder")}
-                  className={`h-11 w-full max-w-64 rounded-xl border px-4 text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-purple-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-secondary"} ${errorMsg ? "border-red-500" : ""}`}
+                  className={`h-11 w-full max-w-64 rounded-xl border px-4 text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-secondary"} ${errorMsg ? "border-destructive" : ""}`}
                 />
                 <button
                   onClick={handleSubscribe}
                   disabled={!email || subscribeState === "loading"}
-                  className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary px-5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary px-5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {subscribeState === "loading" ? (
                     <span className="flex items-center gap-1.5">
@@ -253,7 +253,7 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
                 </button>
               </div>
               {errorMsg && (
-                <p className="text-xs text-red-500">{errorMsg}</p>
+                <p className="text-xs text-destructive">{errorMsg}</p>
               )}
             </div>
           )}
@@ -266,8 +266,8 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           className="mt-6"
         >
           <button
-            onClick={() => navigate("/about")}
-            className="inline-flex h-12 cursor-pointer items-center gap-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary px-7 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100"
+            onClick={() => navigate("/pfe-book")}
+            className="inline-flex h-12 cursor-pointer items-center gap-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary px-7 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100"
           >
             {t("closed.aboutUs")}
           </button>

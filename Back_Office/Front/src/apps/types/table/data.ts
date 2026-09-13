@@ -11,7 +11,7 @@ export const useTypeToolbarProps = () => {
   const { modulePermissions } = usePermissions();
   const { data: allTypes = [] } = useTypes({});
 
-  const canCreateType = modulePermissions.types?.canCreate;
+  const canCreateType = modulePermissions.settings?.canUpdate;
   const maxTypesReached = allTypes.length >= 2;
 
   return {

@@ -34,9 +34,9 @@ const managementNavItems: GlowNavItem[] = [
     title: 'technology_management',
     href: '/settings/technologies',
     icon: Laptop,
-    color: 'text-violet-500',
+    color: 'text-[#1d7cc7]',
     gradient:
-      'radial-gradient(circle, rgba(139,92,246,0.18) 0%, rgba(124,58,237,0.08) 50%, rgba(109,40,217,0) 100%)',
+      'radial-gradient(circle, rgba(29,124,199,0.18) 0%, rgba(29,124,199,0.08) 50%, rgba(29,124,199,0) 100%)',
   },
   {
     title: 'type_management',

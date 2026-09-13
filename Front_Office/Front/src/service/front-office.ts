@@ -36,8 +36,14 @@ export async function submitCandidature(formData: FormData): Promise<{ id: numbe
     body: formData,
   })
   if (!res.ok) {
-    const body = await res.json()
-    throw new Error(body.error ?? "Failed to submit candidature")
+    const body = await res.json().catch(() => ({}))
+    const err = new Error(body.error ?? "Failed to submit candidature") as Error & {
+      status?: number
+      code?: string
+    }
+    err.status = res.status
+    err.code = body.code
+    throw err
   }
   const body = await res.json()
   return body.data ?? { id: 0 }
@@ -56,6 +62,18 @@ export async function subscribeWaitlist(email: string): Promise<void> {
   if (body.data?.already) {
     throw new Error("already subscribed")
   }
+}
+
+export async function fetchFrontOfficeStatus(): Promise<{
+  is_enabled: boolean
+  year?: string
+  internship_title?: string
+  reopening_date?: string
+}> {
+  const res = await fetch(`${API_BASE}/front-office/status`)
+  if (!res.ok) throw new Error("Failed to fetch front office status")
+  const body = await res.json()
+  return (body.data ?? body) as { is_enabled: boolean; year?: string; internship_title?: string; reopening_date?: string }
 }
 
 // Re-export types for convenience

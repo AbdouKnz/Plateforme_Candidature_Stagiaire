@@ -39,7 +39,7 @@ export function RecentActivity() {
     <Card className="border-border/40 rounded-2xl shadow-sm fade-in h-full">
       <CardHeader className="px-6 pt-6 pb-0">
         <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-[#1d7cc7]/10 text-[#1d7cc7] dark:bg-[#1d7cc7]/15 dark:text-[#5aa3d8]">
             <Activity className="size-5" />
           </div>
           <div>

@@ -34,7 +34,6 @@ export const useCandidaturesStore = create<CandidaturesState>((set) => ({
     set((state) => ({
       queryParams: {
         search: state.queryParams.search,
-        status: state.queryParams.status,
       },
     })),
   emailModalData: null,

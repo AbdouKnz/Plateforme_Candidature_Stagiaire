@@ -9,7 +9,7 @@ export const useDegreeToolbarProps = () => {
   const { setOpenDegree, setQueryParams } = useDegreesStore();
   const { modulePermissions } = usePermissions();
 
-  const canCreateDegree = modulePermissions.degrees?.canCreate;
+  const canCreateDegree = modulePermissions.settings?.canUpdate;
 
   return {
     tableSearchProps: {

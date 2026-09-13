@@ -14,15 +14,14 @@ func ProfilesRoutes(r *gin.RouterGroup, db *bun.DB) {
 
 	profileGroup := r.Group("/profiles")
 	profileGroup.Use(middleware.AuthMiddleware())
+	// Consolidated Settings permission: GET requires "view" or higher,
+	// POST/PUT/DELETE require "edit" (enforced via the settings mask).
+	profileGroup.Use(middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		profileGroup.GET("/", handler.GetAllProfilesHandler)
-
-		profileGroup.Use(middleware.PermissionMiddleware(pkg.PROFILES_PERMISSIONS))
-		{
-			profileGroup.POST("/", handler.CreateProfileHandler)
-			profileGroup.GET("/:id", handler.GetProfileByIDHandler)
-			profileGroup.DELETE("/:id", handler.DeleteProfileHandler)
-			profileGroup.PUT("/:id", handler.UpdateProfileHandler)
-		}
+		profileGroup.POST("/", handler.CreateProfileHandler)
+		profileGroup.GET("/:id", handler.GetProfileByIDHandler)
+		profileGroup.DELETE("/:id", handler.DeleteProfileHandler)
+		profileGroup.PUT("/:id", handler.UpdateProfileHandler)
 	}
 }

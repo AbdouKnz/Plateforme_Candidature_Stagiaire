@@ -14,15 +14,14 @@ func DegreesRoutes(r *gin.RouterGroup, db *bun.DB) {
 
 	degreeGroup := r.Group("/degrees")
 	degreeGroup.Use(middleware.AuthMiddleware())
+	// Consolidated Settings permission: GET requires "view" or higher,
+	// POST/PUT/DELETE require "edit" (enforced via the settings mask).
+	degreeGroup.Use(middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		degreeGroup.GET("/", handler.GetAllDegreesHandler)
-
-		degreeGroup.Use(middleware.PermissionMiddleware(pkg.DEGREES_PERMISSIONS))
-		{
-			degreeGroup.POST("/", handler.CreateDegreeHandler)
-			degreeGroup.GET("/:id", handler.GetDegreeByIDHandler)
-			degreeGroup.DELETE("/:id", handler.DeleteDegreeHandler)
-			degreeGroup.PUT("/:id", handler.UpdateDegreeHandler)
-		}
+		degreeGroup.POST("/", handler.CreateDegreeHandler)
+		degreeGroup.GET("/:id", handler.GetDegreeByIDHandler)
+		degreeGroup.DELETE("/:id", handler.DeleteDegreeHandler)
+		degreeGroup.PUT("/:id", handler.UpdateDegreeHandler)
 	}
 }

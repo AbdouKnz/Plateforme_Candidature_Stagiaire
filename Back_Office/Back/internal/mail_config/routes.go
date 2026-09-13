@@ -14,13 +14,12 @@ func MailConfigRoutes(r *gin.RouterGroup, db *bun.DB) {
 
 	mailConfigGroup := r.Group("/mail-config")
 	mailConfigGroup.Use(middleware.AuthMiddleware())
+	// Consolidated Settings permission: GET requires "view" or higher,
+	// PUT/POST require "edit" (enforced via the settings mask).
+	mailConfigGroup.Use(middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		mailConfigGroup.GET("/", handler.GetHandler)
-
-		mailConfigGroup.Use(middleware.PermissionMiddleware(pkg.MAIL_CONFIG_PERMISSIONS))
-		{
-			mailConfigGroup.PUT("/", handler.UpdateHandler)
-			mailConfigGroup.POST("/test", handler.TestHandler)
-		}
+		mailConfigGroup.PUT("/", handler.UpdateHandler)
+		mailConfigGroup.POST("/test", handler.TestHandler)
 	}
 }

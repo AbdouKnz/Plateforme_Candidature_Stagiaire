@@ -1,11 +1,12 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { useTranslation } from "react-i18next"
-import { PowerIcon } from "lucide-react"
+import { PowerIcon, SaveIcon } from "lucide-react"
 import { useFrontOfficeStatus, useToggleFrontOffice } from "@/hooks/use-front-office"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Input } from "@/components/ui/input"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -23,11 +24,14 @@ import {
 import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
+import { usePermissions } from "@/hooks/use-permissions"
 
 export function FrontOfficeForm() {
   const { t } = useTranslation()
   const { data: statusData } = useFrontOfficeStatus()
   const toggleMutation = useToggleFrontOffice()
+  const { modulePermissions } = usePermissions()
+  const canEditFrontOffice = modulePermissions.settings.canUpdate
 
   const isEnabled = statusData?.is_enabled ?? true
   const existingDate = statusData?.reopening_date
@@ -37,9 +41,17 @@ export function FrontOfficeForm() {
     existingDate ? new Date(existingDate) : undefined
   )
 
+  const [year, setYear] = useState(statusData?.year ?? "")
+  const [internshipTitle, setInternshipTitle] = useState(statusData?.internship_title ?? "")
+
+  useEffect(() => {
+    setYear(statusData?.year ?? "")
+    setInternshipTitle(statusData?.internship_title ?? "")
+  }, [statusData?.year, statusData?.internship_title])
+
   const handleToggleChange = (checked: boolean) => {
     if (checked) {
-      toggleMutation.mutate({ is_enabled: true })
+      toggleMutation.mutate({ is_enabled: true, year, internship_title: internshipTitle })
     } else {
       setSelectedDate(existingDate ? new Date(existingDate) : undefined)
       setShowDisableDialog(true)
@@ -51,8 +63,18 @@ export function FrontOfficeForm() {
     toggleMutation.mutate({
       is_enabled: false,
       reopening_date,
+      year,
+      internship_title: internshipTitle,
     }, {
       onSuccess: () => setShowDisableDialog(false),
+    })
+  }
+
+  const handleSaveInfo = () => {
+    toggleMutation.mutate({
+      is_enabled: isEnabled,
+      year,
+      internship_title: internshipTitle,
     })
   }
 
@@ -79,7 +101,7 @@ export function FrontOfficeForm() {
               id="front-office-toggle"
               checked={isEnabled}
               onCheckedChange={handleToggleChange}
-              disabled={toggleMutation.isPending}
+              disabled={toggleMutation.isPending || !canEditFrontOffice}
             />
           </div>
         </div>
@@ -93,6 +115,56 @@ export function FrontOfficeForm() {
             </p>
           </div>
         )}
+      </Card>
+
+      <Card className="bg-card text-card-foreground p-0 gap-0 rounded-xl border shadow-sm mb-6">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="bg-primary/10 text-primary flex aspect-square size-10 items-center justify-center rounded-lg">
+              <SaveIcon className="size-5" />
+            </div>
+            <div>
+              <p className="text-sm font-medium leading-none">{t("internship_title")}</p>
+            </div>
+          </div>
+          <div className="grid gap-4 mt-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="front-office-year" className="text-sm font-medium">
+                {t("year")}
+              </Label>
+              <Input
+                id="front-office-year"
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                placeholder={t("year_placeholder")}
+                disabled={!canEditFrontOffice}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="front-office-title" className="text-sm font-medium">
+                {t("internship_title")}
+              </Label>
+              <Input
+                id="front-office-title"
+                value={internshipTitle}
+                onChange={(e) => setInternshipTitle(e.target.value)}
+                placeholder={t("internship_title_placeholder")}
+                disabled={!canEditFrontOffice}
+              />
+            </div>
+          </div>
+          {canEditFrontOffice && (
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={handleSaveInfo}
+                disabled={toggleMutation.isPending}
+              >
+                <SaveIcon className="size-4 mr-2" />
+                {t("save")}
+              </Button>
+            </div>
+          )}
+        </div>
       </Card>
 
       <Dialog open={showDisableDialog} onOpenChange={(open) => {

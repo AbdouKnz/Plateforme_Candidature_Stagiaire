@@ -66,7 +66,22 @@ export function OptionCards({
               value={option.value}
               id={id}
               aria-invalid={invalid}
+              className="sr-only"
             />
+            <div
+              aria-hidden
+              className={cn(
+                "pointer-events-none flex size-4 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                isSelected ? "border-primary" : "border-input",
+              )}
+            >
+              <span
+                className={cn(
+                  "size-1.5 rounded-full transition-all duration-200",
+                  isSelected ? "scale-100 bg-primary" : "scale-0",
+                )}
+              />
+            </div>
             <div className="flex flex-col gap-0.5">
               <span
                 className={cn(

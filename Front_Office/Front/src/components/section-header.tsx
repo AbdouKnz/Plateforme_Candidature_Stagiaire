@@ -19,7 +19,7 @@ export function SectionHeader({
 }: SectionHeaderProps) {
   return (
     <div className={cn("flex flex-col gap-1", className)}>
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
+      <span className="text-xs font-bold uppercase tracking-[0.12em] text-primary">
         {step}
       </span>
       <div className="flex items-center gap-3.5">

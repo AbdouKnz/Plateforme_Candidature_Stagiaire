@@ -15,9 +15,9 @@ export function AuroraBackground({ children, className = "" }: AuroraBackgroundP
     <div className={`relative min-h-screen overflow-hidden w-full bg-background ${className}`}>
       <div className="absolute inset-0">
         <MoltenMetal
-          color1={isDark ? "#4C1D95" : "#7C3AED"}
-          color2={isDark ? "#7C3AED" : "#8B5CF6"}
-          color3={isDark ? "#DDD6FE" : "#C4B5FD"}
+          color1={isDark ? "#0F5C9E" : "#1D7CC7"}
+          color2={isDark ? "#1D7CC7" : "#12B9DA"}
+          color3={isDark ? "#B3E8F2" : "#12B9DA"}
           speed={0.35}
           scale={4}
           detail={3}

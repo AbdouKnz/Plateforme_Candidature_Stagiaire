@@ -26,7 +26,7 @@ const buttonVariants = cva(
         warning:
           "bg-yellow-500 text-white shadow-xs hover:bg-yellow-600 focus-visible:ring-yellow-400 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus-visible:ring-yellow-500",
         custom:
-          "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-primary-foreground dark:text-[#f8fafc]",
+          "bg-gradient-to-r from-[#1d7cc7] to-[#12b9da] hover:from-[#1869ab] hover:to-[#0ea5c2] text-white dark:text-[#f8fafc]",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
