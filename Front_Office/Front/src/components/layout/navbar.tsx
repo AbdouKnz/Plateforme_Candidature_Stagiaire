@@ -4,28 +4,12 @@ import { motion } from "motion/react"
 import { MenuIcon, XIcon } from "lucide-react"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
-import { useTranslation } from "@/context/language-context"
-import { useFrontOfficeStatus } from "@/hooks/use-front-office-status"
 import { cn } from "@/lib/utils"
 
-function useNavLinks() {
-  const { status } = useFrontOfficeStatus()
-  const isClosed = status && !status.is_enabled
-  if (isClosed) {
-    return [{ to: "/", labelKey: "home.nav.home" }]
-  }
-  return [
-    { to: "/", labelKey: "home.nav.home" },
-    { to: "/pfe-book", labelKey: "pfeBook" },
-  ]
-}
-
 export function Navbar() {
-  const t = useTranslation()
   const location = useLocation()
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const NAV_LINKS = useNavLinks()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -60,32 +44,6 @@ export function Navbar() {
           />
         </Link>
 
-        <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-1">
-          {NAV_LINKS.map((link) => {
-            const isActive = location.pathname === link.to
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={cn(
-                  "relative px-4 py-2 text-sm font-bold rounded-lg transition-colors",
-                  isActive
-                    ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                )}
-              >
-                {link.labelKey === "pfeBook" ? "PFE Book" : t(link.labelKey)}
-                {isActive && (
-                  <motion.span
-                    layoutId="nav-indicator"
-                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
-                  />
-                )}
-              </Link>
-            )
-          })}
-        </nav>
-
         <div className="flex items-center gap-2">
           <div className="hidden md:flex items-center gap-1.5">
             <LanguageToggle />
@@ -108,23 +66,6 @@ export function Navbar() {
           className="border-t border-border/50 bg-background/85 dark:bg-background backdrop-blur-xl md:hidden"
         >
           <div className="flex flex-col gap-1 px-6 py-4">
-            {NAV_LINKS.map((link) => {
-              const isActive = location.pathname === link.to
-              return (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className={cn(
-                    "px-4 py-2.5 text-sm font-bold rounded-lg transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
-                  )}
-                >
-                  {link.labelKey === "pfeBook" ? "PFE Book" : t(link.labelKey)}
-                </Link>
-              )
-            })}
             <div className="flex items-center gap-2 px-4 pt-2 border-t border-border/50 mt-2">
               <LanguageToggle />
               <ThemeToggle />

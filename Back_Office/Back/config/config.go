@@ -76,6 +76,11 @@ type ConfigMode struct {
 	Export struct {
 		FontPath string `env:"FONT_PATH,./pkg/export/font/DejaVuSans.ttf"`
 	}
+
+	// ───────────── RESET ─────────────
+	Reset struct {
+		Password string `env:"Reset_PWD,"`
+	}
 }
 
 func LoadConfig() {

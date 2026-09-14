@@ -5,12 +5,15 @@ import (
 	"astro-backend/domain"
 	"astro-backend/internal/audit"
 	"astro-backend/internal/mail_config"
+	"astro-backend/pkg"
 	"astro-backend/pkg/export"
 	mailPkg "astro-backend/pkg/mail"
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -1170,8 +1173,8 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 
 	err := query.Scan(ctx)
 
-	headers := []string{"Step", "Type", "Full Name 1", "Full Name 2", "Project", "Start Date"}
-	pdfWidths := []float64{35, 25, 55, 55, 75, 32}
+	headers := []string{"Step", "Type", "Full Name 1", "Full Name 2", "Project", "Gender"}
+	pdfWidths := []float64{35, 25, 55, 55, 65, 42}
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -1194,13 +1197,21 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 		if c.FullName2 != "" {
 			candidatureType = "Binôme"
 		}
+		gender := strings.TrimSpace(c.Gender1)
+		if strings.TrimSpace(c.Gender2) != "" {
+			if gender == "" {
+				gender = strings.TrimSpace(c.Gender2)
+			} else if !strings.EqualFold(gender, strings.TrimSpace(c.Gender2)) {
+				gender = gender + " / " + strings.TrimSpace(c.Gender2)
+			}
+		}
 		row := []string{
 			stepExportLabel(c.Step),
 			candidatureType,
+			gender,
 			c.FullName,
 			c.FullName2,
 			c.SubjectName,
-			c.StartDate,
 		}
 		data = append(data, row)
 	}
@@ -1236,5 +1247,161 @@ func (s *CandidatureService) Delete(ctx context.Context, id int) error {
 	}
 
 	log.Info().Int("id", id).Msg("Successfully deleted candidature")
+	return nil
+}
+
+var ErrInvalidResetPassword = errors.New("incorrect reset password")
+
+func verifyResetPassword(provided string) bool {
+	expected := os.Getenv("Reset_PWD")
+	if expected == "" {
+		expected = config.Configvar.Reset.Password
+	}
+	if expected == "" {
+		expected = os.Getenv("Rest_PWD")
+	}
+	if expected == "" || provided == "" {
+		return false
+	}
+	return subtle.ConstantTimeCompare([]byte(provided), []byte(expected)) == 1
+}
+
+func (s *CandidatureService) ResetPrepare(ctx context.Context, password string) ([]byte, error) {
+	if !verifyResetPassword(password) {
+		return nil, ErrInvalidResetPassword
+	}
+
+	log.Info().Msg("Generating session reset Excel backup...")
+
+	// 1. Fetch all subjects
+	var subjects []*domain.Subject
+	err := s.db.NewSelect().Model(&subjects).Order("sub.id ASC").Scan(ctx)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to fetch subjects: %w", err)
+	}
+
+	// Load relations for subjects
+	for _, subj := range subjects {
+		if subj.DurationID != nil {
+			var d domain.Duration
+			if err := s.db.NewSelect().Model(&d).Where("id = ?", *subj.DurationID).Scan(ctx); err == nil {
+				subj.Duration = &d
+			}
+		}
+		var techIDs []int
+		_ = s.db.NewSelect().Model((*domain.SubjectTechnology)(nil)).Column("technology_id").Where("subject_id = ?", subj.ID).Scan(ctx, &techIDs)
+		if len(techIDs) > 0 {
+			_ = s.db.NewSelect().Model(&subj.Technologies).Where("id IN (?)", bun.In(techIDs)).Scan(ctx)
+		}
+		var profIDs []int
+		_ = s.db.NewSelect().Model((*domain.SubjectProfile)(nil)).Column("profile_id").Where("subject_id = ?", subj.ID).Scan(ctx, &profIDs)
+		if len(profIDs) > 0 {
+			_ = s.db.NewSelect().Model(&subj.Profiles).Where("id IN (?)", bun.In(profIDs)).Scan(ctx)
+		}
+	}
+
+	// 2. Fetch all candidatures
+	var candidatures []*domain.Candidature
+	err = s.db.NewSelect().Model(&candidatures).Order("cnd.id ASC").Scan(ctx)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to fetch candidatures: %w", err)
+	}
+
+	// 3. Fetch pipeline stages
+	stages, err := s.GetPipeline(ctx)
+	if err != nil {
+		log.Warn().Err(err).Msg("Failed to fetch pipeline for reset export, proceeding with empty counts")
+	}
+
+	var pipelineStats []export.PipelineStageStats
+	for _, stage := range stages {
+		pipelineStats = append(pipelineStats, export.PipelineStageStats{
+			StageName: stage.Name,
+			Pending:   stage.Counts.Pending,
+			Accepted:  stage.Counts.Accepted,
+			Rejected:  stage.Counts.Rejected,
+		})
+	}
+
+	// 4. Generate multi-sheet workbook entirely in memory
+	exportData := export.SessionExportData{
+		Subjects:     subjects,
+		Candidatures: candidatures,
+		Pipeline:     pipelineStats,
+	}
+
+	workbookBytes, err := export.GenerateSessionResetWorkbook(exportData)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to generate session reset Excel workbook")
+		return nil, fmt.Errorf("failed to generate Excel workbook: %w", err)
+	}
+
+	log.Info().Int("subjects", len(subjects)).Int("candidatures", len(candidatures)).Msg("Session reset Excel workbook successfully generated in memory")
+	return workbookBytes, nil
+}
+
+func (s *CandidatureService) ResetConfirm(ctx context.Context, password string) error {
+	if !verifyResetPassword(password) {
+		return ErrInvalidResetPassword
+	}
+
+	log.Warn().Msg("Executing database reset for recruitment session...")
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("could not start reset transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Delete all email logs associated with candidatures
+	if _, err := tx.NewDelete().Model((*domain.EmailLog)(nil)).Where("1 = 1").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete email logs in reset transaction")
+		return fmt.Errorf("could not delete email logs: %w", err)
+	}
+
+	// 2. Delete all audit logs related to candidatures and subjects
+	if _, err := tx.NewDelete().Model((*domain.AuditLog)(nil)).Where("LOWER(module) IN ('candidature', 'subject')").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete candidature and subject audit logs in reset transaction")
+		return fmt.Errorf("could not delete audit logs: %w", err)
+	}
+
+	// 3. Delete all candidatures
+	if _, err := tx.NewDelete().Model((*domain.Candidature)(nil)).Where("1 = 1").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete candidatures in reset transaction")
+		return fmt.Errorf("could not delete candidatures: %w", err)
+	}
+
+	// 4. Delete subject relations (technologies & profiles) and all subjects
+	if _, err := tx.NewDelete().Model((*domain.SubjectTechnology)(nil)).Where("1 = 1").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete subject technologies in reset transaction")
+		return fmt.Errorf("could not delete subject technologies: %w", err)
+	}
+	if _, err := tx.NewDelete().Model((*domain.SubjectProfile)(nil)).Where("1 = 1").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete subject profiles in reset transaction")
+		return fmt.Errorf("could not delete subject profiles: %w", err)
+	}
+	if _, err := tx.NewDelete().Model((*domain.Subject)(nil)).Where("1 = 1").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete subjects in reset transaction")
+		return fmt.Errorf("could not delete subjects: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error().Err(err).Msg("Failed to commit session reset transaction")
+		return fmt.Errorf("could not commit reset transaction: %w", err)
+	}
+
+	log.Info().Msg("Recruitment session and subjects successfully reset in database")
+
+	// 5. Record audit log of the session reset
+	changeDetails := domain.ChangeDetail{
+		Type: pkg.RESET_ACTION,
+		Fields: map[string]domain.FieldChange{
+			"Session": {DeletedValues: "All candidatures, subjects, email logs, and recruitment pipeline data", Changed: true},
+		},
+	}
+	if _, err := audit.LogAction(ctx, s.db, pkg.SESSION_MODULE, pkg.RESET_ACTION, changeDetails); err != nil {
+		log.Warn().Err(err).Msg("Failed to record audit log for session reset")
+	}
+
 	return nil
 }

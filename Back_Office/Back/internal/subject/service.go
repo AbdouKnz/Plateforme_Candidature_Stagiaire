@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -112,11 +113,11 @@ func (s *SubjectService) ExportSubjects(ctx context.Context, params SubjectParam
 		return nil, fmt.Errorf("failed to fetch subjects: %w", err)
 	}
 
-	headers := []string{"Code", "Name", "Period"}
+	headers := []string{"Code", "Name", "Period", "Profiles"}
 	if params.FileType == "excel" {
-		headers = []string{"code", "name", "period"}
+		headers = []string{"code", "name", "period", "profiles"}
 	}
-	widths := []float64{50, 160, 67}
+	widths := []float64{40, 110, 47, 80}
 
 	if len(subjects) == 0 {
 		log.Warn().Msg("No subjects found matching criteria")
@@ -137,9 +138,17 @@ func (s *SubjectService) ExportSubjects(ctx context.Context, params SubjectParam
 			period = subj.Duration.Name
 		}
 
+		profileNames := make([]string, 0, len(subj.Profiles))
+		for _, prof := range subj.Profiles {
+			if prof != nil {
+				profileNames = append(profileNames, prof.Name)
+			}
+		}
+
 		row := []string{
 			subj.Code,
 			subj.Name,
+			strings.Join(profileNames, ", "),
 			period,
 		}
 		data = append(data, row)

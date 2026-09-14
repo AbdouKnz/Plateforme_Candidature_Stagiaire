@@ -20,6 +20,10 @@ func CandidatureRoutes(r *gin.RouterGroup, db *bun.DB) {
 		candidatureGroup.GET("/pipeline", handler.GetPipelineHandler)
 		candidatureGroup.GET("/rejection-reasons", handler.GetRejectionReasonsHandler)
 
+		// Session reset endpoints - strictly restricted to Super Admin only
+		candidatureGroup.POST("/reset/prepare", middleware.AdminMiddleware(), handler.ResetPrepareHandler)
+		candidatureGroup.POST("/reset/confirm", middleware.AdminMiddleware(), handler.ResetConfirmHandler)
+
 		candidatureGroup.Use(middleware.PermissionMiddleware(pkg.CANDIDATURES_PERMISSIONS))
 		{
 			candidatureGroup.POST("/", handler.CreateHandler)

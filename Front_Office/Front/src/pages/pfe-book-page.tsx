@@ -30,6 +30,8 @@ import {
   HandshakeIcon,
   UserIcon,
   CalendarIcon,
+  GlobeIcon,
+  LayersIcon,
 } from "lucide-react"
 
 function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -365,108 +367,104 @@ export function PfeBookPage() {
               <div className="mx-auto mt-3 h-px w-12 bg-[#F1F4F8]" />
             </div>
 
-            <div className="flex flex-1 min-h-0 flex-col lg:flex-row gap-2 lg:gap-2.5 mt-3 sm:mt-4 px-4 sm:px-6 lg:px-8 xl:px-10 overflow-hidden">
-            {/* left - dark cards */}
-            <div className="flex w-full lg:w-[46%] flex-col gap-2 lg:gap-2.5 overflow-hidden flex-1 min-h-0">
-              {/* Card 1 - Company Overview merged with features + achievements */}
-              <div className="rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-2.5 sm:p-3 shadow-sm flex flex-col gap-2 lg:gap-2.5 flex-1 min-h-0">
-                {/* Company Overview Header with Image */}
-                <div className="flex flex-row items-center gap-3 flex-none">
+            <div className="flex flex-1 min-h-0 flex-col mt-3 sm:mt-4 px-5 sm:px-7 lg:px-8 xl:px-10 overflow-hidden">
+              {/* Company Overview Card spanning full width */}
+              <div className="w-full rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-4 sm:p-5 lg:p-6 shadow-sm flex flex-col gap-3 lg:gap-4 flex-1 min-h-0">
+                {/* Company Overview Header with Image & Key Stats */}
+                <div className="flex flex-row items-center justify-between gap-4 sm:gap-6 flex-none">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2.5">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
-                        <BuildingIcon className="size-4" />
+                      <div className="flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
+                        <BuildingIcon className="size-4 sm:size-5" />
                       </div>
                       <h3 className="text-xl lg:text-2xl font-bold tracking-tight text-[#24243C]">Company Overview</h3>
                     </div>
                     <div className="mt-1.5 h-0.5 w-14 rounded-full bg-gradient-to-r from-[#1D7CC7] to-[#0F5C9E]" />
-                    <p className="mt-2 text-sm sm:text-base lg:text-lg leading-[1.55] text-[#24243C]/80">
-                      Asteroidea is a <span className="font-semibold text-[#24243C]">global company</span> creating smart digital solutions for urban mobility and parking. We digitize <span className="font-semibold text-[#24243C]">parking systems</span>, connect EV charging, and use <span className="font-semibold text-[#24243C]">AI and data</span> to make cities smarter and more sustainable.
+                    <p className="mt-2.5 text-sm sm:text-base lg:text-lg leading-[1.5] text-[#24243C]/80">
+                      <span className="font-semibold text-[#24243C]">Park & Charge</span> was founded in Tunisia and is officially labelled under the Tunisia Startup Act.<br /> With a daughter company in <span className="font-semibold text-[#24243C]">Malta</span>, we now serve operators from <span className="font-semibold text-[#24243C]">Rome to Madrid and Berlin</span> <br className="hidden sm:inline" />Connecting parking and charging into one seamless experience.
                     </p>
                   </div>
-                  <div className="block shrink-0 w-28 sm:w-36 lg:w-44 aspect-square rounded-xl border border-[#1D7CC7]/30 overflow-hidden">
+                  <div className="block shrink-0 w-28 sm:w-36 lg:w-44 aspect-square rounded-xl border border-[#1D7CC7]/30 overflow-hidden shadow-sm">
                     <img src="/EV_Charging.png" alt="EV Charging Smart City" className="w-full h-full object-cover" />
                   </div>
                 </div>
 
-                {/* Key Achievements then Core Values stacked */}
-                <div className="flex flex-col gap-2 flex-1 min-h-0">
-                  <div className="flex flex-col rounded-xl border border-[#1D7CC7]/30 bg-[#F1F4F8] p-2.5 sm:p-3 flex-1 min-h-0 overflow-hidden">
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
-                        <AwardIcon className="size-4" />
+                {/* Our Mission & What we stand for */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 flex-1 min-h-0">
+                  {/* Our Mission */}
+                  <div className="lg:col-span-4 xl:col-span-3 flex flex-col justify-between rounded-xl border border-[#1D7CC7]/30 bg-[#F1F4F8] p-3 sm:p-4 min-h-0 overflow-hidden">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
+                          <RocketIcon className="size-4" />
+                        </div>
+                        <h4 className="text-lg sm:text-xl font-bold text-[#24243C]">Our Mission</h4>
                       </div>
-                      <h4 className="text-lg sm:text-xl font-bold text-[#24243C]">Key Achievements</h4>
-                    </div>
-                    <p className="mt-1.5 text-sm sm:text-base leading-[1.45] text-[#24243C]/70">
-                      More than <span className="font-bold text-[#24243C]">30 projects</span> in <span className="font-bold text-[#24243C]">12 countries</span>. Trusted by governments and enterprises across EMEA.
-                    </p>
-                    <div className="mt-1.5 grid grid-cols-2 gap-1.5">
-                      <div className="rounded-xl bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/50 p-1.5 text-center text-[#FFFFFF] shadow-sm">
-                        <div className="text-xl font-bold leading-none tracking-tight">30+</div>
-                        <div className="mt-1 text-[12px] font-semibold tracking-widest uppercase opacity-80">Projects</div>
-                      </div>
-                      <div className="rounded-xl bg-[#F1F4F8] border border-[#1D7CC7]/40 p-1.5 text-center">
-                        <div className="text-xl font-bold leading-none tracking-tight text-[#24243C]">12</div>
-                        <div className="mt-1 text-[12px] font-semibold tracking-widest text-[#24243C]/60 uppercase">Countries</div>
-                      </div>
+                      <p className="mt-2 text-sm sm:text-base leading-[1.45] text-[#24243C]/75">
+                        Make <span className="font-bold text-[#24243C]">EV charging management</span> seamless, from the charger to the parking spot.
+                      </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-col rounded-xl border border-[#1D7CC7]/30 bg-[#F1F4F8] p-2.5 sm:p-3 flex-1 min-h-0 overflow-hidden">
-                    <div className="flex items-center gap-2">
+                  {/* What we stand for */}
+                  <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between rounded-xl border border-[#1D7CC7]/30 bg-[#F1F4F8] p-3 sm:p-4 min-h-0 overflow-hidden">
+                    <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
                       <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
                         <HeartHandshakeIcon className="size-4" />
                       </div>
-                      <h4 className="text-lg sm:text-xl font-bold text-[#24243C]">Core Values</h4>
+                      <h4 className="text-lg sm:text-xl font-bold text-[#24243C]">What we stand for</h4>
                     </div>
-                    <p className="mt-1.5 text-sm sm:text-base leading-[1.45] text-[#24243C]/70">
-                      Innovation, integrity, and teamwork drive every line of code and every city we serve.
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1">
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1D7CC7] text-[#FFFFFF] px-2.5 py-1 text-[13px] font-bold shadow-sm">
-                        <LightbulbIcon className="size-3" /> Innovation
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1D7CC7] text-[#FFFFFF] px-2.5 py-1 text-[13px] font-bold shadow-sm">
-                        <HeartHandshakeIcon className="size-3" /> Integrity
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F1F4F8] border border-[#DCE3EA] text-[#24243C] px-2.5 py-1 text-[13px] font-bold">
-                        <UsersIcon className="size-3" /> Teamwork
-                      </span>
+
+                    {/* 3 cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 flex-1 min-h-0">
+                      {/* Card 1: Interoperability */}
+                      <div className="flex flex-col justify-center rounded-xl border border-[#1D7CC7]/25 bg-white p-3 shadow-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#1D7CC7]/10 text-[#1D7CC7]">
+                            <LayersIcon className="size-3.5" />
+                          </div>
+                          <h5 className="text-sm font-bold text-[#24243C]">Interoperability</h5>
+                        </div>
+                        <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#24243C]/75">
+                          Open standards (OCPP), cross-CPO wallets, and white-label front-ends.
+                        </p>
+                      </div>
+
+                      {/* Card 2: Operator-first */}
+                      <div className="flex flex-col justify-center rounded-xl border border-[#1D7CC7]/25 bg-white p-3 shadow-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#1D7CC7]/10 text-[#1D7CC7]">
+                            <UsersIcon className="size-3.5" />
+                          </div>
+                          <h5 className="text-sm font-bold text-[#24243C]">Operator first</h5>
+                        </div>
+                        <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#24243C]/75">
+                          We build for the people who actually run charging networks every day.
+                        </p>
+                      </div>
+
+                      {/* Card 3: Global, from Tunisia */}
+                      <div className="flex flex-col justify-center rounded-xl border border-[#1D7CC7]/25 bg-white p-3 shadow-xs">
+                        <div className="flex items-center gap-2">
+                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#1D7CC7]/10 text-[#1D7CC7]">
+                            <GlobeIcon className="size-3.5" />
+                          </div>
+                          <h5 className="text-sm font-bold text-[#24243C]">Global, from Tunisia</h5>
+                        </div>
+                        <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#24243C]/75">
+                          International ambition, North African roots, Maltese subsidiary.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* right map */}
-            <div className="w-full lg:w-[54%] shrink-0 flex flex-col gap-2 sm:gap-3 overflow-hidden flex-1 min-h-0">
-              {/* map */}
-              <div className="relative shrink min-h-0 h-[160px] sm:h-[200px] lg:flex-1 rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] shadow-2xl overflow-hidden">
-                <img
-                  src="/world-map-dotted.png?v=blue"
-                  alt="Asteroidea global footprint - dotted world map with 12 countries and 30+ projects"
-                  className="absolute inset-0 h-full w-full object-contain scale-[1.17] sm:scale-[1.15] lg:scale-[1.12]"
-                  loading="lazy"
-                />
-                <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-[#DCE3EA] shadow-inner" />
-                <div className="absolute bottom-3 left-3 right-3 flex justify-between gap-2 text-[12px] font-mono font-bold">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE3EA] bg-white px-3 py-1.5 shadow-md text-[#24243C]">
-                    <span className="size-1.5 rounded-full bg-[#1D7CC7]" /> 12 countries
-                  </span>
-                  
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DCE3EA] bg-white px-3 py-1.5 shadow-md text-[#24243C]">
-                    <span className="size-1.5 rounded-full bg-[#1D7CC7]" /> 30+ projects
-                  </span>
-                </div>
-              </div>
-            </div>
             </div>
 
             {/* sponsors - bottom band aligned with the cards above */}
             <div className="shrink-0 rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur px-5 sm:px-8 lg:px-12 py-4 shadow-sm mx-5 sm:mx-7 lg:mx-8 xl:mx-10 my-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold tracking-widest text-[#24243C] uppercase">Trusted & Backed By</p>
+                <p className="text-xs font-bold tracking-widest text-[#24243C] uppercase">Trusted across Europe and beyond</p>
                 <span className="rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/40 px-2 py-0.5 text-[12px] font-bold tracking-wide text-[#24243C]/60">6 partners</span>
               </div>
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 items-center gap-4 sm:gap-5 lg:gap-6">
@@ -1037,21 +1035,6 @@ export function PfeBookPage() {
                   <div className="mt-8 h-px w-12 bg-[#1D7CC7]/50" />
                   <p className="mt-6 text-xs font-bold tracking-widest text-[#12B9DA] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
                 </div>
-              </div>
-              {/* Bottom row: footer image icons, icon-only, no card */}
-              <div className="flex items-center justify-center gap-8">
-                <a href="https://www.google.com/maps/place/Asteroidea/@36.7683782,10.2420193,909m/data=!3m2!1e3!4b1!4m6!3m5!1s0x12fd370003d7b35b:0xba18eae5e43a8557!8m2!3d36.7683739!4d10.2445942!16s%2Fg%2F11vy5k2_b2?entry=ttu&g_ep=EgoyMDI1MTIwOS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noreferrer" aria-label="Address" className="fine-hover:opacity-80 fine-hover:scale-105 transition-all">
-                  <img src="/adress.png" alt="" className="size-7 object-contain" loading="lazy" />
-                </a>
-                <a href="mailto:info@parkandcharge.io" aria-label="Email" className="fine-hover:opacity-80 fine-hover:scale-105 transition-all">
-                  <img src="/email.png" alt="" className="size-7 object-contain" loading="lazy" />
-                </a>
-                <a href="https://www.linkedin.com/company/park-and-charge-tn/" target="_blank" rel="noreferrer" aria-label="LinkedIn" className="fine-hover:opacity-80 fine-hover:scale-105 transition-all">
-                  <img src="/linkedin.png" alt="" className="size-7 object-contain" loading="lazy" />
-                </a>
-                <a href="https://parkandcharge.io/" target="_blank" rel="noreferrer" aria-label="Website" className="fine-hover:opacity-80 fine-hover:scale-105 transition-all">
-                  <img src="/WhiteBlueCircle.png" alt="" className="size-7 object-contain" loading="lazy" />
-                </a>
               </div>
             </div>
           </div>

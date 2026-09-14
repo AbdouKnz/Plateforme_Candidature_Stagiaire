@@ -38,10 +38,8 @@ export function useModules() {
     queryKey: ["modules"],
     queryFn: getModules,
     retry: 1,
-    onError: (error: Error) => {
-      console.error("Error fetching modules:", error);
-    },
-  } as UseQueryOptions<Module[], Error>);
+    staleTime: 5 * 60 * 1000,
+  });
 }
 
 

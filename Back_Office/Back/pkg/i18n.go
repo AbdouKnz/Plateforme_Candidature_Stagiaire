@@ -131,6 +131,9 @@ var Messages = map[string]map[string]string{
 		"email_logs_fetched_successfully": "Email logs fetched successfully",
 		"email_log_not_found":             "Email log not found",
 		"email_log_fetched_successfully":  "Email log fetched successfully",
+
+		// Session Reset
+		"session_reset_successfully": "Recruitment session reset successfully",
 	},
 
 	LangFR: {
@@ -254,6 +257,9 @@ var Messages = map[string]map[string]string{
 		"email_logs_fetched_successfully": "Journaux d'emails récupérés avec succès",
 		"email_log_not_found":             "Journal d'email introuvable",
 		"email_log_fetched_successfully":  "Journal d'email récupéré avec succès",
+
+		// Session Reset
+		"session_reset_successfully": "Session de recrutement réinitialisée avec succès",
 	},
 
 	LangAR: {
@@ -374,6 +380,9 @@ var Messages = map[string]map[string]string{
 		"email_logs_fetched_successfully": "تم جلب سجلات البريد الإلكتروني بنجاح",
 		"email_log_not_found":             "سجل البريد الإلكتروني غير موجود",
 		"email_log_fetched_successfully":  "تم جلب سجل البريد الإلكتروني بنجاح",
+
+		// Session Reset
+		"session_reset_successfully": "تمت إعادة تعيين جلسة التوظيف بنجاح",
 	},
 }
 

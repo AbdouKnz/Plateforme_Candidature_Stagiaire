@@ -4,9 +4,13 @@ import (
 	"astro-backend/domain"
 	"astro-backend/pkg"
 	"astro-backend/pkg/export"
+	"errors"
+	"fmt"
+	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
@@ -265,16 +269,16 @@ func (h *CandidatureHandler) GetByIDHandler(c *gin.Context) {
 
 func (h *CandidatureHandler) ParseCandidatureParams(c *gin.Context) CandidatureParams {
 	return CandidatureParams{
-		Search:            c.DefaultQuery("search", ""),
-		FileType:          c.DefaultQuery("file_type", "pdf"),
-		FullName:          c.DefaultQuery("full_name", ""),
-		CandidatureType:   c.DefaultQuery("candidature_type", ""),
-		Gender:            c.DefaultQuery("gender", ""),
-		Degree:            c.DefaultQuery("degree", ""),
-		SubjectName:       c.DefaultQuery("subject_name", ""),
-		Status:            c.DefaultQuery("status", ""),
-		Step:              c.DefaultQuery("step", ""),
-		ScoreSortStep:     c.DefaultQuery("score_sort_step", ""),
+		Search:             c.DefaultQuery("search", ""),
+		FileType:           c.DefaultQuery("file_type", "pdf"),
+		FullName:           c.DefaultQuery("full_name", ""),
+		CandidatureType:    c.DefaultQuery("candidature_type", ""),
+		Gender:             c.DefaultQuery("gender", ""),
+		Degree:             c.DefaultQuery("degree", ""),
+		SubjectName:        c.DefaultQuery("subject_name", ""),
+		Status:             c.DefaultQuery("status", ""),
+		Step:               c.DefaultQuery("step", ""),
+		ScoreSortStep:      c.DefaultQuery("score_sort_step", ""),
 		ScoreSortDirection: c.DefaultQuery("score_sort_direction", ""),
 	}
 }
@@ -338,4 +342,48 @@ func (h *CandidatureHandler) DeleteHandler(c *gin.Context) {
 	}
 
 	pkg.SuccessL(c, "candidature_deleted_successfully", nil)
+}
+
+func (h *CandidatureHandler) ResetPrepareHandler(c *gin.Context) {
+	var req ResetSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pkg.BadRequest(c, "password is required")
+		return
+	}
+
+	excelBytes, err := h.Service.ResetPrepare(c.Request.Context(), req.Password)
+	if err != nil {
+		if errors.Is(err, ErrInvalidResetPassword) {
+			pkg.Unauthorized(c, "Invalid reset password")
+			return
+		}
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	currentTime := time.Now().Format("2006-01-02_15-04-05")
+	filename := fmt.Sprintf("session_backup_%s.xlsx", currentTime)
+
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	c.Data(http.StatusOK, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelBytes)
+}
+
+func (h *CandidatureHandler) ResetConfirmHandler(c *gin.Context) {
+	var req ResetSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pkg.BadRequest(c, "password is required")
+		return
+	}
+
+	if err := h.Service.ResetConfirm(c.Request.Context(), req.Password); err != nil {
+		if errors.Is(err, ErrInvalidResetPassword) {
+			pkg.Unauthorized(c, "Invalid reset password")
+			return
+		}
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	pkg.SuccessL(c, "session_reset_successfully", nil)
 }

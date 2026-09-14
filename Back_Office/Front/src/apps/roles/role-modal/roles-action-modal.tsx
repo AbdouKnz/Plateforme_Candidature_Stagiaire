@@ -54,21 +54,13 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-// Legacy per-submodule Settings permission keys consolidated into `settings`.
-const SETTINGS_CONSOLIDATED_MODULES = [
-  "degrees",
-  "technologies",
-  "profiles",
-  "durations",
-  "types",
-  "email_templates",
-  "front_office_messages",
-  "mail_config",
-];
-
-const SETTINGS_VIEW = "1000";
-const SETTINGS_EDIT = "1111";
-const SETTINGS_NONE = "0000";
+// Modules with only two levels (like settings): View = read-only ("1000"),
+// Edit = full access ("1111", all bits set so POST/PUT/DELETE all pass the
+// backend method->bit check). Create/Delete columns render as "-" for these.
+const TWO_LEVEL_MODULES = ["settings", "candidatures"];
+const TWO_LEVEL_VIEW = "1000";
+const TWO_LEVEL_FULL = "1111";
+const TWO_LEVEL_NONE = "0000";
 
 interface RolesActionModalProps {
   role?: Role;
@@ -77,6 +69,21 @@ interface RolesActionModalProps {
   onClose: () => void;
   mode?: ModalMode;
   switchToEdit?: () => void;
+  modulesLoading?: boolean;
+  modulesError?: unknown;
+  onRetryModules?: () => void;
+}
+
+function getModulesErrorMessage(error: unknown): string {
+  const err = error as {
+    response?: { status?: number; data?: { error?: string; message?: string } };
+    message?: string;
+  };
+  const status = err?.response?.status;
+  const detail =
+    err?.response?.data?.error || err?.response?.data?.message || err?.message;
+  if (status) return `Request failed (${status})${detail ? `: ${detail}` : ""}`;
+  return detail || "Unknown error";
 }
 
 export function RolesActionModal({
@@ -86,6 +93,9 @@ export function RolesActionModal({
   onClose,
   mode,
   switchToEdit,
+  modulesLoading = false,
+  modulesError = null,
+  onRetryModules,
 }: RolesActionModalProps) {
   const { t } = useTranslation();
   const isEdit = mode === DialogEnum.EDIT;
@@ -99,13 +109,12 @@ export function RolesActionModal({
   const { mutate: createRole, isPending: isCreating } = useCreateRole();
   const { mutate: updateRole, isPending: isUpdating } = useUpdateRole();
 
-  // Consolidated Settings permission (RBAC): every Settings submodule
-  // (degrees, technologies, profiles, durations, types, email templates,
-  // mail config, front office) is governed by the single `settings` module.
-  // view ("1000") = read-only, edit ("1111") = full access.
-  const permissionModules = modules.filter(
-    (m) => !SETTINGS_CONSOLIDATED_MODULES.includes(m.module_name),
+  // Like before: show every module returned by the API.
+  const permissionModules = (modules ?? []).filter(
+    (m) => m?.module_name !== "transactions",
   );
+  const isLoadingModules = modulesLoading;
+  const hasModulesError = Boolean(modulesError);
 
   const actions = ["view", "create", "edit", "delete"];
   const handleClose = () => {
@@ -123,15 +132,19 @@ export function RolesActionModal({
 
   // Single source of truth for getting permissions
   const getModulePermissions = (moduleName: string): string => {
-    return form.watch("role_permissions")[moduleName] || "0000";
+    return form.watch("role_permissions")?.[moduleName] || "0000";
   };
 
   // Single function to set permissions
   const setModulePermissions = (moduleName: string, permissions: string) => {
-    form.setValue("role_permissions", {
-      ...form.getValues("role_permissions"),
-      [moduleName]: permissions,
-    });
+    form.setValue(
+      "role_permissions",
+      {
+        ...(form.getValues("role_permissions") ?? {}),
+        [moduleName]: permissions,
+      },
+      { shouldDirty: true },
+    );
   };
 
   // Build permission string from enabled permissions
@@ -139,16 +152,16 @@ export function RolesActionModal({
     module: Module,
     shouldEnable: boolean,
   ): string => {
-    // Settings only supports the two consolidated levels.
-    if (module.module_name === "settings") {
-      return shouldEnable ? SETTINGS_EDIT : SETTINGS_NONE;
+    // Two-level modules: All on = full access, All off = nothing.
+    if (TWO_LEVEL_MODULES.includes(module.module_name)) {
+      return shouldEnable ? TWO_LEVEL_FULL : TWO_LEVEL_NONE;
     }
 
     let permissionString = "0000";
 
     if (shouldEnable) {
       actions.forEach((action, index) => {
-        if (module.enabled_permissions.includes(action)) {
+        if ((module.enabled_permissions ?? []).includes(action)) {
           permissionString =
             permissionString.substring(0, index) +
             "1" +
@@ -178,7 +191,7 @@ export function RolesActionModal({
     const perms = getModulePermissions(moduleName);
 
     return actions.every((action, index) => {
-      if (module.enabled_permissions.includes(action)) {
+      if ((module.enabled_permissions ?? []).includes(action)) {
         return perms[index] === "1";
       }
       return true;
@@ -193,18 +206,18 @@ export function RolesActionModal({
   ) => {
     if (isView) return;
 
-    // Settings only supports the two consolidated levels:
-    // View checkbox = read-only ("1000"), Edit checkbox = full access ("1111").
-    if (moduleName === "settings") {
+    // Two-level modules only support read-only ("1000") and full access
+    // ("1111"): View checkbox toggles read-only, Edit checkbox toggles full.
+    if (TWO_LEVEL_MODULES.includes(moduleName)) {
       if (action === "view") {
         setModulePermissions(
-          "settings",
-          checked ? SETTINGS_VIEW : SETTINGS_NONE,
+          moduleName,
+          checked ? TWO_LEVEL_VIEW : TWO_LEVEL_NONE,
         );
       } else if (action === "edit") {
         setModulePermissions(
-          "settings",
-          checked ? SETTINGS_EDIT : SETTINGS_VIEW,
+          moduleName,
+          checked ? TWO_LEVEL_FULL : TWO_LEVEL_VIEW,
         );
       }
       return;
@@ -258,13 +271,14 @@ export function RolesActionModal({
 
   // Check if ALL permissions across ALL modules are checked
   const areAllModulesFullyChecked = (): boolean => {
+    if (permissionModules.length === 0) return false;
     return permissionModules.every((module) => {
       const perms =
-        form.watch("role_permissions")[module.module_name] || "0000";
+        form.watch("role_permissions")?.[module.module_name] || "0000";
 
       // Check if all enabled permissions for this module are checked
       return actions.every((action, index) => {
-        if (module.enabled_permissions.includes(action)) {
+        if ((module.enabled_permissions ?? []).includes(action)) {
           return perms[index] === "1";
         }
         return true; // Ignore disabled permissions
@@ -303,6 +317,7 @@ export function RolesActionModal({
     //showSubmittedData(payload);
   }
   useEffect(() => {
+    if (!open) return;
     if (role) {
       // If a role is passed in (Edit/View mode), reset the form to its values
       form.reset({
@@ -316,14 +331,17 @@ export function RolesActionModal({
         role_permissions: {},
       });
     }
-  }, [role, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, open]);
 
   return (
     <Dialog
       open={open}
       onOpenChange={(state) => {
-        form.reset();
-        onClose();
+        if (!state) {
+          form.reset();
+          onClose();
+        }
       }}
     >
       <DialogContent className="sm:max-w-3xl max-h-[70vh] overflow-y-auto">
@@ -412,68 +430,129 @@ export function RolesActionModal({
                       </TableHeader>
 
                       <TableBody>
-                        {permissionModules.map((module) => (
-                          <TableRow key={module.module_name}>
-                            <TableCell className="font-medium capitalize flex items-center gap-2">
-                              {(() => {
-                                const iconName = iconFallback[module.module_icon] || module.module_icon;
-                                const Icon = (TablerIcons as any)[iconName];
-                                return Icon ? (
-                                  <Icon className="w-4 h-4 text-muted-foreground" />
-                                ) : null;
-                              })()}
-                              {module.module_name}
-                            </TableCell>
-
-                            {actions.map((action) => {
-                              return (
-                                <TableCell key={action} className="text-center">
-                                  {module.enabled_permissions.includes(
-                                    action,
-                                  ) ? (
-                                    <Checkbox
-                                      checked={isPermissionChecked(
-                                        module.module_name,
-                                        action,
-                                      )}
-                                      onCheckedChange={(checked) => {
-                                        handlePermissionChange(
-                                          module.module_name,
-                                          action,
-                                          checked as boolean,
-                                        );
-                                      }}
-                                    />
-                                  ) : (
-                                    <span className="text-muted-foreground">
-                                      -
-                                    </span>
-                                  )}
-                                </TableCell>
-                              );
-                            })}
-
-                            <TableCell className="text-center">
-                              {module.module_name !== "dashboard" && (
-                                <Switch
-                                  checked={areAllPermissionsChecked(
-                                    module.module_name,
-                                  )}
-                                  onCheckedChange={(checked) => {
-                                    handleToggleAllPermissions(
-                                      module.module_name,
-                                      checked,
-                                    );
-                                  }}
-                                />
-                              )}
+                        {isLoadingModules && permissionModules.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-center text-muted-foreground"
+                            >
+                              Loading modules...
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : hasModulesError && permissionModules.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center">
+                              <div className="flex flex-col items-center gap-2 py-2">
+                                <span className="text-destructive text-sm">
+                                  Failed to load modules:{" "}
+                                  {getModulesErrorMessage(modulesError)}
+                                </span>
+                                <span className="text-muted-foreground text-xs">
+                                  Check devtools console (look for
+                                  &quot;fetching modules response&quot;) and
+                                  GET /api/modules/.
+                                </span>
+                                {onRetryModules && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    type="button"
+                                    onClick={onRetryModules}
+                                  >
+                                    Retry
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ) : permissionModules.length === 0 ? (
+                          <TableRow>
+                            <TableCell
+                              colSpan={6}
+                              className="text-center text-muted-foreground"
+                            >
+                              No modules returned by the API (empty list). The
+                              backend modules table looks empty — verify GET
+                              /api/modules/ returns data.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          permissionModules.map((module) => (
+                            <TableRow key={module.module_name}>
+                              <TableCell className="font-medium capitalize flex items-center gap-2">
+                                {(() => {
+                                  const iconName =
+                                    iconFallback[module.module_icon] ||
+                                    module.module_icon;
+                                  const Icon = (TablerIcons as any)[iconName];
+                                  return Icon ? (
+                                    <Icon className="w-4 h-4 text-muted-foreground" />
+                                  ) : null;
+                                })()}
+                                {module.module_name}
+                              </TableCell>
+
+                              {actions.map((action) => {
+                                return (
+                                  <TableCell
+                                    key={action}
+                                    className="text-center"
+                                  >
+                                    {(module.enabled_permissions ?? []).includes(
+                                      action,
+                                    ) ? (
+                                      <Checkbox
+                                        disabled={isView}
+                                        checked={isPermissionChecked(
+                                          module.module_name,
+                                          action,
+                                        )}
+                                        onCheckedChange={(checked) => {
+                                          handlePermissionChange(
+                                            module.module_name,
+                                            action,
+                                            checked as boolean,
+                                          );
+                                        }}
+                                      />
+                                    ) : (
+                                      <span className="text-muted-foreground">
+                                        -
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                );
+                              })}
+
+                              <TableCell className="text-center">
+                                {module.module_name !== "dashboard" && (
+                                  <Switch
+                                    disabled={isView}
+                                    checked={areAllPermissionsChecked(
+                                      module.module_name,
+                                    )}
+                                    onCheckedChange={(checked) => {
+                                      handleToggleAllPermissions(
+                                        module.module_name,
+                                        checked,
+                                      );
+                                    }}
+                                  />
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
 
                         <TableRow>
-                          <TableCell className="capitalize flex items-center gap-2">
+                          <TableCell
+                            colSpan={6}
+                            className="capitalize flex items-center gap-2"
+                          >
                             <Switch
+                              disabled={
+                                isView || permissionModules.length === 0
+                              }
                               checked={areAllModulesFullyChecked()}
                               onCheckedChange={(checked) => {
                                 handleToggleAllModules(checked);

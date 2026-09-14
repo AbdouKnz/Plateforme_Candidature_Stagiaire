@@ -41,42 +41,43 @@ import { useProfiles } from "@/hooks/use-profiles";
 import { DialogEnum, ModalMode } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
+import { cn } from "@/lib/utils";
 
-const formSchema = z.object({
+const createSubjectFormSchema = (t: (key: string) => string) => z.object({
   code: z
     .string()
-    .nonempty({ message: "Code is required." })
-    .min(2, { message: "Code must be at least 2 characters long." }),
+    .nonempty({ message: t("subject_code_required") })
+    .min(2, { message: t("subject_code_min") }),
   name: z
     .string()
-    .nonempty({ message: "Subject name is required." })
-    .min(3, { message: "Subject name must be at least 3 characters long." }),
-  technology_ids: z.array(z.number()).min(1, { message: "Select at least one technology." }),
-  profile_ids: z.array(z.number()).min(1, { message: "Select at least one profile." }),
+    .nonempty({ message: t("subject_name_required") })
+    .min(3, { message: t("subject_name_min") }),
+  technology_ids: z.array(z.number()).min(1, { message: t("subject_technology_required") }),
+  profile_ids: z.array(z.number()).min(1, { message: t("subject_profile_required") }),
   description: z
     .string()
-    .nonempty({ message: "Description is required." })
-    .min(10, { message: "Description must be at least 10 characters long." }),
+    .nonempty({ message: t("subject_description_required") })
+    .min(10, { message: t("subject_description_min") }),
   online_quiz_link: z
     .string()
-    .nonempty({ message: "Online quiz link is required." })
-    .url({ message: "Must be a valid URL." }),
+    .nonempty({ message: t("subject_quiz_link_required") })
+    .url({ message: t("subject_invalid_url") }),
   online_meeting_link: z
     .string()
-    .nonempty({ message: "Online meeting link is required." })
-    .url({ message: "Must be a valid URL." }),
+    .nonempty({ message: t("subject_meeting_link_required") })
+    .url({ message: t("subject_invalid_url") }),
   f2f_meeting_link: z
     .string()
-    .nonempty({ message: "F2F meeting link is required." })
-    .url({ message: "Must be a valid URL." }),
+    .nonempty({ message: t("subject_f2f_link_required") })
+    .url({ message: t("subject_invalid_url") }),
   duration_id: z.preprocess(
-    (val) => (val == null || val === "") ? NaN : Number(val),
-    z.number().refine((val) => !Number.isNaN(val) && val >= 1, { message: "Project period is required." })
+    (val) => (val == null || val === "" ? undefined : Number(val)),
+    z.number({ error: t("subject_period_required") }).refine((val) => !Number.isNaN(val) && val >= 1, { message: t("subject_period_required") })
   ),
   image_path: z.string().optional(),
 });
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof createSubjectFormSchema>>;
 
 interface SubjectsActionModalProps {
   subject?: Subject;
@@ -97,7 +98,7 @@ export function SubjectsActionModal({
   onConfirm,
   isDeleting,
 }: SubjectsActionModalProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const isEdit = mode === DialogEnum.EDIT;
   const isView = mode === DialogEnum.VIEW;
   const isAdd = mode === DialogEnum.ADD;
@@ -125,6 +126,8 @@ export function SubjectsActionModal({
     if (path.startsWith("http") || path.startsWith("/")) return path;
     return `/api/${path}`;
   };
+
+  const formSchema = useMemo(() => createSubjectFormSchema(t), [t]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -178,7 +181,7 @@ export function SubjectsActionModal({
 
   function onSubmit(data: FormData) {
     if (isAdd && !imageFile) {
-      form.setError("image_path", { message: "Subject image is required." });
+      form.setError("image_path", { message: t("subject_image_required") });
       return;
     }
 
@@ -186,7 +189,7 @@ export function SubjectsActionModal({
       (s) => s.code === data.code && s.id !== subject?.id
     );
     if (duplicateCode) {
-      form.setError("code", { message: "A subject with this code already exists." });
+      form.setError("code", { message: t("subject_code_exists") });
       return;
     }
 
@@ -194,7 +197,7 @@ export function SubjectsActionModal({
       (s) => s.name === data.name && s.id !== subject?.id
     );
     if (duplicateName) {
-      form.setError("name", { message: "A subject with this name already exists." });
+      form.setError("name", { message: t("subject_name_exists") });
       return;
     }
 
@@ -242,6 +245,18 @@ export function SubjectsActionModal({
       setImagePreview(null);
     }
   }, [subject, form]);
+
+  // Re-validate visible errors when the UI language changes so messages
+  // switch language immediately instead of staying in the previous one.
+  useEffect(() => {
+    if (Object.keys(form.formState.errors).length === 0) return;
+    form.trigger().then(() => {
+      if (isAdd && !imageFile) {
+        form.setError("image_path", { message: t("subject_image_required") });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language]);
 
   if (isDelete) {
     return (
@@ -311,7 +326,11 @@ export function SubjectsActionModal({
         <Form {...form}>
           <form
             id="subject-form"
-            onSubmit={form.handleSubmit(onSubmit)}
+            onSubmit={form.handleSubmit(onSubmit, () => {
+              if (isAdd && !imageFile) {
+                form.setError("image_path", { message: t("subject_image_required") });
+              }
+            })}
             className="mt-3 p-1"
           >
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_2fr]">
@@ -534,52 +553,63 @@ export function SubjectsActionModal({
                     />
                   </div>
 
-                  <div className="rounded-xl border border-border/60 p-4">
-                    <FormLabel>
-                      {t("subject_image")}
-                    </FormLabel>
-                    <div className="mt-1.5 flex items-center gap-3">
-                      {!isView ? (
-                        <>
-                          <label
-                            htmlFor="subject-image-input"
-                            className="inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg border border-dashed border-primary/40 bg-primary/5 px-4 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-                          >
-                            {t("browse")}
-                          </label>
-                          <Input
-                            id="subject-image-input"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0] ?? null;
-                              setImageFile(file);
-                              setImagePreview(null);
-                              if (file) form.clearErrors("image_path");
-                            }}
-                          />
-                          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-                            {imageFile
-                              ? imageFile.name
-                              : subject?.image_path
-                                ? subject.image_path.split("/").pop()
-                                : t("no_file_chosen")}
-                          </span>
-                        </>
-                      ) : subject?.image_path ? (
-                        <span className="truncate text-sm text-muted-foreground">
-                          {subject.image_path.split("/").pop()}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
+                  <div className={cn("rounded-xl border p-4", form.formState.errors.image_path ? "border-destructive/60" : "border-border/60")}>
+                    <FormField
+                      control={form.control}
+                      name="image_path"
+                      render={() => (
+                        <FormItem className="space-y-1.5">
+                          <FormLabel>
+                            {t("subject_image")}
+                          </FormLabel>
+                          <FormControl>
+                            <div className="mt-1.5 flex items-center gap-3">
+                              {!isView ? (
+                                <>
+                                  <label
+                                    htmlFor="subject-image-input"
+                                    className={cn(
+                                      "inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg border border-dashed px-4 text-sm font-medium transition-colors",
+                                      form.formState.errors.image_path
+                                        ? "border-destructive/60 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                                        : "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
+                                    )}
+                                  >
+                                    {t("browse")}
+                                  </label>
+                                  <Input
+                                    id="subject-image-input"
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0] ?? null;
+                                      setImageFile(file);
+                                      setImagePreview(null);
+                                      if (file) form.clearErrors("image_path");
+                                    }}
+                                  />
+                                  <span className={cn("min-w-0 flex-1 truncate text-sm", form.formState.errors.image_path ? "text-destructive" : "text-muted-foreground")}>
+                                    {imageFile
+                                      ? imageFile.name
+                                      : subject?.image_path
+                                        ? subject.image_path.split("/").pop()
+                                        : t("no_file_chosen")}
+                                  </span>
+                                </>
+                              ) : subject?.image_path ? (
+                                <span className="truncate text-sm text-muted-foreground">
+                                  {subject.image_path.split("/").pop()}
+                                </span>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">—</span>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
-                    {form.formState.errors.image_path && (
-                      <p className="text-sm text-destructive mt-1.5">
-                        {form.formState.errors.image_path.message}
-                      </p>
-                    )}
+                    />
                   </div>
                 </div>
               </div>

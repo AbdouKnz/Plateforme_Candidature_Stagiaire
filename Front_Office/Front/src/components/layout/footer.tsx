@@ -40,7 +40,7 @@ export function Footer() {
                 LinkedIn
               </a>
               <a href="https://parkandcharge.io/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-                <img src="/WhiteBlue.png" alt="" className="size-4 shrink-0" />
+                <img src="/WhiteBlueCircle.png" alt="" className="size-4 shrink-0" />
                 Park&Charge.io
               </a>
             </div>

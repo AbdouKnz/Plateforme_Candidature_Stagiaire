@@ -262,7 +262,7 @@ export const fr = {
   "validation.university2.required": "L'université du second candidat est requise.",
   "validation.university2.tooLong": "Le nom de l'université du second candidat est trop long.",
   "validation.cv2.required": "Le CV du second candidat est requis.",
-  "footer.description": "Construire l'avenir grâce à l'innovation et à la technologie. Rejoignez-nous dans notre mission de créer des solutions à fort impact.",
+  "footer.description": "Le système tout-en-un de gestion de la recharge de véhicules électriques.",
   "footer.contactTitle": "Contact",
   "footer.linksTitle": "Liens Rapides",
   "footer.privacy": "Politique de Confidentialité",

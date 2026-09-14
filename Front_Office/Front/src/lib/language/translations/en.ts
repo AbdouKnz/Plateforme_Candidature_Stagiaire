@@ -271,7 +271,7 @@ export const en = {
   "validation.university2.required": "Second candidate university is required.",
   "validation.university2.tooLong": "Second candidate university name is too long.",
   "validation.cv2.required": "Second candidate CV is required.",
-  "footer.description": "Building the future through innovation and technology. Join us on our mission to create impactful solutions.",
+  "footer.description": "The all-in-one EV charging management system.",
   "footer.contactTitle": "Contact",
   "footer.linksTitle": "Quick Links",
   "footer.privacy": "Privacy Policy",

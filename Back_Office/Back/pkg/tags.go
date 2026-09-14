@@ -43,6 +43,7 @@ const (
 	LOGOUT_ACTION = "Logged out"
 	ACCEPT_ACTION = "accept"
 	REJECT_ACTION = "reject"
+	RESET_ACTION  = "Reset"
 )
 
 // Audit-Module
@@ -51,6 +52,7 @@ const (
 	USER_MODULE           = "User"
 	ROLE_MODULE           = "Role"
 	AUTH_MODULE           = "Auth"
+	SESSION_MODULE        = "Session"
 	SETTING_MODULE        = "Setting"
 	DEGREE_MODULE         = "Degree"
 	TECHNOLOGY_MODULE     = "Technology"

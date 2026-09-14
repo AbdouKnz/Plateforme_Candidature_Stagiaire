@@ -140,3 +140,32 @@ export const exportCandidatures = async (fileType: FileType, params?: Candidatur
     : `candidatures.${fileType === "pdf" ? "pdf" : "xlsx"}`;
   createDownloadLink(new Blob([response.data]), filename);
 };
+
+export interface PrepareResetResult {
+  blob: Blob;
+  filename: string;
+}
+
+export const prepareSessionReset = async (password: string): Promise<PrepareResetResult> => {
+  const response = await axiosApi.post(
+    `${CANDIDATURE_ENDPOINT}/reset/prepare`,
+    { password },
+    { responseType: "blob" }
+  );
+  const contentDisposition = response.headers["content-disposition"];
+  const filename = contentDisposition
+    ? contentDisposition.split("filename=")[1]?.replace(/"/g, "")
+    : `session_backup_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  return {
+    blob: new Blob([response.data], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    }),
+    filename: filename || "session_backup.xlsx",
+  };
+};
+
+export const confirmSessionReset = async (password: string): Promise<{ status: number; message: string }> => {
+  const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/reset/confirm`, { password });
+  return response?.data;
+};
+

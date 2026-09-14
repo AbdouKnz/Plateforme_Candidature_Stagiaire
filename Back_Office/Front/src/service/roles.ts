@@ -12,9 +12,16 @@ export const getRoles = async (params?: RoleQueryParams): Promise<Role[]> => {
 };
 
 export const getModules = async (): Promise<Module[]> => {
-  const response = await axiosApi.get(MODULE_ENDPOINT+"/");
+  const response = await axiosApi.get(MODULE_ENDPOINT + "/");
   console.log("fetching modules response: ", response?.data);
-  return response?.data?.data;
+  const payload = response?.data;
+  // Backend wraps with { status, message, data } but be tolerant to shape changes.
+  const list = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload)
+      ? payload
+      : [];
+  return list;
 };
 
 

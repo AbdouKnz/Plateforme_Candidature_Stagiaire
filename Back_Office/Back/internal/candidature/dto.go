@@ -285,3 +285,7 @@ type PipelineStage struct {
 	Final  bool           `json:"final,omitempty"`
 	Counts PipelineCounts `json:"counts"`
 }
+
+type ResetSessionRequest struct {
+	Password string `json:"password" binding:"required"`
+}

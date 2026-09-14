@@ -9,8 +9,16 @@ import { useRolesStore } from "@/stores/roles-store";
 export function RolesModals() {
   const { openRole, setOpenRole, currentRoleId, setCurrentRoleId } = useRolesStore();
   const { data: role, isLoading, isError, error } = useRole(currentRoleId);
-  const { data: modules } = useModules();
-  const filteredModules = (modules || []).filter((m) => m.module_name !== "transactions");
+  const {
+    data: modules,
+    isLoading: isLoadingModules,
+    isError: isModulesError,
+    error: modulesError,
+    refetch: refetchModules,
+  } = useModules();
+  const filteredModules = (modules ?? []).filter(
+    (m) => m?.module_name !== "transactions",
+  );
   const { data: roles } = useRoles();
 
   const deleteRoleMutation = useDeleteRole();
@@ -58,6 +66,9 @@ export function RolesModals() {
         onClose={() => handleCloseModal()}
         mode={DialogEnum.ADD}
         modules={filteredModules}
+        modulesLoading={isLoadingModules}
+        modulesError={isModulesError ? modulesError : null}
+        onRetryModules={() => refetchModules()}
       />
 
       {role && (
@@ -69,6 +80,9 @@ export function RolesModals() {
             mode={openRole as DialogEnum.VIEW | DialogEnum.EDIT}
             role={role}
             modules={filteredModules}
+            modulesLoading={isLoadingModules}
+            modulesError={isModulesError ? modulesError : null}
+            onRetryModules={() => refetchModules()}
           />
 
           <DeleteRoleAlert

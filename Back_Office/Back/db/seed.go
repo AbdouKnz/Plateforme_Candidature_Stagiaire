@@ -1094,25 +1094,62 @@ func InitializeModules(ctx context.Context, db *bun.DB) error {
 		{ModuleName: "audits", View: 1, Create: 0, Edit: 0, Delete: 0, ModuleIcon: "IconFileSearch", ModuleIconColor: "text-red-500"},
 		{ModuleName: "settings", View: 1, Create: 0, Edit: 1, Delete: 0, ModuleIcon: "IconSettings", ModuleIconColor: "text-gray-600"},
 		{ModuleName: "subjects", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconNotebook", ModuleIconColor: "text-rose-500"},
-		{ModuleName: "candidatures", View: 1, Create: 1, Edit: 1, Delete: 1, ModuleIcon: "IconFileDescription", ModuleIconColor: "text-blue-500"},
+		{ModuleName: "candidatures", View: 1, Create: 0, Edit: 1, Delete: 0, ModuleIcon: "IconFileDescription", ModuleIconColor: "text-blue-500"},
 		{ModuleName: "email_logs", View: 1, Create: 0, Edit: 0, Delete: 0, ModuleIcon: "IconSend", ModuleIconColor: "text-green-500"},
 	}
 
-	// Remove legacy per-submodule Settings entries consolidated into "settings".
-	if _, err := db.NewDelete().Model((*domain.ModulePermissions)(nil)).Where("module_name IN (?)", bun.In(pkg.SettingsConsolidatedModules)).Exec(ctx); err != nil {
+	// Run everything in a transaction so a crash can never leave the
+	// modules table partially empty (delete ran, inserts didn't).
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		log.Error().Err(err).Msg("Failed to begin modules transaction")
+		return fmt.Errorf("could not begin modules transaction: %w", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	// 1. Ensure the default modules exist FIRST (idempotent upsert).
+	// This also repairs an already-emptied table on the next backend restart.
+	for _, m := range defaultModules {
+		mm := m
+		if _, err := tx.NewInsert().Model(&mm).On("CONFLICT (module_name) DO NOTHING").Exec(ctx); err != nil {
+			log.Error().Err(err).Str("module_name", m.ModuleName).Msg("Error ensuring default module")
+			return fmt.Errorf("could not ensure module %s: %w", m.ModuleName, err)
+		}
+	}
+
+	// 2. Remove legacy per-submodule Settings entries consolidated into "settings".
+	if _, err := tx.NewDelete().Model((*domain.ModulePermissions)(nil)).Where("module_name IN (?)", bun.In(pkg.SettingsConsolidatedModules)).Exec(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to remove legacy settings submodule entries")
 		return fmt.Errorf("could not remove legacy settings modules: %w", err)
 	}
 
-	// Enforce the two-level settings module (view = read-only, edit = full access).
-	if _, err := db.NewUpdate().Model((*domain.ModulePermissions)(nil)).Set("view = ?", 1).Set("create = ?", 0).Set("edit = ?", 1).Set("delete = ?", 0).Where("module_name = ?", pkg.SETTINGS_PERMISSIONS).Exec(ctx); err != nil {
+	// 3. Enforce the two-level settings module (view = read-only, edit = full access).
+	// NOTE: "create" is a reserved keyword in Postgres, so identifiers must
+	// be double-quoted in raw Set() fragments, otherwise Postgres reports
+	// `syntax error at or near "create"` and the whole tx rolls back,
+	// leaving the modules table empty.
+	if _, err := tx.NewUpdate().Model((*domain.ModulePermissions)(nil)).Set("\"view\" = ?", 1).Set("\"create\" = ?", 0).Set("\"edit\" = ?", 1).Set("\"delete\" = ?", 0).Where("module_name = ?", pkg.SETTINGS_PERMISSIONS).Exec(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to enforce settings module levels")
 		return fmt.Errorf("could not enforce settings module levels: %w", err)
 	}
 
+	// 3b. Enforce the two-level candidatures module (view = read-only,
+	// edit = full access: scores, notes, decisions, send mails). Identifiers
+	// are double-quoted because "create" is reserved in Postgres.
+	if _, err := tx.NewUpdate().Model((*domain.ModulePermissions)(nil)).Set("\"view\" = ?", 1).Set("\"create\" = ?", 0).Set("\"edit\" = ?", 1).Set("\"delete\" = ?", 0).Where("module_name = ?", pkg.CANDIDATURES_PERMISSIONS).Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to enforce candidatures module levels")
+		return fmt.Errorf("could not enforce candidatures module levels: %w", err)
+	}
+
+	// 4. Sync icons for the default modules.
 	for _, m := range defaultModules {
 		var existing domain.ModulePermissions
-		err := db.NewSelect().
+		err := tx.NewSelect().
 			Model(&existing).
 			Where("module_name = ?", m.ModuleName).
 			Scan(ctx)
@@ -1123,24 +1160,25 @@ func InitializeModules(ctx context.Context, db *bun.DB) error {
 		}
 
 		if errors.Is(err, sql.ErrNoRows) {
-			//log.Info().Str("module_name", m.ModuleName).Msg("No module found, creating...")
-			_, err = db.NewInsert().Model(&m).Exec(ctx)
-			if err != nil {
+			mm := m
+			if _, err = tx.NewInsert().Model(&mm).On("CONFLICT (module_name) DO NOTHING").Exec(ctx); err != nil {
 				log.Error().Err(err).Str("module_name", m.ModuleName).Msg("Error creating module")
 				return fmt.Errorf("could not create module %s: %w", m.ModuleName, err)
 			}
-			//log.Info().Str("module_name", m.ModuleName).Msg("Module created successfully")
-		} else {
-			if existing.ModuleIcon != m.ModuleIcon {
-				_, err = db.NewUpdate().Model(&domain.ModulePermissions{}).Set("module_icon = ?", m.ModuleIcon).Where("module_name = ?", m.ModuleName).Exec(ctx)
-				if err != nil {
-					log.Error().Err(err).Str("module_name", m.ModuleName).Msg("Error updating module icon")
-					return fmt.Errorf("could not update module %s: %w", m.ModuleName, err)
-				}
-				log.Info().Str("module_name", m.ModuleName).Str("new_icon", m.ModuleIcon).Msg("Updated module icon")
+		} else if existing.ModuleIcon != m.ModuleIcon {
+			if _, err = tx.NewUpdate().Model(&domain.ModulePermissions{}).Set("module_icon = ?", m.ModuleIcon).Where("module_name = ?", m.ModuleName).Exec(ctx); err != nil {
+				log.Error().Err(err).Str("module_name", m.ModuleName).Msg("Error updating module icon")
+				return fmt.Errorf("could not update module %s: %w", m.ModuleName, err)
 			}
+			log.Info().Str("module_name", m.ModuleName).Str("new_icon", m.ModuleIcon).Msg("Updated module icon")
 		}
 	}
+
+	if err := tx.Commit(); err != nil {
+		log.Error().Err(err).Msg("Failed to commit modules transaction")
+		return fmt.Errorf("could not commit modules transaction: %w", err)
+	}
+	committed = true
 
 	return nil
 }
