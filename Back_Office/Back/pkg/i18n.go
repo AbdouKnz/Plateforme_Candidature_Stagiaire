@@ -111,6 +111,8 @@ var Messages = map[string]map[string]string{
 		"subject_updated_successfully": "Subject updated successfully",
 		"subject_deleted_successfully": "Subject deleted successfully",
 		"subject_not_found":            "Subject not found",
+		"subject_code_exists":          "A subject with this code already exists",
+		"subject_name_exists":          "A subject with this name already exists",
 
 		// Candidatures
 		"candidature_created_successfully": "Candidature created successfully",
@@ -237,6 +239,8 @@ var Messages = map[string]map[string]string{
 		"subject_updated_successfully": "Sujet mis à jour avec succès",
 		"subject_deleted_successfully": "Sujet supprimé avec succès",
 		"subject_not_found":            "Sujet introuvable",
+		"subject_code_exists":          "Un sujet avec ce code existe déjà",
+		"subject_name_exists":          "Un sujet avec ce nom existe déjà",
 
 		// Candidatures
 		"candidature_created_successfully": "Candidature créée avec succès",
@@ -360,6 +364,8 @@ var Messages = map[string]map[string]string{
 		"subject_updated_successfully": "تم تحديث المادة بنجاح",
 		"subject_deleted_successfully": "تم حذف المادة بنجاح",
 		"subject_not_found":            "المادة غير موجودة",
+		"subject_code_exists":          "يوجد موضوع بهذا الرمز بالفعل",
+		"subject_name_exists":          "يوجد موضوع بهذا الاسم بالفعل",
 
 		// Candidatures
 		"candidature_created_successfully": "تم إنشاء الترشيح بنجاح",

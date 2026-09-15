@@ -6,7 +6,10 @@ import {
   IconLockOpen,
   IconLock,
   IconHistory,
+  IconLink,
+  IconCheck,
 } from '@tabler/icons-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -23,6 +26,7 @@ interface DataTableRowActionsProps<TData> {
   onBlock?: (data: TData) => void
   onEdit?: (data: TData) => void
   onCompare?: (data: TData) => void
+  onCopyLink?: (data: TData) => string | Promise<string>
   onDelete?: (data: TData) => void
   canView?: boolean
   canEdit?: boolean
@@ -42,11 +46,26 @@ export function DataTableRowActions<TData>({
   canEdit = true,
   canDelete = true,
   onCompare,
+  onCopyLink,
   className,
   tooltipMessage,
 }: DataTableRowActionsProps<TData>) {
   const { t } = useTranslation()
+  const [copied, setCopied] = useState(false)
   const buttonClass = 'h-8 w-8 p-0'
+
+  const handleCopyLink = async () => {
+    if (!onCopyLink) return
+    try {
+      const link = await onCopyLink(row.original)
+      if (!link) return
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1500)
+    } catch {
+      setCopied(false)
+    }
+  }
   return (
     <div className={cn('flex items-center gap-2', className)}>
       {onBlock && canEdit && (
@@ -149,6 +168,32 @@ export function DataTableRowActions<TData>({
             arrowClass='bg-blue-500 fill-blue-500'
           >
             {t('audit')}
+          </TooltipContent>
+        </Tooltip>
+      )}
+
+      {onCopyLink && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={handleCopyLink}
+              className={cn(
+                buttonClass,
+                copied
+                  ? 'text-green-500 hover:border-green-300 hover:text-green-600'
+                  : 'text-purple-500 hover:border-purple-300 hover:text-purple-600'
+              )}
+            >
+              {copied ? <IconCheck size={16} /> : <IconLink size={16} />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent
+            colorClass={copied ? 'bg-green-500 text-white' : 'bg-purple-500 text-white'}
+            arrowClass={copied ? 'bg-green-500 fill-green-500' : 'bg-purple-500 fill-purple-500'}
+          >
+            {copied ? t('link_copied') : t('copy_link')}
           </TooltipContent>
         </Tooltip>
       )}

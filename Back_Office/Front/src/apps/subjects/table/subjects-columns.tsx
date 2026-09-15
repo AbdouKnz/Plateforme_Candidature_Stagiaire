@@ -152,6 +152,10 @@ export function useSubjectColumns(): ColumnDef<Subject>[] {
               setCurrentSubjectId(data.id);
               setOpenSubject(DialogEnum.BLOCK);
             }}
+            onCopyLink={(data) => {
+              const base = (import.meta.env.FO_URL as string).replace(/\/$/, '');
+              return `${base}/form?subjectId=${data.id}`;
+            }}
             canView={modulePermissions.subjects.canView}
             canEdit={modulePermissions.subjects.canUpdate}
             canDelete={modulePermissions.subjects.canDelete}

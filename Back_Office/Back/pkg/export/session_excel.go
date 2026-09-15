@@ -267,12 +267,12 @@ func GenerateSessionResetWorkbook(data SessionExportData) ([]byte, error) {
 	curRow := 1
 
 	// Title Section: Pipeline Step Statistics
-	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "1. Pipeline Step Statistics")
+	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "1. Steps KPI")
 	f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("D%d", curRow), subHeaderStyle)
 	f.MergeCell(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("D%d", curRow))
 	curRow++
 
-	pipelineHeaders := []string{"Pipeline Step", "Pending", "Accepted", "Rejected"}
+	pipelineHeaders := []string{"Step", "Pending", "Accepted", "Rejected"}
 	for colIdx, h := range pipelineHeaders {
 		cell, _ := excelize.CoordinatesToCellName(colIdx+1, curRow)
 		f.SetCellValue(sheet3, cell, h)
@@ -294,13 +294,7 @@ func GenerateSessionResetWorkbook(data SessionExportData) ([]byte, error) {
 
 	curRow += 2
 
-	// Global Metrics Aggregations
-	totalApps := len(data.Candidatures)
-	pairCount := 0
-	soloCount := 0
-	degreeCounts := make(map[string]int)
-	genderCounts := make(map[string]int)
-
+	// Build per-subject stats
 	type SubjStats struct {
 		Code         string
 		Name         string
@@ -323,28 +317,15 @@ func GenerateSessionResetWorkbook(data SessionExportData) ([]byte, error) {
 
 	for _, c := range data.Candidatures {
 		isSolo := strings.TrimSpace(c.FullName2) == ""
-		if isSolo {
-			soloCount++
-		} else {
-			pairCount++
-		}
 
 		deg1 := strings.TrimSpace(c.Degree1)
 		if deg1 == "" {
 			deg1 = "Unknown"
 		}
-		degreeCounts[deg1]++
-		if !isSolo && strings.TrimSpace(c.Degree2) != "" {
-			degreeCounts[strings.TrimSpace(c.Degree2)]++
-		}
 
 		g1 := strings.TrimSpace(c.Gender1)
 		if g1 == "" {
 			g1 = "Unknown"
-		}
-		genderCounts[g1]++
-		if !isSolo && strings.TrimSpace(c.Gender2) != "" {
-			genderCounts[strings.TrimSpace(c.Gender2)]++
 		}
 
 		// Breakdowns per subject
@@ -360,78 +341,93 @@ func GenerateSessionResetWorkbook(data SessionExportData) ([]byte, error) {
 				}
 				stat.DegreeCounts[deg1]++
 				stat.GenderCounts[g1]++
+				if !isSolo && strings.TrimSpace(c.Degree2) != "" {
+					stat.DegreeCounts[strings.TrimSpace(c.Degree2)]++
+				}
+				if !isSolo && strings.TrimSpace(c.Gender2) != "" {
+					stat.GenderCounts[strings.TrimSpace(c.Gender2)]++
+				}
 			}
 		}
 	}
 
-	// Section 2: Global Overview
-	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "2. Overall Recruitment Session Summary")
-	f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("B%d", curRow), subHeaderStyle)
-	f.MergeCell(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("B%d", curRow))
-	curRow++
+	// ─────────────────────────────────────────────────────────────
+	// Section: Per-Subject Breakdown with Degree & Gender
+	// ─────────────────────────────────────────────────────────────
 
-	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "Metric")
-	f.SetCellValue(sheet3, fmt.Sprintf("B%d", curRow), "Count")
-	f.SetRowStyle(sheet3, curRow, curRow, headerStyle)
-	curRow++
+	// Collect all unique degrees and genders globally from ALL candidatures
+	allDegrees := make(map[string]bool)
+	allGenders := make(map[string]bool)
 
-	summaryMetrics := []struct {
-		Name  string
-		Value int
-	}{
-		{"Total Candidates / Applications", totalApps},
-		{"Solo Applications", soloCount},
-		{"Pair (Binôme) Applications", pairCount},
-		{"Total Subjects Offered", len(data.Subjects)},
+	// Global collection from all candidatures
+	for _, c := range data.Candidatures {
+		deg1 := strings.TrimSpace(c.Degree1)
+		if deg1 != "" {
+			allDegrees[deg1] = true
+		}
+		if strings.TrimSpace(c.Degree2) != "" {
+			allDegrees[strings.TrimSpace(c.Degree2)] = true
+		}
+		g1 := strings.TrimSpace(c.Gender1)
+		if g1 != "" {
+			allGenders[g1] = true
+		}
+		if strings.TrimSpace(c.Gender2) != "" {
+			allGenders[strings.TrimSpace(c.Gender2)] = true
+		}
 	}
 
-	for _, m := range summaryMetrics {
-		f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), m.Name)
-		f.SetCellValue(sheet3, fmt.Sprintf("B%d", curRow), m.Value)
-		f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("A%d", curRow), cellBorder)
-		f.SetCellStyle(sheet3, fmt.Sprintf("B%d", curRow), fmt.Sprintf("B%d", curRow), cellBorder)
-		curRow++
+	// Also collect from per-subject stats (in case of empty candidatures but existing stats)
+	for _, stat := range subjStatsMap {
+		for deg := range stat.DegreeCounts {
+			allDegrees[deg] = true
+		}
+		for g := range stat.GenderCounts {
+			allGenders[g] = true
+		}
 	}
 
-	curRow += 2
-
-	// Section 3: Degree & Gender Breakdowns
-	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "3. Demographics (Degree Level & Gender)")
-	f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("B%d", curRow), subHeaderStyle)
-	f.MergeCell(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("B%d", curRow))
-	curRow++
-
-	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "Category")
-	f.SetCellValue(sheet3, fmt.Sprintf("B%d", curRow), "Count")
-	f.SetRowStyle(sheet3, curRow, curRow, headerStyle)
-	curRow++
-
-	for deg, count := range degreeCounts {
-		f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "Degree: "+deg)
-		f.SetCellValue(sheet3, fmt.Sprintf("B%d", curRow), count)
-		f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("A%d", curRow), cellBorder)
-		f.SetCellStyle(sheet3, fmt.Sprintf("B%d", curRow), fmt.Sprintf("B%d", curRow), cellBorder)
-		curRow++
+	// Sort degrees and genders for consistent column order
+	var sortedDegrees []string
+	for deg := range allDegrees {
+		sortedDegrees = append(sortedDegrees, deg)
+	}
+	// Simple sort
+	for i := 0; i < len(sortedDegrees); i++ {
+		for j := i + 1; j < len(sortedDegrees); j++ {
+			if sortedDegrees[i] > sortedDegrees[j] {
+				sortedDegrees[i], sortedDegrees[j] = sortedDegrees[j], sortedDegrees[i]
+			}
+		}
 	}
 
-	for g, count := range genderCounts {
-		f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "Gender: "+g)
-		f.SetCellValue(sheet3, fmt.Sprintf("B%d", curRow), count)
-		f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("A%d", curRow), cellBorder)
-		f.SetCellStyle(sheet3, fmt.Sprintf("B%d", curRow), fmt.Sprintf("B%d", curRow), cellBorder)
-		curRow++
+	var sortedGenders []string
+	for g := range allGenders {
+		sortedGenders = append(sortedGenders, g)
+	}
+	for i := 0; i < len(sortedGenders); i++ {
+		for j := i + 1; j < len(sortedGenders); j++ {
+			if sortedGenders[i] > sortedGenders[j] {
+				sortedGenders[i], sortedGenders[j] = sortedGenders[j], sortedGenders[i]
+			}
+		}
 	}
 
-	curRow += 2
+	// Build headers
+	subjHeaders := []string{"Code", "Subject Name", "Total Applications", "Pair", "Solo"}
+	for _, deg := range sortedDegrees {
+		subjHeaders = append(subjHeaders, "Degree: "+deg)
+	}
+	for _, g := range sortedGenders {
+		subjHeaders = append(subjHeaders, "Gender: "+g)
+	}
 
-	// Section 4: Per-Subject KPIs
-	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "4. Subject Breakdown & Candidate Allocation")
+	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "2. Subject Breakdown & Candidate Allocation")
 	f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("E%d", curRow), subHeaderStyle)
-	f.MergeCell(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("E%d", curRow))
+	lastColIdx := len(subjHeaders)
 	curRow++
 
-	subjKPIHeaders := []string{"Code", "Subject Name", "Total Applications", "Pair", "Solo"}
-	for colIdx, h := range subjKPIHeaders {
+	for colIdx, h := range subjHeaders {
 		cell, _ := excelize.CoordinatesToCellName(colIdx+1, curRow)
 		f.SetCellValue(sheet3, cell, h)
 	}
@@ -440,27 +436,180 @@ func GenerateSessionResetWorkbook(data SessionExportData) ([]byte, error) {
 
 	for _, s := range data.Subjects {
 		stat := subjStatsMap[s.Name]
-		f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), s.Code)
-		f.SetCellValue(sheet3, fmt.Sprintf("B%d", curRow), s.Name)
+		col := 1
+
+		// Code
+		cell, _ := excelize.CoordinatesToCellName(col, curRow)
+		f.SetCellValue(sheet3, cell, s.Code)
+		f.SetCellStyle(sheet3, cell, cell, cellBorder)
+		col++
+
+		// Subject Name
+		cell, _ = excelize.CoordinatesToCellName(col, curRow)
+		f.SetCellValue(sheet3, cell, s.Name)
+		f.SetCellStyle(sheet3, cell, cell, cellBorder)
+		col++
+
+		// Total Applications
+		cell, _ = excelize.CoordinatesToCellName(col, curRow)
 		if stat != nil {
-			f.SetCellValue(sheet3, fmt.Sprintf("C%d", curRow), stat.Total)
-			f.SetCellValue(sheet3, fmt.Sprintf("D%d", curRow), stat.Pair)
-			f.SetCellValue(sheet3, fmt.Sprintf("E%d", curRow), stat.Solo)
+			f.SetCellValue(sheet3, cell, stat.Total)
 		} else {
-			f.SetCellValue(sheet3, fmt.Sprintf("C%d", curRow), 0)
-			f.SetCellValue(sheet3, fmt.Sprintf("D%d", curRow), 0)
-			f.SetCellValue(sheet3, fmt.Sprintf("E%d", curRow), 0)
+			f.SetCellValue(sheet3, cell, 0)
 		}
-		for c := 1; c <= 5; c++ {
+		f.SetCellStyle(sheet3, cell, cell, cellBorder)
+		col++
+
+		// Pair
+		cell, _ = excelize.CoordinatesToCellName(col, curRow)
+		if stat != nil {
+			f.SetCellValue(sheet3, cell, stat.Pair)
+		} else {
+			f.SetCellValue(sheet3, cell, 0)
+		}
+		f.SetCellStyle(sheet3, cell, cell, cellBorder)
+		col++
+
+		// Solo
+		cell, _ = excelize.CoordinatesToCellName(col, curRow)
+		if stat != nil {
+			f.SetCellValue(sheet3, cell, stat.Solo)
+		} else {
+			f.SetCellValue(sheet3, cell, 0)
+		}
+		f.SetCellStyle(sheet3, cell, cell, cellBorder)
+		col++
+
+		// Degree columns
+		for _, deg := range sortedDegrees {
+			cell, _ = excelize.CoordinatesToCellName(col, curRow)
+			if stat != nil {
+				f.SetCellValue(sheet3, cell, stat.DegreeCounts[deg])
+			} else {
+				f.SetCellValue(sheet3, cell, 0)
+			}
+			f.SetCellStyle(sheet3, cell, cell, cellBorder)
+			col++
+		}
+
+		// Gender columns
+		for _, g := range sortedGenders {
+			cell, _ = excelize.CoordinatesToCellName(col, curRow)
+			if stat != nil {
+				f.SetCellValue(sheet3, cell, stat.GenderCounts[g])
+			} else {
+				f.SetCellValue(sheet3, cell, 0)
+			}
+			f.SetCellStyle(sheet3, cell, cell, cellBorder)
+			col++
+		}
+
+		curRow++
+	}
+
+	f.SetColWidth(sheet3, "A", "A", 14)
+	f.SetColWidth(sheet3, "B", "B", 38)
+	f.SetColWidth(sheet3, "C", "E", 18)
+	if lastColIdx > 5 {
+		lastCol, _ := excelize.CoordinatesToCellName(lastColIdx, 0)
+		f.SetColWidth(sheet3, "F", lastCol, 18)
+	}
+
+	// ─────────────────────────────────────────────────────────────
+	// Section 3: Global Application Type (Pair/Solo)
+	// ─────────────────────────────────────────────────────────────
+	curRow += 2
+
+	globalPair := 0
+	globalSolo := 0
+	for _, c := range data.Candidatures {
+		if strings.TrimSpace(c.FullName2) == "" {
+			globalSolo++
+		} else {
+			globalPair++
+		}
+	}
+	globalTotal := globalPair + globalSolo
+
+	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "3. Global Application Type (Pair/Solo)")
+	f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("D%d", curRow), subHeaderStyle)
+	curRow++
+
+	typeHeaders := []string{"Type", "Count"}
+	for colIdx, h := range typeHeaders {
+		cell, _ := excelize.CoordinatesToCellName(colIdx+1, curRow)
+		f.SetCellValue(sheet3, cell, h)
+	}
+	f.SetRowStyle(sheet3, curRow, curRow, headerStyle)
+	curRow++
+
+	typeData := []struct {
+		Label string
+		Count int
+	}{
+		{"Pair (Binôme)", globalPair},
+		{"Solo", globalSolo},
+		{"Total", globalTotal},
+	}
+	for _, td := range typeData {
+		cellA, _ := excelize.CoordinatesToCellName(1, curRow)
+		cellB, _ := excelize.CoordinatesToCellName(2, curRow)
+		f.SetCellValue(sheet3, cellA, td.Label)
+		f.SetCellValue(sheet3, cellB, td.Count)
+		for c := 1; c <= 2; c++ {
 			cell, _ := excelize.CoordinatesToCellName(c, curRow)
 			f.SetCellStyle(sheet3, cell, cell, cellBorder)
 		}
 		curRow++
 	}
 
-	f.SetColWidth(sheet3, "A", "A", 28)
-	f.SetColWidth(sheet3, "B", "B", 38)
-	f.SetColWidth(sheet3, "C", "E", 18)
+	// ─────────────────────────────────────────────────────────────
+	// Section 4: Application Method Distribution
+	// ─────────────────────────────────────────────────────────────
+	curRow += 2
+
+	methodCounts := make(map[string]int)
+	for _, c := range data.Candidatures {
+		method := strings.TrimSpace(c.Methode)
+		if method == "" {
+			method = "Unknown"
+		}
+		methodCounts[method]++
+	}
+
+	f.SetCellValue(sheet3, fmt.Sprintf("A%d", curRow), "4. Application Method Distribution")
+	f.SetCellStyle(sheet3, fmt.Sprintf("A%d", curRow), fmt.Sprintf("D%d", curRow), subHeaderStyle)
+	curRow++
+
+	methodHeaders := []string{"Method", "Count"}
+	for colIdx, h := range methodHeaders {
+		cell, _ := excelize.CoordinatesToCellName(colIdx+1, curRow)
+		f.SetCellValue(sheet3, cell, h)
+	}
+	f.SetRowStyle(sheet3, curRow, curRow, headerStyle)
+	curRow++
+
+	methodTotal := len(data.Candidatures)
+	for method, count := range methodCounts {
+		cellA, _ := excelize.CoordinatesToCellName(1, curRow)
+		cellB, _ := excelize.CoordinatesToCellName(2, curRow)
+		f.SetCellValue(sheet3, cellA, method)
+		f.SetCellValue(sheet3, cellB, count)
+		for c := 1; c <= 2; c++ {
+			cell, _ := excelize.CoordinatesToCellName(c, curRow)
+			f.SetCellStyle(sheet3, cell, cell, cellBorder)
+		}
+		curRow++
+	}
+	// Method total row
+	cellA, _ := excelize.CoordinatesToCellName(1, curRow)
+	cellB, _ := excelize.CoordinatesToCellName(2, curRow)
+	f.SetCellValue(sheet3, cellA, "Total")
+	f.SetCellValue(sheet3, cellB, methodTotal)
+	for c := 1; c <= 2; c++ {
+		cell, _ := excelize.CoordinatesToCellName(c, curRow)
+		f.SetCellStyle(sheet3, cell, cell, cellBorder)
+	}
 
 	// Export to buffer
 	var buf bytes.Buffer

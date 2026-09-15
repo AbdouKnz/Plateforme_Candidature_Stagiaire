@@ -362,7 +362,7 @@ func (h *CandidatureHandler) ResetPrepareHandler(c *gin.Context) {
 	}
 
 	currentTime := time.Now().Format("2006-01-02_15-04-05")
-	filename := fmt.Sprintf("session_backup_%s.xlsx", currentTime)
+	filename := fmt.Sprintf("Session_Reset_%s.xlsx", currentTime)
 
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))

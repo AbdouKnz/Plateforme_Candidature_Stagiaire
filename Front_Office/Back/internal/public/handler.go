@@ -75,6 +75,19 @@ func (h *PublicHandler) GetActiveSubjectsHandler(c *gin.Context) {
 	pkg.OK(c, subjectListToResponse(subjects), nil)
 }
 
+func (h *PublicHandler) GetActiveSubjectByIDHandler(c *gin.Context) {
+	subject, err := h.Service.GetActiveSubjectByID(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		if errors.Is(err, ErrSubjectNotFound) {
+			pkg.NotFound(c, err.Error())
+			return
+		}
+		pkg.BadRequest(c, err.Error())
+		return
+	}
+	pkg.OK(c, subjectToResponse(subject), nil)
+}
+
 func (h *PublicHandler) SubscribeWaitlistHandler(c *gin.Context) {
 	var req SubscribeWaitlistRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

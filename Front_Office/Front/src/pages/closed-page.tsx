@@ -265,6 +265,12 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6"
         >
+          <button
+            onClick={() => navigate("/pfe-book")}
+            className="inline-flex h-12 cursor-pointer items-center gap-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary px-7 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100"
+          >
+            {t("closed.aboutUs")}
+          </button>
 
         </motion.div>
       </div>

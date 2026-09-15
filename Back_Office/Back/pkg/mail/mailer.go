@@ -22,9 +22,17 @@ type Mailer struct {
 }
 
 type Email struct {
-	To      []string
-	Subject string
-	Body    string
+	To          []string
+	Subject     string
+	Body        string
+	Attachments []Attachment
+}
+
+// Attachment is a file attached to an outgoing email.
+type Attachment struct {
+	Filename    string
+	ContentType string
+	Data        []byte
 }
 
 func NewMailer(host string, port int, username, password, from, fromName string) *Mailer {
@@ -113,11 +121,50 @@ func (m *Mailer) buildMessage(e Email) (rawMessage, error) {
 	buf.WriteString(fmt.Sprintf("Subject: %s\r\n", encodeSubject(strings.TrimSpace(e.Subject))))
 	buf.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC1123Z)))
 	buf.WriteString("MIME-Version: 1.0\r\n")
-	buf.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
-	buf.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
 
 	htmlContent := strings.ReplaceAll(e.Body, "\n", "<br>")
-	buf.WriteString(buildHTML(htmlContent))
+	html := buildHTML(htmlContent)
+
+	if len(e.Attachments) == 0 {
+		buf.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
+		buf.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
+		buf.WriteString(html)
+		return rawMessage{content: buf.Bytes()}, nil
+	}
+
+	// multipart/mixed so the plain body ships alongside file attachments.
+	boundary := fmt.Sprintf("astro-%d", time.Now().UnixNano())
+	buf.WriteString(fmt.Sprintf("Content-Type: multipart/mixed; boundary=\"%s\"\r\n\r\n", boundary))
+
+	buf.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+	buf.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
+	buf.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
+	buf.WriteString(html)
+	buf.WriteString("\r\n")
+
+	for _, a := range e.Attachments {
+		filename := strings.TrimSpace(a.Filename)
+		if filename == "" {
+			filename = "attachment"
+		}
+		contentType := strings.TrimSpace(a.ContentType)
+		if contentType == "" {
+			contentType = "application/octet-stream"
+		}
+		buf.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		buf.WriteString(fmt.Sprintf("Content-Type: %s; name=\"%s\"\r\n", contentType, filename))
+		buf.WriteString("Content-Transfer-Encoding: base64\r\n")
+		buf.WriteString(fmt.Sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n\r\n", filename))
+		encoded := base64.StdEncoding.EncodeToString(a.Data)
+		for i := 0; i < len(encoded); i += 76 {
+			end := i + 76
+			if end > len(encoded) {
+				end = len(encoded)
+			}
+			buf.WriteString(encoded[i:end] + "\r\n")
+		}
+	}
+	buf.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
 
 	return rawMessage{content: buf.Bytes()}, nil
 }

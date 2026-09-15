@@ -53,4 +53,5 @@ func InitBackofficeRouter(r *gin.Engine, database *bun.DB) {
 	public := r.Group("/api/public")
 	front_office.PublicFrontOfficeRoutes(public, database)
 	waitlist.PublicWaitlistRoutes(public, database)
+	subject.PublicSubjectRoutes(public, database)
 }

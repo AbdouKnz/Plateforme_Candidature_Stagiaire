@@ -1,14 +1,53 @@
+import * as React from "react"
 import { motion } from "motion/react"
 import { ChevronLeftIcon, FileTextIcon } from "lucide-react"
 import { ApplicationForm } from "@/components/application-form"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { useTranslation } from "@/context/language-context"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams, useNavigate } from "react-router-dom"
 import { AuroraBackground } from "@/components/ui/animated-background"
+import { Spinner } from "@/components/ui/spinner"
+import { fetchSubjectById } from "@/service/front-office"
+import { SHORTLIST_STORAGE_KEY } from "@/store/preselection-store"
 
 export function FormPage() {
   const t = useTranslation()
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const subjectId = searchParams.get("subjectId")
+  const [ready, setReady] = React.useState(!subjectId)
+
+  React.useEffect(() => {
+    if (!subjectId) {
+      setReady(true)
+      return
+    }
+
+    fetchSubjectById(subjectId)
+      .then((subject) => {
+        if (subject?.code) {
+          localStorage.setItem(
+            SHORTLIST_STORAGE_KEY,
+            JSON.stringify([subject.code])
+          )
+        }
+      })
+      .catch(() => {
+        navigate("/", { replace: true })
+      })
+      .finally(() => {
+        setReady(true)
+      })
+  }, [subjectId, navigate])
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-svh items-center justify-center bg-background">
+        <Spinner className="size-8" />
+      </div>
+    )
+  }
 
   return (
     <AuroraBackground className="min-h-svh">

@@ -3,7 +3,7 @@ export const fr = {
   "home.badge": "Acceptation des candidatures",
   "home.title": "Bienvenue à\nAstro Internship",
   "home.description": "Rejoignez une équipe d'ingénierie dynamique et travaillez dès le premier jour sur des projets concrets. Nous recherchons des esprits curieux et ambitieux, prêts à apprendre vite et à avoir un impact.",
-  "home.cta": "Explorer le Livre PFE",
+  "home.cta": "Commencer",
   "home.noCommitment": "Prend seulement 5 minutes — aucun engagement requis",
   "home.feature1": "Expérience pratique",
   "home.feature2": "Télétravail possible",

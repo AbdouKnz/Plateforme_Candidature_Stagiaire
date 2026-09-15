@@ -1,9 +1,10 @@
 import * as React from "react"
 import { motion } from "motion/react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { fetchSubjects, fetchFrontOfficeStatus } from "@/service/front-office"
 import type { Subject } from "@/models/api"
 import { Button } from "@/components/ui/button"
+import { WhoAreWeContent } from "@/components/about/who-are-we"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTheme } from "@/context/theme-context"
@@ -125,11 +126,21 @@ function BrandLogo({ className = "" }: { className?: string }) {
 
 export function PfeBookPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [subjects, setSubjects] = React.useState<Subject[]>([])
   const [loading, setLoading] = React.useState(true)
   const { ids: shortlist, toggle, clear, has } = useShortlist()
   const [year, setYear] = React.useState("2027")
   const [internshipTitle, setInternshipTitle] = React.useState("Internship Program 2027")
+  const [notice, setNotice] = React.useState<string | null>(
+    () => (location.state as { notice?: string } | null)?.notice ?? null
+  )
+
+  // Keep the banner in sync when the catalog is reached via a router-state notice
+  // while the page is already mounted.
+  React.useEffect(() => {
+    setNotice((location.state as { notice?: string } | null)?.notice ?? null)
+  }, [location.state])
 
   const containerRef = React.useRef<HTMLDivElement>(null)
   const [activePage, setActivePage] = React.useState(0)
@@ -235,9 +246,28 @@ export function PfeBookPage() {
 
   const progress = ((activePage + 1) / totalPages) * 100
 
+  const showSubjectNotFound = notice === "sujet-introuvable"
+
   return (
     <div className="pfe-book flex h-[100dvh] w-screen flex-col overflow-hidden bg-[#FFFFFF] text-[#24243C] selection:bg-primary/20">
       <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
+
+      {showSubjectNotFound && (
+        <div className="relative z-50 flex items-center justify-center gap-3 border-b border-[#1D7CC7]/20 bg-[#F1F4F8] px-4 py-2.5 text-sm text-[#24243C]">
+          <span className="font-medium">Subject not found — explore the available subjects below.</span>
+          <button
+            type="button"
+            onClick={() => {
+              setNotice(null)
+              navigate("/pfe-book", { replace: true, state: {} })
+            }}
+            className="inline-flex size-6 items-center justify-center rounded-full text-[#24243C]/60 transition-colors fine-hover:bg-[#1D7CC7]/10 fine-hover:text-[#24243C]"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── horizontally scrollable book ── */}
       <div
@@ -349,136 +379,11 @@ export function PfeBookPage() {
           data-page={1}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
-          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
-            <BrandLogo className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-3 py-1.5 text-[12px] font-mono tracking-[0.2em] text-[#24243C]/70">
-              01 / {String(totalPages).padStart(2, "0")}
-            </span>
-          </div>
-          <div className="relative z-10 flex flex-1 min-h-0 flex-col overflow-hidden">
-            {/* centered title - same style as Our Culture / Why Intern With Us */}
-            <div className="shrink-0 text-center pt-1 sm:pt-2">
-              <span className="inline-flex items-center rounded-full bg-[#1D7CC7] px-3.5 py-1 text-[12px] font-bold tracking-widest text-[#FFFFFF] uppercase shadow">Park & Charge</span>
-              <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none">
-                <span className="text-[#24243C]">Who </span><span className="text-[#12B9DA]">are</span> <span className="text-[#24243C]">we?</span>
-              </h2>
-              <div className="mx-auto mt-3 h-px w-12 bg-[#F1F4F8]" />
-            </div>
-
-            <div className="flex flex-1 min-h-0 flex-col mt-3 sm:mt-4 px-5 sm:px-7 lg:px-8 xl:px-10 overflow-hidden">
-              {/* Company Overview Card spanning full width */}
-              <div className="w-full rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-4 sm:p-5 lg:p-6 shadow-sm flex flex-col gap-3 lg:gap-4 flex-1 min-h-0">
-                {/* Company Overview Header with Image & Key Stats */}
-                <div className="flex flex-row items-center justify-between gap-4 sm:gap-6 flex-none">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex size-8 sm:size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
-                        <BuildingIcon className="size-4 sm:size-5" />
-                      </div>
-                      <h3 className="text-xl lg:text-2xl font-bold tracking-tight text-[#24243C]">Company Overview</h3>
-                    </div>
-                    <div className="mt-1.5 h-0.5 w-14 rounded-full bg-gradient-to-r from-[#1D7CC7] to-[#0F5C9E]" />
-                    <p className="mt-2.5 text-sm sm:text-base lg:text-lg leading-[1.5] text-[#24243C]/80">
-                      <span className="font-semibold text-[#24243C]">Park & Charge</span> was founded in Tunisia and is officially labelled under the Tunisia Startup Act.<br /> With a daughter company in <span className="font-semibold text-[#24243C]">Malta</span>, we now serve operators from <span className="font-semibold text-[#24243C]">Rome to Madrid and Berlin</span> <br className="hidden sm:inline" />Connecting parking and charging into one seamless experience.
-                    </p>
-                  </div>
-                  <div className="block shrink-0 w-28 sm:w-36 lg:w-44 aspect-square rounded-xl border border-[#1D7CC7]/30 overflow-hidden shadow-sm">
-                    <img src="/EV_Charging.png" alt="EV Charging Smart City" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-
-                {/* Our Mission & What we stand for */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 flex-1 min-h-0">
-                  {/* Our Mission */}
-                  <div className="lg:col-span-4 xl:col-span-3 flex flex-col justify-between rounded-xl border border-[#1D7CC7]/30 bg-[#F1F4F8] p-3 sm:p-4 min-h-0 overflow-hidden">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
-                          <RocketIcon className="size-4" />
-                        </div>
-                        <h4 className="text-lg sm:text-xl font-bold text-[#24243C]">Our Mission</h4>
-                      </div>
-                      <p className="mt-2 text-sm sm:text-base leading-[1.45] text-[#24243C]/75">
-                        Make <span className="font-bold text-[#24243C]">EV charging management</span> seamless, from the charger to the parking spot.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* What we stand for */}
-                  <div className="lg:col-span-8 xl:col-span-9 flex flex-col justify-between rounded-xl border border-[#1D7CC7]/30 bg-[#F1F4F8] p-3 sm:p-4 min-h-0 overflow-hidden">
-                    <div className="flex items-center gap-2 mb-2 sm:mb-2.5">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-sm">
-                        <HeartHandshakeIcon className="size-4" />
-                      </div>
-                      <h4 className="text-lg sm:text-xl font-bold text-[#24243C]">What we stand for</h4>
-                    </div>
-
-                    {/* 3 cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 flex-1 min-h-0">
-                      {/* Card 1: Interoperability */}
-                      <div className="flex flex-col justify-center rounded-xl border border-[#1D7CC7]/25 bg-white p-3 shadow-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#1D7CC7]/10 text-[#1D7CC7]">
-                            <LayersIcon className="size-3.5" />
-                          </div>
-                          <h5 className="text-sm font-bold text-[#24243C]">Interoperability</h5>
-                        </div>
-                        <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#24243C]/75">
-                          Open standards (OCPP), cross-CPO wallets, and white-label front-ends.
-                        </p>
-                      </div>
-
-                      {/* Card 2: Operator-first */}
-                      <div className="flex flex-col justify-center rounded-xl border border-[#1D7CC7]/25 bg-white p-3 shadow-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#1D7CC7]/10 text-[#1D7CC7]">
-                            <UsersIcon className="size-3.5" />
-                          </div>
-                          <h5 className="text-sm font-bold text-[#24243C]">Operator first</h5>
-                        </div>
-                        <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#24243C]/75">
-                          We build for the people who actually run charging networks every day.
-                        </p>
-                      </div>
-
-                      {/* Card 3: Global, from Tunisia */}
-                      <div className="flex flex-col justify-center rounded-xl border border-[#1D7CC7]/25 bg-white p-3 shadow-xs">
-                        <div className="flex items-center gap-2">
-                          <div className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[#1D7CC7]/10 text-[#1D7CC7]">
-                            <GlobeIcon className="size-3.5" />
-                          </div>
-                          <h5 className="text-sm font-bold text-[#24243C]">Global, from Tunisia</h5>
-                        </div>
-                        <p className="mt-2 text-xs sm:text-[13px] leading-relaxed text-[#24243C]/75">
-                          International ambition, North African roots, Maltese subsidiary.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* sponsors - bottom band aligned with the cards above */}
-            <div className="shrink-0 rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur px-5 sm:px-8 lg:px-12 py-4 shadow-sm mx-5 sm:mx-7 lg:mx-8 xl:mx-10 my-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold tracking-widest text-[#24243C] uppercase">Trusted across Europe and beyond</p>
-                <span className="rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/40 px-2 py-0.5 text-[12px] font-bold tracking-wide text-[#24243C]/60">6 partners</span>
-              </div>
-              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 items-center gap-4 sm:gap-5 lg:gap-6">
-                {[
-                  { name: "OVHcloud", icon: "/OVHCloud_Logo.png", size: "h-12 md:h-14 lg:h-16 max-w-[160px] lg:max-w-[200px]" },
-                  { name: "NVIDIA", icon: "/NVIDIA_Logo.png", size: "h-11 md:h-12 lg:h-14 max-w-[140px] lg:max-w-[170px]" },
-                  { name: "EIT Urban Mobility", icon: "/EIT_Logo.png", size: "h-14 md:h-[72px] lg:h-[88px] max-w-[170px] lg:max-w-[240px]" },
-                  { name: "British Parking", icon: "/BPA_Logo.png", size: "h-14 md:h-[72px] lg:h-[88px] max-w-[170px] lg:max-w-[240px]" },
-                  { name: "Terna", icon: "/Terna_Logo.png", size: "h-14 md:h-[72px] lg:h-[88px] max-w-[160px] lg:max-w-[230px]" },
-                  { name: "EPA", icon: "/EPA_Logo.png", size: "h-11 md:h-12 lg:h-14 max-w-[110px] lg:max-w-[150px]" },
-                ].map((p) => (
-                  <img key={p.name} src={p.icon} alt={p.name} className={`${p.size} w-auto object-contain mx-auto`} loading="lazy" />
-                ))}
-              </div>
+          <PageHeader number={1} total={totalPages} />
+          <div className="relative z-10 flex flex-1 min-h-0 flex-col overflow-hidden bg-[#FCFDFE]">
+            {/* Who are we? — reference About layout, fitted to the slide (no inner scrollbar on desktop) */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin lg:overflow-hidden">
+              <WhoAreWeContent compact />
             </div>
           </div>
         </section>
@@ -944,7 +849,7 @@ export function PfeBookPage() {
                     <div className="flex-1 mx-2 h-[10px] bg-[#1D7CC7]/15 blur-[6px] rounded-full" />
                   </div>
                   {[
-                    { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-center" },
+                    { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-[38%_50%]" },
                     { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills.", img: "/Online_Assesement.jpg", pos: "object-center" },
                     { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
                   ].map((s) => (
@@ -980,7 +885,7 @@ export function PfeBookPage() {
                   </div>
                   <div className="flex flex-col gap-14">
                     {[
-                      { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-center" },
+                      { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-[38%_50%]" },
                       { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills.", img: "/Online_Assesement.jpg", pos: "object-center" },
                       { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
                     ].map((s) => (

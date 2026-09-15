@@ -11,7 +11,7 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-3">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <img src="/public/PC_logo.png" alt="Park&Charge" className="h-10 w-auto" />
+              <img src="/PC_Logo.png" alt="Park&Charge" className="h-10 w-auto" />
             </div>
             <p className="max-w-md text-sm leading-relaxed text-muted-foreground dark:text-muted-foreground">
               {t("footer.description")}

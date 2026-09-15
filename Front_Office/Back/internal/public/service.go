@@ -142,6 +142,10 @@ func (s *PublicService) GetActiveTechnologies(ctx context.Context) ([]*domain.Te
 	return technologies, nil
 }
 
+// ErrSubjectNotFound is returned when the requested subject does not exist
+// or is not active (not visible to the front office).
+var ErrSubjectNotFound = errors.New("subject not found")
+
 func (s *PublicService) GetActiveSubjects(ctx context.Context) ([]*domain.Subject, error) {
 	log.Info().Msg("Fetching active subjects for front office...")
 	var subjects []*domain.Subject
@@ -202,6 +206,57 @@ func (s *PublicService) GetActiveSubjects(ctx context.Context) ([]*domain.Subjec
 	}
 
 	return subjects, nil
+}
+
+func (s *PublicService) GetActiveSubjectByID(ctx context.Context, rawID string) (*domain.Subject, error) {
+	id, err := strconv.Atoi(strings.TrimSpace(rawID))
+	if err != nil || id <= 0 {
+		return nil, fmt.Errorf("invalid subject id")
+	}
+	subj := &domain.Subject{}
+	err = s.db.NewSelect().Model(subj).
+		Where("sub.id = ?", id).
+		Where("sub.status = ?", true).
+		Limit(1).Scan(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrSubjectNotFound
+		}
+		return nil, fmt.Errorf("database error: %w", err)
+	}
+
+	var techIDs []int
+	if err := s.db.NewSelect().Model((*domain.SubjectTechnology)(nil)).
+		Column("technology_id").
+		Where("subject_id = ?", subj.ID).
+		Scan(ctx, &techIDs); err == nil && len(techIDs) > 0 {
+		if err := s.db.NewSelect().Model(&subj.Technologies).
+			Where("id IN (?)", bun.In(techIDs)).Scan(ctx); err != nil {
+			log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load technologies")
+		}
+	}
+
+	if subj.DurationID != nil {
+		var dur domain.Duration
+		if err := s.db.NewSelect().Model(&dur).Where("id = ?", *subj.DurationID).Scan(ctx); err == nil {
+			subj.Duration = &dur
+		} else if !errors.Is(err, sql.ErrNoRows) {
+			log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load duration")
+		}
+	}
+
+	var profIDs []int
+	if err := s.db.NewSelect().Model((*domain.SubjectProfile)(nil)).
+		Column("profile_id").
+		Where("subject_id = ?", subj.ID).
+		Scan(ctx, &profIDs); err == nil && len(profIDs) > 0 {
+		if err := s.db.NewSelect().Model(&subj.Profiles).
+			Where("id IN (?)", bun.In(profIDs)).Scan(ctx); err != nil {
+			log.Warn().Err(err).Int("subject_id", subj.ID).Msg("Failed to load profiles")
+		}
+	}
+
+	return subj, nil
 }
 
 func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candidature) (*domain.Candidature, error) {

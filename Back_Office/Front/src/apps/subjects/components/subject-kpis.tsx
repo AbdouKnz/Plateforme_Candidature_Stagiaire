@@ -73,7 +73,6 @@ function pct(value: number, total: number): number {
 
 function toBreakdown(counts: Record<string, number>, total: number): BreakdownItem[] {
   return Object.entries(counts)
-    .filter(([, v]) => v > 0)
     .map(([label, count]) => ({ label, count, percent: pct(count, total) }))
     .sort((a, b) => b.count - a.count);
 }
@@ -146,6 +145,20 @@ export function SubjectKpis() {
     const allCandidatures = candidatures ?? [];
     const knownNames = new Set(activeSubjects.map((s) => s.name));
 
+    // Collect all unique degrees and genders globally from all candidatures
+    const globalDegrees = new Set<string>();
+    const globalGenders = new Set<string>();
+    for (const c of allCandidatures) {
+      const d1 = (c.degree1 || "").trim();
+      if (d1) globalDegrees.add(d1);
+      const d2 = (c.degree2 || "").trim();
+      if (d2) globalDegrees.add(d2);
+      const g1 = (c.gender1 || "").trim();
+      if (g1) globalGenders.add(g1);
+      const g2 = (c.gender2 || "").trim();
+      if (g2) globalGenders.add(g2);
+    }
+
     const statsMap = new Map<string, RawStat>();
     for (const subject of activeSubjects) {
       statsMap.set(subject.name, {
@@ -178,6 +191,16 @@ export function SubjectKpis() {
         else stat.pair += 1;
         stat.degreeCounts[degree] = (stat.degreeCounts[degree] || 0) + 1;
         stat.genderCounts[gender] = (stat.genderCounts[gender] || 0) + 1;
+      }
+    }
+
+    // Ensure every subject has all global degrees/genders with at least 0
+    for (const stat of statsMap.values()) {
+      for (const deg of globalDegrees) {
+        if (!(deg in stat.degreeCounts)) stat.degreeCounts[deg] = 0;
+      }
+      for (const g of globalGenders) {
+        if (!(g in stat.genderCounts)) stat.genderCounts[g] = 0;
       }
     }
 

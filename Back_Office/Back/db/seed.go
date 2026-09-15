@@ -151,6 +151,19 @@ func MigrateSubjectTable(ctx context.Context, db *bun.DB) error {
 		log.Info().Msg("Subject table schema is up to date")
 	}
 
+	// Code and Name must each be unique on their own (not as a pair).
+	// Add missing UNIQUE constraints idempotently; existing duplicates are
+	// left untouched here and surfaced by the service-level checks.
+	for _, ddl := range []string{
+		`DO $$ BEGIN ALTER TABLE subject ADD CONSTRAINT subject_code_unique UNIQUE (code); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
+		`DO $$ BEGIN ALTER TABLE subject ADD CONSTRAINT subject_name_unique UNIQUE (name); EXCEPTION WHEN duplicate_object THEN NULL; END $$;`,
+	} {
+		if _, err := db.ExecContext(ctx, ddl); err != nil {
+			// duplicate_table / existing duplicates: warn but don't block boot.
+			log.Warn().Err(err).Msg("Could not add subject UNIQUE constraint (possible pre-existing duplicates)")
+		}
+	}
+
 	// Create join tables
 	log.Info().Msg("Checking subject_technologies table...")
 	_, err = db.ExecContext(ctx, `

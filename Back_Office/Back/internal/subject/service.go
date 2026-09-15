@@ -14,10 +14,69 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
 
 type SubjectService struct {
 	db *bun.DB
+}
+
+// Sentinel errors so handlers can map duplicates to 400 with a clear message.
+// Code and Name are each unique on their own — never checked as a pair.
+var (
+	ErrSubjectCodeExists = errors.New("subject_code_exists")
+	ErrSubjectNameExists = errors.New("subject_name_exists")
+)
+
+// subjectCodeExists reports whether another subject already uses code.
+// excludeID is skipped (use 0 on create).
+func (s *SubjectService) subjectCodeExists(ctx context.Context, code string, excludeID int) (bool, error) {
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return false, nil
+	}
+	q := s.db.NewSelect().Model((*domain.Subject)(nil)).Where("code = ?", code)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	return q.Exists(ctx)
+}
+
+// subjectNameExists reports whether another subject already uses name.
+// excludeID is skipped (use 0 on create).
+func (s *SubjectService) subjectNameExists(ctx context.Context, name string, excludeID int) (bool, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return false, nil
+	}
+	q := s.db.NewSelect().Model((*domain.Subject)(nil)).Where("name = ?", name)
+	if excludeID > 0 {
+		q = q.Where("id != ?", excludeID)
+	}
+	return q.Exists(ctx)
+}
+
+// mapUniqueViolation converts a Postgres unique-violation into the matching
+// sentinel error by inspecting the constraint / detail message.
+func mapUniqueViolation(err error, code, name string) error {
+	var pgErr pgdriver.Error
+	if !errors.As(err, &pgErr) {
+		return fmt.Errorf("could not create subject: %w", err)
+	}
+	if pgErr.Field('C') != "23505" {
+		return fmt.Errorf("could not create subject: %w", err)
+	}
+	msg := strings.ToLower(pgErr.Error() + " " + pgErr.Field('M') + " " + pgErr.Field('n') + " " + pgErr.Field('D'))
+	switch {
+	case strings.Contains(msg, "name"):
+		log.Warn().Str("name", name).Msg("Duplicate subject name")
+		return ErrSubjectNameExists
+	default:
+		// Anything else on this table is treated as a code conflict
+		// (code has the UNIQUE constraint; name check above catches name).
+		log.Warn().Str("code", code).Msg("Duplicate subject code")
+		return ErrSubjectCodeExists
+	}
 }
 
 func (s *SubjectService) loadRelations(ctx context.Context, subject *domain.Subject) error {
@@ -113,9 +172,9 @@ func (s *SubjectService) ExportSubjects(ctx context.Context, params SubjectParam
 		return nil, fmt.Errorf("failed to fetch subjects: %w", err)
 	}
 
-	headers := []string{"Code", "Name", "Period", "Profiles"}
+	headers := []string{"Code", "Name", "Profiles", "Period"}
 	if params.FileType == "excel" {
-		headers = []string{"code", "name", "period", "profiles"}
+		headers = []string{"code", "name", "profiles", "period"}
 	}
 	widths := []float64{40, 110, 47, 80}
 
@@ -193,6 +252,26 @@ func (s *SubjectService) CreateSubject(ctx context.Context, subject *domain.Subj
 	subject.CreatedAt = time.Now().Format("2006-01-02 15:04:05")
 	subject.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 
+	// Code alone must be unique.
+	codeTaken, err := s.subjectCodeExists(ctx, subject.Code, 0)
+	if err != nil {
+		return nil, fmt.Errorf("could not check subject code uniqueness: %w", err)
+	}
+	if codeTaken {
+		log.Warn().Str("code", subject.Code).Msg("Duplicate subject code")
+		return nil, ErrSubjectCodeExists
+	}
+
+	// Name alone must be unique (independent from code).
+	nameTaken, err := s.subjectNameExists(ctx, subject.Name, 0)
+	if err != nil {
+		return nil, fmt.Errorf("could not check subject name uniqueness: %w", err)
+	}
+	if nameTaken {
+		log.Warn().Str("name", subject.Name).Msg("Duplicate subject name")
+		return nil, ErrSubjectNameExists
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not start transaction: %w", err)
@@ -202,7 +281,8 @@ func (s *SubjectService) CreateSubject(ctx context.Context, subject *domain.Subj
 	_, err = tx.NewInsert().Model(subject).Exec(ctx)
 	if err != nil {
 		log.Error().Err(err).Str("subject", subject.Name).Msg("Could not create subject")
-		return nil, fmt.Errorf("could not create subject: %w", err)
+		// Race-condition safety net: map DB unique violations to the same sentinels.
+		return nil, mapUniqueViolation(err, subject.Code, subject.Name)
 	}
 
 	if err := insertSubjectRelations(ctx, tx, subject.ID, technologyIDs, profileIDs); err != nil {
@@ -246,10 +326,28 @@ func (s *SubjectService) UpdateSubject(ctx context.Context, id int, request Upda
 	oldName := subject.Name
 	oldStatus := subject.Status
 
-	if request.Code != "" {
+	// Code alone must be unique (ignore the current row).
+	if request.Code != "" && strings.TrimSpace(request.Code) != subject.Code {
+		codeTaken, err := s.subjectCodeExists(ctx, request.Code, id)
+		if err != nil {
+			return nil, fmt.Errorf("could not check subject code uniqueness: %w", err)
+		}
+		if codeTaken {
+			log.Warn().Str("code", request.Code).Int("subject_id", id).Msg("Duplicate subject code")
+			return nil, ErrSubjectCodeExists
+		}
 		subject.Code = request.Code
 	}
-	if request.Name != "" {
+	// Name alone must be unique (ignore the current row, independent from code).
+	if request.Name != "" && strings.TrimSpace(request.Name) != subject.Name {
+		nameTaken, err := s.subjectNameExists(ctx, request.Name, id)
+		if err != nil {
+			return nil, fmt.Errorf("could not check subject name uniqueness: %w", err)
+		}
+		if nameTaken {
+			log.Warn().Str("name", request.Name).Int("subject_id", id).Msg("Duplicate subject name")
+			return nil, ErrSubjectNameExists
+		}
 		subject.Name = request.Name
 	}
 	if request.Description != "" {
@@ -284,6 +382,13 @@ func (s *SubjectService) UpdateSubject(ctx context.Context, id int, request Upda
 
 	_, err = tx.NewUpdate().Model(subject).Where("id = ?", subject.ID).Exec(ctx)
 	if err != nil {
+		// Race-condition safety net: map DB unique violations to the same sentinels.
+		if errors.Is(mapUniqueViolation(err, subject.Code, subject.Name), ErrSubjectCodeExists) {
+			return nil, ErrSubjectCodeExists
+		}
+		if errors.Is(mapUniqueViolation(err, subject.Code, subject.Name), ErrSubjectNameExists) {
+			return nil, ErrSubjectNameExists
+		}
 		return nil, fmt.Errorf("could not update subject with ID %d: %w", subject.ID, err)
 	}
 

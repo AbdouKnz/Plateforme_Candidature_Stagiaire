@@ -88,6 +88,10 @@ axiosApi.interceptors.response.use(
       if (originalRequest.url?.includes("/auth/login")) {
         return Promise.reject(error);
       }
+      // Reset endpoints return 401 for wrong password, not expired token
+      if (originalRequest.url?.includes("/reset/prepare") || originalRequest.url?.includes("/reset/confirm")) {
+        return Promise.reject(error);
+      }
       // Don't retry refresh endpoint itself
       if (originalRequest.url?.includes("/auth/refresh-token")) {
         handleSessionExpired();

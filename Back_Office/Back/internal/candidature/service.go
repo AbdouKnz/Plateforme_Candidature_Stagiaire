@@ -5,6 +5,7 @@ import (
 	"astro-backend/domain"
 	"astro-backend/internal/audit"
 	"astro-backend/internal/mail_config"
+	"astro-backend/middleware"
 	"astro-backend/pkg"
 	"astro-backend/pkg/export"
 	mailPkg "astro-backend/pkg/mail"
@@ -1271,6 +1272,14 @@ func (s *CandidatureService) ResetPrepare(ctx context.Context, password string) 
 		return nil, ErrInvalidResetPassword
 	}
 
+	return s.buildSessionResetWorkbook(ctx)
+}
+
+// buildSessionResetWorkbook snapshots subjects, candidatures and pipeline
+// stats, then renders the same 3-sheet Excel used for the reset backup
+// (Subjects, Applications, Statistics & KPIs). Shared by ResetPrepare and
+// ResetConfirm so the confirm-step attachment is identical to the download.
+func (s *CandidatureService) buildSessionResetWorkbook(ctx context.Context) ([]byte, error) {
 	log.Info().Msg("Generating session reset Excel backup...")
 
 	// 1. Fetch all subjects
@@ -1345,6 +1354,31 @@ func (s *CandidatureService) ResetConfirm(ctx context.Context, password string) 
 		return ErrInvalidResetPassword
 	}
 
+	// Snapshot the backup workbook BEFORE the destructive transaction: after
+	// the deletes there is nothing left to export. The bytes are reused as the
+	// notification-email attachment once the commit succeeds.
+	workbookBytes, err := s.buildSessionResetWorkbook(ctx)
+	if err != nil {
+		return err
+	}
+	resetAt := time.Now()
+
+	// Resolve the acting admin's email from the auth context (actorID), NOT
+	// from the reset password. Needed after commit for the notification email.
+	adminEmail := ""
+	adminName := ""
+	if actor, aErr := middleware.GetActorFromContext(ctx); aErr != nil {
+		log.Warn().Err(aErr).Msg("Could not resolve acting admin from context for session reset notification")
+	} else {
+		var admin domain.User
+		if uErr := s.db.NewSelect().Model(&admin).Where("u.id = ?", actor.UserID).Scan(ctx); uErr != nil {
+			log.Warn().Err(uErr).Int("admin_id", actor.UserID).Msg("Could not fetch acting admin for session reset notification")
+		} else {
+			adminEmail = strings.TrimSpace(admin.Email)
+			adminName = strings.TrimSpace(strings.TrimSpace(admin.FirstName) + " " + strings.TrimSpace(admin.LastName))
+		}
+	}
+
 	log.Warn().Msg("Executing database reset for recruitment session...")
 
 	tx, err := s.db.BeginTx(ctx, nil)
@@ -1403,5 +1437,84 @@ func (s *CandidatureService) ResetConfirm(ctx context.Context, password string) 
 		log.Warn().Err(err).Msg("Failed to record audit log for session reset")
 	}
 
+	// Notify the acting admin asynchronously with the backup attached.
+	// Fire-and-forget on a background context: a send failure only logs and
+	// never rolls back or fails the (already committed) reset.
+	if adminEmail != "" {
+		go s.sendSessionResetNotification(adminEmail, adminName, resetAt, workbookBytes)
+	} else {
+		log.Warn().Msg("Skipping session reset notification email: acting admin email unknown")
+	}
+
 	return nil
+}
+
+// Session reset notification email (hardcoded, no admin-configurable template).
+const (
+	sessionResetEmailSubject      = "Session reset"
+	sessionResetEmailTemplateType = "session_reset"
+)
+
+// sendSessionResetNotification sends the post-reset email to the admin with
+// the 3-sheet backup attached, then records it in email_logs like other
+// system emails. Runs in background: failures are logged only, never
+// propagated.
+func (s *CandidatureService) sendSessionResetNotification(adminEmail, adminName string, resetAt time.Time, workbook []byte) {
+	bgCtx := context.Background()
+	body := fmt.Sprintf("The session was reset on %s at %s. Export attached.",
+		resetAt.Format("02/01/2006"), resetAt.Format("15:04:05"))
+	now := resetAt.Format("2006-01-02 15:04:05")
+	attachmentName := fmt.Sprintf("session_backup_%s.xlsx", resetAt.Format("2006-01-02_15-04-05"))
+
+	cfg, err := mail_config.GetSMTPConfig(bgCtx, s.db)
+	if err != nil {
+		log.Error().Err(err).Str("to", adminEmail).Msg("Session reset notification: SMTP config unavailable")
+		s.logSessionResetEmail(bgCtx, adminEmail, adminName, sessionResetEmailSubject, body, now, "failed", err)
+		return
+	}
+	mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
+	email := mailPkg.Email{
+		To:      []string{adminEmail},
+		Subject: sessionResetEmailSubject,
+		Body:    body,
+		Attachments: []mailPkg.Attachment{
+			{
+				Filename:    attachmentName,
+				ContentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+				Data:        workbook,
+			},
+		},
+	}
+	if sendErr := mailer.Send(email); sendErr != nil {
+		log.Error().Err(sendErr).Str("to", adminEmail).Msg("Session reset notification email failed to send")
+		s.logSessionResetEmail(bgCtx, adminEmail, adminName, sessionResetEmailSubject, body, now, "failed", sendErr)
+		return
+	}
+	log.Info().Str("to", adminEmail).Msg("Session reset notification email sent")
+	s.logSessionResetEmail(bgCtx, adminEmail, adminName, sessionResetEmailSubject, body, now, "sent", nil)
+}
+
+// logSessionResetEmail records the notification in email_logs (recipient,
+// subject, timestamp, success/failure). Log-only: insert errors are logged,
+// never returned — the reset already succeeded.
+func (s *CandidatureService) logSessionResetEmail(ctx context.Context, recipient, candidatName, subject, body, sentAt, status string, sendErr error) {
+	errMsg := ""
+	if sendErr != nil {
+		errMsg = truncateError(sendErr.Error(), 2000)
+	}
+	entry := &domain.EmailLog{
+		CandidatureID: 0,
+		Recipient:     recipient,
+		Subject:       subject,
+		Body:          body,
+		TemplateType:  sessionResetEmailTemplateType,
+		CandidatName:  candidatName,
+		SubjectName:   "Session reset",
+		Status:        status,
+		SentAt:        sentAt,
+		ErrorMessage:  errMsg,
+	}
+	if _, err := s.db.NewInsert().Model(entry).Exec(ctx); err != nil {
+		log.Error().Err(err).Str("to", recipient).Msg("Failed to log session reset notification email")
+	}
 }

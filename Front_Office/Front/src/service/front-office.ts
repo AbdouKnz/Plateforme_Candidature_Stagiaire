@@ -30,6 +30,17 @@ export async function fetchSubjects(): Promise<Subject[]> {
   return body.data ?? []
 }
 
+export async function fetchSubjectById(id: string | number): Promise<Subject> {
+  const res = await fetch(`${API_BASE}/subjects/${encodeURIComponent(String(id))}`)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error ?? "Failed to fetch subject")
+  }
+  const body = await res.json()
+  if (!body.data) throw new Error("Subject not found")
+  return body.data as Subject
+}
+
 export async function submitCandidature(formData: FormData): Promise<{ id: number }> {
   const res = await fetch(`${API_BASE}/candidatures`, {
     method: "POST",

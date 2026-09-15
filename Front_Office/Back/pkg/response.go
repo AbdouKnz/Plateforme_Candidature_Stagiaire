@@ -49,6 +49,10 @@ func BadRequest(c *gin.Context, err string) {
 	HttpError(c, http.StatusBadRequest, err)
 }
 
+func NotFound(c *gin.Context, err string) {
+	HttpError(c, http.StatusNotFound, err)
+}
+
 func InternalError(c *gin.Context, err string) {
 	HttpError(c, http.StatusInternalServerError, err)
 }

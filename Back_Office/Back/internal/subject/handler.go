@@ -5,6 +5,7 @@ import (
 	"astro-backend/domain"
 	"astro-backend/pkg"
 	"astro-backend/pkg/export"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -13,6 +14,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+// subjectConflict maps service sentinel errors to a 400 with a localized key.
+func subjectConflict(c *gin.Context, err error) bool {
+	if errors.Is(err, ErrSubjectCodeExists) {
+		pkg.BadRequest(c, pkg.T(c, "subject_code_exists"))
+		return true
+	}
+	if errors.Is(err, ErrSubjectNameExists) {
+		pkg.BadRequest(c, pkg.T(c, "subject_name_exists"))
+		return true
+	}
+	return false
+}
 
 func saveSubjectImage(c *gin.Context) (string, error) {
 	file, err := c.FormFile("image")
@@ -102,6 +116,9 @@ func (h *SubjectHandler) CreateSubjectHandler(c *gin.Context) {
 
 	createdSubject, err := h.Service.CreateSubject(c.Request.Context(), subject, request.TechnologyIDs, request.ProfileIDs)
 	if err != nil {
+		if subjectConflict(c, err) {
+			return
+		}
 		pkg.InternalError(c, err.Error())
 		return
 	}
@@ -191,6 +208,9 @@ func (h *SubjectHandler) UpdateSubjectHandler(c *gin.Context) {
 
 	updatedSubject, err := h.Service.UpdateSubject(c.Request.Context(), id, request)
 	if err != nil {
+		if subjectConflict(c, err) {
+			return
+		}
 		pkg.InternalError(c, err.Error())
 		return
 	}

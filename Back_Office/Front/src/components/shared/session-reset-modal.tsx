@@ -33,6 +33,7 @@ import {
 export type ResetStep =
   | "CONFIRM"
   | "PASSWORD"
+  | "FILENAME"
   | "PREPARING"
   | "EXCEL_READY"
   | "RESETTING"
@@ -60,6 +61,7 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
 
   // Download Blob & filename kept strictly in memory
   const [excelData, setExcelData] = useState<PrepareResetResult | null>(null);
+  const [customFilename, setCustomFilename] = useState("");
 
   // Generic error message for ERROR step
   const [errorMessage, setErrorMessage] = useState("");
@@ -75,6 +77,7 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
     setPasswordError("");
     setProgress(0);
     setExcelData(null);
+    setCustomFilename("");
     setErrorMessage("");
     setCanRetryConfirm(false);
     if (progressIntervalRef.current) {
@@ -122,13 +125,9 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
     };
   }, []);
 
-  // Step 2 -> Step 3: Call /reset/prepare
+  // Step 3 -> Step 4: Call /reset/prepare
   const handleStartPrepare = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!password.trim()) {
-      setPasswordError(t("password_required", "Password is required"));
-      return;
-    }
 
     setPasswordError("");
     setStep("PREPARING");
@@ -139,6 +138,9 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
       stopProgressAnimation();
       setProgress(100);
       setExcelData(result);
+      if (!customFilename.trim()) {
+        setCustomFilename(result.filename.replace(/\.xlsx$/i, ""));
+      }
       setStep("EXCEL_READY");
     } catch (err: any) {
       stopProgressAnimation();
@@ -176,7 +178,8 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
     if (!excelData) return;
 
     // 1. Immediately trigger the browser download of the already-generated Blob
-    createDownloadLink(excelData.blob, excelData.filename);
+    const downloadName = customFilename.trim() ? `${customFilename.trim()}.xlsx` : excelData.filename;
+    createDownloadLink(excelData.blob, downloadName);
 
     // 2. Transition to RESETTING
     setStep("RESETTING");
@@ -274,7 +277,17 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
 
         {/* ── STEP 2: PASSWORD ── */}
         {step === "PASSWORD" && (
-          <form onSubmit={handleStartPrepare}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!password.trim()) {
+                setPasswordError(t("password_required", "Password is required"));
+                return;
+              }
+              setPasswordError("");
+              setStep("FILENAME");
+            }}
+          >
             <AlertDialogHeader>
               <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary sm:mx-0">
                 <IconKey className="size-6" />
@@ -324,6 +337,59 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
               </Button>
               <Button type="submit">
                 {t("continue", "Continue")}
+              </Button>
+            </AlertDialogFooter>
+          </form>
+        )}
+
+        {/* ── STEP 3: FILENAME ── */}
+        {step === "FILENAME" && (
+          <form onSubmit={handleStartPrepare}>
+            <AlertDialogHeader>
+              <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary sm:mx-0">
+                <IconFileSpreadsheet className="size-6" />
+              </div>
+              <AlertDialogTitle className="text-start text-xl font-bold">
+                {t("enter_filename", "Enter file name")}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-start text-sm text-muted-foreground">
+                {t(
+                  "enter_filename_desc",
+                  "Choose a name for the Excel backup file."
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <div className="my-4 space-y-2 text-start">
+              <Label htmlFor="session-reset-filename">
+                {t("file_name", "File name")}
+              </Label>
+              <div className="flex items-center">
+                <Input
+                  id="session-reset-filename"
+                  type="text"
+                  value={customFilename}
+                  onChange={(e) => setCustomFilename(e.target.value)}
+                  placeholder={t("filename_placeholder", "e.g. session_backup")}
+                  autoFocus
+                  className="h-9 rounded-r-none text-xs font-mono"
+                />
+                <span className="flex h-9 items-center rounded-r-md border border-l-0 border-input bg-muted px-3 text-xs font-mono text-muted-foreground">
+                  .xlsx
+                </span>
+              </div>
+            </div>
+
+            <AlertDialogFooter className="mt-4 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setStep("PASSWORD")}
+              >
+                {t("back", "Back")}
+              </Button>
+              <Button type="submit">
+                {t("create", "Create")}
               </Button>
             </AlertDialogFooter>
           </form>
@@ -383,12 +449,25 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
                 <p>
                   {t(
                     "excel_backup_generated_success",
-                    "The Excel backup containing 3 sheets (Subjects, Applications, and KPIs) has been successfully generated."
+                    "The Excel backup  has been successfully generated."
                   )}
                 </p>
-                <div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 p-2.5 text-xs text-foreground">
-                  <span className="font-semibold">{t("file_name", "File")}: </span>
-                  <span className="font-mono">{excelData?.filename}</span>
+                <div className="space-y-1.5">
+                  <Label htmlFor="custom-filename" className="text-xs font-semibold text-foreground">
+                    {t("file_name", "File name")}
+                  </Label>
+                  <div className="flex items-center">
+                    <Input
+                      id="custom-filename"
+                      type="text"
+                      value={customFilename}
+                      onChange={(e) => setCustomFilename(e.target.value)}
+                      className="h-9 rounded-r-none text-xs font-mono"
+                    />
+                    <span className="flex h-9 items-center rounded-r-md border border-l-0 border-input bg-muted px-3 text-xs font-mono text-muted-foreground">
+                      .xlsx
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs font-medium text-destructive">
                   {t(

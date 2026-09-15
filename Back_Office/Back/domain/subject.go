@@ -6,8 +6,8 @@ type Subject struct {
 	bun.BaseModel `bun:"table:subject,alias:sub" json:"-"`
 
 	ID               int     `bun:"id,pk,autoincrement" json:"id"`
-	Code             string  `bun:"code,notnull" json:"code" binding:"required"`
-	Name             string  `bun:"name,notnull" json:"name" binding:"required,min=3,max=100"`
+	Code             string  `bun:"code,notnull,unique" json:"code" binding:"required"`
+	Name             string  `bun:"name,notnull,unique" json:"name" binding:"required,min=3,max=100"`
 	Description      string  `bun:"description,notnull" json:"description" binding:"required"`
 	ImagePath        string  `bun:"image_path,default:''" json:"image_path"`
 	Status           bool    `bun:"status,notnull,default:true" json:"status"`

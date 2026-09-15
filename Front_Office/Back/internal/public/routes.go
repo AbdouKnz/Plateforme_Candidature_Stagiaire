@@ -15,6 +15,7 @@ func PublicRoutes(r *gin.RouterGroup, db *bun.DB) {
 	r.GET("/durations", handler.GetActiveDurationsHandler)
 	r.GET("/technologies", handler.GetActiveTechnologiesHandler)
 	r.GET("/subjects", handler.GetActiveSubjectsHandler)
+	r.GET("/subjects/:id", handler.GetActiveSubjectByIDHandler)
 	r.POST("/candidatures", handler.CreateCandidatureHandler)
 	r.POST("/waitlist", handler.SubscribeWaitlistHandler)
 }
