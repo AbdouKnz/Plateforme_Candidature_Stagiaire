@@ -21,6 +21,7 @@ type ConfigMode struct {
 		TZ                 string `env:"TZ,UTC"`
 		BackendUrl         string `env:"BACKEND_URL,http://localhost:8070"`
 		UploadsPath        string `env:"UPLOADS_PATH,./uploads"`
+		FOUrl              string `env:"FO_URL,http://localhost:5173"`
 	}
 
 	// ───────────── DATABASE ─────────────

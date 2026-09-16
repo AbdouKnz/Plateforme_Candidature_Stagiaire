@@ -60,6 +60,8 @@ const getActionBadgeColor = (action?: string) => {
       return "success";
     case "reject":
       return "destructive";
+    case "reset":
+      return "warning";
     default:
       return "secondary";
   }

@@ -44,8 +44,6 @@ const statusVariants: Record<string, string> = {
 };
 
 function FileLink({ path, label, fallback }: { path?: string; label: string; fallback?: string }) {
-      console.log("****path:", path);
-
    if (!path) {
     return <span className="text-sm text-muted-foreground">{fallback || "-"}</span>;
   }
@@ -158,7 +156,6 @@ export function CandidatureActionModal({
   const isDelete = mode === DialogEnum.DELETE;
 
   if (isDelete && candidature) {
-    console.log("****candidature:", candidature);
     return (
       <Dialog open={open} onOpenChange={(state) => { if (!state) handleClose(); }}>
         <DialogContent className="sm:max-w-md">

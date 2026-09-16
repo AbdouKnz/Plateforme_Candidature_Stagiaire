@@ -141,9 +141,12 @@ export function SubjectKpis() {
   const isLoading = subjectsLoading || candidaturesLoading;
 
   const rows = useMemo<SubjectRow[]>(() => {
+    // Subject names are matched TRIMMED on both sides: stored candidature
+    // rows and subject rows can drift by whitespace (e.g. "Projet 1" vs
+    // "Projet 1 "), which would otherwise silently drop rows from the KPIs.
     const activeSubjects = (subjects ?? []).filter((s) => !!s.status);
     const allCandidatures = candidatures ?? [];
-    const knownNames = new Set(activeSubjects.map((s) => s.name));
+    const knownNames = new Set(activeSubjects.map((s) => s.name.trim()));
 
     // Collect all unique degrees and genders globally from all candidatures
     const globalDegrees = new Set<string>();
@@ -161,9 +164,9 @@ export function SubjectKpis() {
 
     const statsMap = new Map<string, RawStat>();
     for (const subject of activeSubjects) {
-      statsMap.set(subject.name, {
+      statsMap.set(subject.name.trim(), {
         code: subject.code,
-        subjectName: subject.name,
+        subjectName: subject.name.trim(),
         total: 0,
         pair: 0,
         solo: 0,
@@ -185,7 +188,8 @@ export function SubjectKpis() {
       const gender = (c.gender1 || t("unknown")).trim();
 
       for (const name of subjectNames) {
-        const stat = statsMap.get(name)!;
+        const stat = statsMap.get(name);
+        if (!stat) continue;
         stat.total += 1;
         if (isSolo) stat.solo += 1;
         else stat.pair += 1;

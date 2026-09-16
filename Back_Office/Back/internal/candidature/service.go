@@ -268,7 +268,7 @@ func (s *CandidatureService) getSubjectQuizLink(ctx context.Context, subjectName
 		return ""
 	}
 	var link string
-	_ = s.db.NewSelect().Column("online_quiz_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
+	_ = s.db.NewSelect().Column("online_quiz_link").Model((*domain.Subject)(nil)).Where("TRIM(name) = ?", name).Scan(ctx, &link)
 	return link
 }
 
@@ -282,7 +282,7 @@ func (s *CandidatureService) getSubjectMeetingLink(ctx context.Context, subjectN
 		return ""
 	}
 	var link string
-	_ = s.db.NewSelect().Column("online_meeting_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
+	_ = s.db.NewSelect().Column("online_meeting_link").Model((*domain.Subject)(nil)).Where("TRIM(name) = ?", name).Scan(ctx, &link)
 	return link
 }
 
@@ -296,7 +296,7 @@ func (s *CandidatureService) getSubjectF2FMeetingLink(ctx context.Context, subje
 		return ""
 	}
 	var link string
-	_ = s.db.NewSelect().Column("f2f_meeting_link").Model((*domain.Subject)(nil)).Where("name = ?", name).Scan(ctx, &link)
+	_ = s.db.NewSelect().Column("f2f_meeting_link").Model((*domain.Subject)(nil)).Where("TRIM(name) = ?", name).Scan(ctx, &link)
 	return link
 }
 
@@ -695,7 +695,7 @@ func (s *CandidatureService) Update(ctx context.Context, id int, request UpdateC
 	return candidature, nil
 }
 
-func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, step string, interviewDate string, interviewTime string, rejectionReason string, quizLink string, meetingLink string, startDate string, f2fMeetingLink string) (*EmailPreviewResponse, error) {
+func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templateType string, step string, interviewDate string, interviewTime string, rejectionReason string, quizLink string, meetingLink string, startDate string, f2fMeetingLink string, quizLink2 ...string) (*EmailPreviewResponse, error) {
 	candidature, err := s.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -752,11 +752,31 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 
 	body := renderEmailPlaceholders(template.Body, vars)
 
-	return &EmailPreviewResponse{
+	// Pair with a distinct second link: also render member 2's own version so
+	// the frontend can show both cards. Member 1 keeps `link`, member 2 gets
+	// quizLink2 when provided (otherwise the same link).
+	resp := &EmailPreviewResponse{
 		To:      to,
 		Subject: subject,
 		Body:    body,
-	}, nil
+	}
+	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
+		second := ""
+		if len(quizLink2) > 0 {
+			second = strings.TrimSpace(quizLink2[0])
+		}
+		if second == "" {
+			second = link
+		}
+		if second != "" && second != link {
+			memberVars := vars
+			memberVars.link = second
+			resp.To2 = email2
+			resp.Body2 = renderEmailPlaceholders(template.Body, memberVars)
+		}
+	}
+
+	return resp, nil
 }
 
 func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmailRequest) error {
@@ -794,18 +814,14 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	// When the caller supplies an explicit body (HR edited the email), use it
 	// as-is instead of the template-generated body. This preserves any edit
 	// while still letting the mailer send it as HTML.
+	//
+	// Pair applications (binôme): each member receives their own edited view
+	// card — member 1 gets Body rendered with QuizLink, member 2 gets Body2
+	// rendered with QuizLink2. When the caller sent a single shared text
+	// (Body2 empty, e.g. bulk accept), member 2 falls back to Body rendered
+	// with their own link. Each send is logged separately so every
+	// recipient/body pair stays traceable.
 	if strings.TrimSpace(req.Body) != "" {
-		link := resolveEmailLink(req.QuizLink, req.MeetingLink, req.F2FMeetingLink)
-		vars := emailRenderVars{
-			interviewDate:   req.InterviewDate,
-			interviewTime:   req.InterviewTime,
-			startDate:       req.StartDate,
-			rejectionReason: req.RejectionReason,
-			link:            link,
-			mapsLink:        asterOideaAddressLink(),
-		}
-		subject := renderEmailPlaceholders(template.Subject, vars)
-		body := renderEmailPlaceholders(req.Body, vars)
 		to := strings.TrimSpace(candidature.Email1)
 		if to == "" {
 			return fmt.Errorf("candidature has no email address")
@@ -814,23 +830,53 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 			recipients = append(recipients, email2)
 		}
-		to = strings.Join(recipients, ", ")
+
+		link := resolveEmailLink(req.QuizLink, req.MeetingLink, req.F2FMeetingLink)
+		link2 := link
+		if strings.TrimSpace(req.QuizLink2) != "" {
+			link2 = strings.TrimSpace(req.QuizLink2)
+		}
+		baseVars := emailRenderVars{
+			interviewDate:   req.InterviewDate,
+			interviewTime:   req.InterviewTime,
+			startDate:       req.StartDate,
+			rejectionReason: req.RejectionReason,
+			link:            link,
+			mapsLink:        asterOideaAddressLink(),
+		}
+		subject := renderEmailPlaceholders(template.Subject, baseVars)
+
+		bodies := make([]string, len(recipients))
+		for i := range recipients {
+			memberVars := baseVars
+			override := req.Body
+			if i == 1 {
+				memberVars.link = link2
+				if strings.TrimSpace(req.Body2) != "" {
+					override = req.Body2
+				}
+			}
+			bodies[i] = renderEmailPlaceholders(override, memberVars)
+		}
 
 		now := time.Now().Format("2006-01-02 15:04:05")
-		emailLog := &domain.EmailLog{
-			CandidatureID: id,
-			Recipient:     to,
-			Subject:       subject,
-			Body:          body,
-			TemplateType:  req.Type,
-			CandidatName:  candidature.FullName,
-			SubjectName:   candidature.SubjectName,
-			Status:        "pending",
-			SentAt:        now,
-		}
-		if _, err := s.db.NewInsert().Model(emailLog).Exec(ctx); err != nil {
-			log.Error().Err(err).Int("id", id).Msg("Failed to create email log")
-			return fmt.Errorf("failed to create email log: %w", err)
+		emailLogs := make([]*domain.EmailLog, len(recipients))
+		for i, r := range recipients {
+			emailLogs[i] = &domain.EmailLog{
+				CandidatureID: id,
+				Recipient:     r,
+				Subject:       subject,
+				Body:          bodies[i],
+				TemplateType:  req.Type,
+				CandidatName:  candidature.FullName,
+				SubjectName:   candidature.SubjectName,
+				Status:        "pending",
+				SentAt:        now,
+			}
+			if _, err := s.db.NewInsert().Model(emailLogs[i]).Exec(ctx); err != nil {
+				log.Error().Err(err).Int("id", id).Msg("Failed to create email log")
+				return fmt.Errorf("failed to create email log: %w", err)
+			}
 		}
 
 		cfg, err := mail_config.GetSMTPConfig(ctx, s.db)
@@ -842,24 +888,27 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 
 		// Send one email per member (binôme): even when the two addresses are
 		// identical (e.g. a pair sharing a mailbox), each member gets their own
-		// email instead of a single message with a duplicated To list.
-		for _, r := range recipients {
-			email := mailPkg.Email{To: []string{r}, Subject: subject, Body: body}
+		// email with their own edited body instead of a single message with a
+		// duplicated To list.
+		for i, r := range recipients {
+			email := mailPkg.Email{To: []string{r}, Subject: subject, Body: bodies[i]}
 			if sendErr := mailer.Send(email); sendErr != nil {
-				log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
-				emailLog.Status = "failed"
-				emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
-				if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+				log.Error().Err(sendErr).Int("id", id).Str("to", r).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
+				emailLogs[i].Status = "failed"
+				emailLogs[i].ErrorMessage = truncateError(sendErr.Error(), 2000)
+				if _, uErr := s.db.NewUpdate().Model(emailLogs[i]).Column("status", "error_message").Where("id = ?", emailLogs[i].ID).Exec(ctx); uErr != nil {
 					log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
 				}
 				return fmt.Errorf("failed to send email: %w", sendErr)
 			}
 		}
 
-		emailLog.Status = "sent"
-		emailLog.ErrorMessage = ""
-		if _, err := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); err != nil {
-			log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
+		for _, l := range emailLogs {
+			l.Status = "sent"
+			l.ErrorMessage = ""
+			if _, err := s.db.NewUpdate().Model(l).Column("status", "error_message").Where("id = ?", l.ID).Exec(ctx); err != nil {
+				log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
+			}
 		}
 
 		// Advance the candidature step exactly like the normal (template) path.
@@ -885,10 +934,28 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 		recipients = append(recipients, email2)
 	}
+	// Per-member links: when QuizLink2 is set and the candidature is a pair,
+	// member 2 (email2) gets their own [Link] value while member 1 (email1)
+	// keeps QuizLink. All other invitation types share a single link.
 	to = strings.Join(recipients, ", ")
 
 	link := resolveEmailLink(req.QuizLink, req.MeetingLink, req.F2FMeetingLink)
-	vars := emailRenderVars{
+	link2 := link
+	if strings.TrimSpace(req.QuizLink2) != "" {
+		link2 = strings.TrimSpace(req.QuizLink2)
+	}
+	perMemberLinks := []string{}
+	for i := range recipients {
+		if i == 1 && strings.TrimSpace(candidature.Email2) != "" {
+			perMemberLinks = append(perMemberLinks, link2)
+		} else {
+			perMemberLinks = append(perMemberLinks, link)
+		}
+	}
+	// Subject has no per-member variation today: render once from the shared
+	// vars. Bodies are rendered per member so each pair member gets their own
+	// [Link] value.
+	sharedVars := emailRenderVars{
 		interviewDate:   req.InterviewDate,
 		interviewTime:   req.InterviewTime,
 		startDate:       req.StartDate,
@@ -896,26 +963,53 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		link:            link,
 		mapsLink:        asterOideaAddressLink(),
 	}
-	subject := renderEmailPlaceholders(template.Subject, vars)
+	subject := renderEmailPlaceholders(template.Subject, sharedVars)
 
-	body := renderEmailPlaceholders(template.Body, vars)
+	// One body per member so each pair member gets their own [Link] value.
+	// When the caller supplied an explicit per-member override (HR edited a
+	// view card), that member's body is used as-is; otherwise the template
+	// body is rendered with the member's own link. This keeps each
+	// applicant's email fully independent (own text + own link).
+	bodies := make([]string, len(recipients))
+	for i, memberLink := range perMemberLinks {
+		if i == 0 && strings.TrimSpace(req.Body) != "" {
+			memberVars := sharedVars
+			memberVars.link = memberLink
+			bodies[i] = renderEmailPlaceholders(req.Body, memberVars)
+			continue
+		}
+		if i == 1 && strings.TrimSpace(candidature.Email2) != "" && strings.TrimSpace(req.Body2) != "" {
+			memberVars := sharedVars
+			memberVars.link = memberLink
+			bodies[i] = renderEmailPlaceholders(req.Body2, memberVars)
+			continue
+		}
+		memberVars := sharedVars
+		memberVars.link = memberLink
+		bodies[i] = renderEmailPlaceholders(template.Body, memberVars)
+	}
 
 	now := time.Now().Format("2006-01-02 15:04:05")
 
-	emailLog := &domain.EmailLog{
-		CandidatureID: id,
-		Recipient:     to,
-		Subject:       subject,
-		Body:          body,
-		TemplateType:  req.Type,
-		CandidatName:  candidature.FullName,
-		SubjectName:   candidature.SubjectName,
-		Status:        "pending",
-		SentAt:        now,
-	}
-	if _, err := s.db.NewInsert().Model(emailLog).Exec(ctx); err != nil {
-		log.Error().Err(err).Int("id", id).Msg("Failed to create email log")
-		return fmt.Errorf("failed to create email log: %w", err)
+	// One email log per member so each recipient/link pair is traceable.
+	// The subject/body stored are exactly what that member received.
+	emailLogs := make([]*domain.EmailLog, len(recipients))
+	for i, r := range recipients {
+		emailLogs[i] = &domain.EmailLog{
+			CandidatureID: id,
+			Recipient:     r,
+			Subject:       subject,
+			Body:          bodies[i],
+			TemplateType:  req.Type,
+			CandidatName:  candidature.FullName,
+			SubjectName:   candidature.SubjectName,
+			Status:        "pending",
+			SentAt:        now,
+		}
+		if _, err := s.db.NewInsert().Model(emailLogs[i]).Exec(ctx); err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Failed to create email log")
+			return fmt.Errorf("failed to create email log: %w", err)
+		}
 	}
 
 	cfg, err := mail_config.GetSMTPConfig(ctx, s.db)
@@ -928,29 +1022,32 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	// Send one email per member (binôme): even when the two addresses are
 	// identical (e.g. a pair sharing a mailbox), each member gets their own
 	// email instead of a single message with a duplicated To list.
-	for _, r := range recipients {
+	// Each member's body carries their own [Link] (perMemberLinks).
+	for i, r := range recipients {
 		email := mailPkg.Email{
 			To:      []string{r},
 			Subject: subject,
-			Body:    body,
+			Body:    bodies[i],
 		}
 
 		sendErr := mailer.Send(email)
 		if sendErr != nil {
-			log.Error().Err(sendErr).Int("id", id).Str("to", to).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
-			emailLog.Status = "failed"
-			emailLog.ErrorMessage = truncateError(sendErr.Error(), 2000)
-			if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+			log.Error().Err(sendErr).Int("id", id).Str("to", r).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
+			emailLogs[i].Status = "failed"
+			emailLogs[i].ErrorMessage = truncateError(sendErr.Error(), 2000)
+			if _, uErr := s.db.NewUpdate().Model(emailLogs[i]).Column("status", "error_message").Where("id = ?", emailLogs[i].ID).Exec(ctx); uErr != nil {
 				log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
 			}
 			return fmt.Errorf("failed to send email: %w", sendErr)
 		}
 	}
 
-	emailLog.Status = "sent"
-	emailLog.ErrorMessage = ""
-	if _, err := s.db.NewUpdate().Model(emailLog).Column("status", "error_message").Where("id = ?", emailLog.ID).Exec(ctx); err != nil {
-		log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
+	for _, l := range emailLogs {
+		l.Status = "sent"
+		l.ErrorMessage = ""
+		if _, err := s.db.NewUpdate().Model(l).Column("status", "error_message").Where("id = ?", l.ID).Exec(ctx); err != nil {
+			log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
+		}
 	}
 
 	status := "accepted"
@@ -1021,6 +1118,7 @@ func (s *CandidatureService) BulkAccept(ctx context.Context, ids []int, req Bulk
 			Type:           req.Type,
 			Step:           req.Step,
 			QuizLink:       req.QuizLink,
+			QuizLink2:      req.QuizLink2,
 			MeetingLink:    req.MeetingLink,
 			F2FMeetingLink: req.F2FMeetingLink,
 			InterviewDate:  req.InterviewDate,
@@ -1461,10 +1559,10 @@ const (
 // propagated.
 func (s *CandidatureService) sendSessionResetNotification(adminEmail, adminName string, resetAt time.Time, workbook []byte) {
 	bgCtx := context.Background()
-	body := fmt.Sprintf("The session was reset on %s at %s. Export attached.",
+	body := fmt.Sprintf("We would like to inform you that the session reset process has been completed %s at %s. \n You will find the excel recap attached .",
 		resetAt.Format("02/01/2006"), resetAt.Format("15:04:05"))
 	now := resetAt.Format("2006-01-02 15:04:05")
-	attachmentName := fmt.Sprintf("session_backup_%s.xlsx", resetAt.Format("2006-01-02_15-04-05"))
+	attachmentName := fmt.Sprintf("Session_Recap_%s.xlsx", resetAt.Format("2006-01-02_15-04-05"))
 
 	cfg, err := mail_config.GetSMTPConfig(bgCtx, s.db)
 	if err != nil {

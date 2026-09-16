@@ -12,6 +12,7 @@ import { ThemeSwitch } from '../theme-switch'
 import { ConfigDrawer } from '../config-drawer'
 import { ProfileDropdown } from '../profile-dropdown'
 import { LanguageSwitch } from '../language-switch'
+import { SessionResetButton } from '../session-reset-button'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -42,6 +43,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               <Search />
               <div className='ms-auto flex items-center space-x-4'>
                   <LanguageSwitch /> 
+                <SessionResetButton />
                 <ThemeSwitch />
                 <ConfigDrawer />
                 <ProfileDropdown />

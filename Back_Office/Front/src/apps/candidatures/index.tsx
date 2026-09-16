@@ -47,6 +47,7 @@ export function Candidatures() {
   const [stepFilter, setStepFilter] = useState("all");
   const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
+  const [bulkAcceptOpen, setBulkAcceptOpen] = useState(false);
 
   // Status filtering is owned exclusively by the status tabs below (per-step,
   // client-side). Never send `status` to the server: its overall-status filter
@@ -147,8 +148,6 @@ export function Candidatures() {
     () => data.filter((c) => rowSelection[String(c.id)]),
     [data, rowSelection]
   );
-
-  const [bulkAcceptOpen, setBulkAcceptOpen] = useState(false);
 
   const pendingSelected = useMemo(
     () => selectedRows.filter((c) => displayStatus(c) === "pending"),

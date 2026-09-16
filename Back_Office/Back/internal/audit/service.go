@@ -328,6 +328,7 @@ var auditIconMap = map[string]string{
 	pkg.SUBJECT_MODULE:     "IconNotebook",
 	pkg.CANDIDATURE_MODULE: "IconFileDescription",
 	pkg.EMAIL_LOG_MODULE:   "IconSend",
+	pkg.SESSION_MODULE:     "IconRefresh",
 }
 
 func getAuditIcon(module string) string {

@@ -101,7 +101,7 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
     setF2fLink("");
     if (!sample) return;
     const match = subjects?.find((s) => s.name === sample.subject_name);
-    setQuizLink(match?.quiz_link ?? "");
+    setQuizLink(match?.online_quiz_link ?? "");
     setF2fLink(match?.f2f_meeting_link ?? "");
   }, [open, sample, subjects]);
 

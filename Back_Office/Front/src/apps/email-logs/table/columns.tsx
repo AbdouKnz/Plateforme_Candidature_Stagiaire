@@ -20,6 +20,7 @@ const typeBadgeVariants: Record<string, "blue" | "success" | "destructive" | "in
   final_decision: "success",
   disapproval: "destructive",
   reopening: "info",
+  session_reset: "warning",
 };
 
 export function useEmailLogColumns(): ColumnDef<EmailLog>[] {

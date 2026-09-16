@@ -1,6 +1,11 @@
 package subject
 
-import "astro-backend/domain"
+import (
+	"astro-backend/config"
+	"astro-backend/domain"
+	"fmt"
+	"strings"
+)
 
 type CreateSubjectRequest struct {
 	Code              string `json:"code"`
@@ -31,6 +36,7 @@ type SubjectResponse struct {
 	F2FMeetingLink    string           `json:"f2f_meeting_link"`
 	DurationID        *int             `json:"duration_id"`
 	Duration          *DurationResponse `json:"duration,omitempty"`
+	ApplyURL          string           `json:"apply_url"`
 	CreatedAt         string           `json:"created_at"`
 	UpdatedAt         string           `json:"updated_at"`
 }
@@ -80,6 +86,8 @@ func ToResponse(s *domain.Subject) SubjectResponse {
 		durResp = &DurationResponse{ID: s.Duration.ID, Name: s.Duration.Name}
 	}
 
+	applyURL := fmt.Sprintf("%s/form?subjectId=%d", strings.TrimRight(config.Configvar.Server.FOUrl, "/"), s.ID)
+
 	return SubjectResponse{
 		ID:                s.ID,
 		Code:              s.Code,
@@ -96,6 +104,7 @@ func ToResponse(s *domain.Subject) SubjectResponse {
 		F2FMeetingLink:    s.F2FMeetingLink,
 		DurationID:        s.DurationID,
 		Duration:          durResp,
+		ApplyURL:          applyURL,
 		CreatedAt:         s.CreatedAt,
 		UpdatedAt:         s.UpdatedAt,
 	}

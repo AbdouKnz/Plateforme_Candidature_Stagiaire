@@ -19,6 +19,7 @@ export interface Subject {
     id: number;
     name: string;
   };
+  apply_url: string;
   created_at: string;
   updated_at: string;
 }

@@ -268,7 +268,7 @@ func (s *PublicService) CreateCandidature(ctx context.Context, c *domain.Candida
 	c.SubjectCode = strings.ToUpper(strings.TrimSpace(c.SubjectCode))
 	if c.SubjectCode == "" && strings.TrimSpace(c.SubjectName) != "" {
 		var code string
-		if err := s.db.NewSelect().Table("subject").Column("code").Where("name = ?", strings.TrimSpace(c.SubjectName)).Limit(1).Scan(ctx, &code); err == nil && code != "" {
+		if err := s.db.NewSelect().Table("subject").Column("code").Where("TRIM(name) = ?", strings.TrimSpace(c.SubjectName)).Limit(1).Scan(ctx, &code); err == nil && code != "" {
 			c.SubjectCode = strings.ToUpper(strings.TrimSpace(code))
 		}
 	}

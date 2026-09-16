@@ -12,6 +12,7 @@ export const auditActionTypes = {
   Delete: { variant: 'destructive' as const },
   accept: { variant: 'success' as const },
   reject: { variant: 'destructive' as const },
+  Reset: { variant: 'warning' as const },
   'Logged in': { variant: 'login' as const },
   'Logged out': { variant: 'logout' as const },
 }

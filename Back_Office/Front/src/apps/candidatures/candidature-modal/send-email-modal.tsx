@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +71,18 @@ function stripHtml(html: string): string {
   return text.trim();
 }
 
+// Ensure the quiz link is visible as text inside a view card. Templates
+// usually render [Link] as a clickable anchor (<a href="…">label</a>),
+// which stripHtml reduces to just "label" — hiding the URL HR is supposed
+// to review and edit. When the stripped text doesn't already contain the
+// link, append it on its own line so it stays visible and editable; the
+// (possibly edited) card text is exactly what gets sent.
+function withVisibleLink(text: string, link: string): string {
+  const l = (link || "").trim();
+  if (!l || text.includes(l)) return text;
+  return text ? `${text}\n${l}` : l;
+}
+
 export function SendEmailModal({ open, onClose, onSent, candidature, templateType, targetStep, bulkIndex, bulkTotal }: SendEmailModalProps) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -89,12 +101,49 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   const [rejectionReasons, setRejectionReasons] = useState<RejectionReason[] | null>(null);
   const [selectedRejectionReason, setSelectedRejectionReason] = useState("");
   const [quizLink, setQuizLink] = useState("");
+  // Second member's quiz link for pair applications. Member 1 keeps quizLink,
+  // member 2 gets quizLink2. For solo applications this stays unused.
+  const [quizLink2, setQuizLink2] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [f2fLink, setF2fLink] = useState("");
   const [startDate, setStartDate] = useState("");
+  // Per-member editable bodies for pair quiz emails: each view card owns its
+  // own body so each applicant can receive a fully independent email.
+  const [member2Body, setMember2Body] = useState("");
+  const [member2BodyModified, setMember2BodyModified] = useState(false);
+  // Raw HTML body for member 2 (with clickable links) used for the actual send
+  // when member 2's textarea was NOT edited. Member 1's raw HTML is kept in
+  // editedBody, so it needs no separate state.
+  const [member2HtmlBody, setMember2HtmlBody] = useState("");
+  // Guards against out-of-order preview responses: opening the modal (and
+  // link auto-fill) fires several preview fetches in a row; only the latest
+  // response may update the cards, otherwise a stale link-less preview could
+  // overwrite the fresh one.
+  const previewRequestRef = useRef(0);
 
   const { data: subjects } = useSubjects();
 
+  const isPair = useMemo(
+    () =>
+      Boolean(candidature.full_name2 && candidature.full_name2.trim() !== ''),
+    [candidature.full_name2]
+  );
+  const member1Label = useMemo(
+    () =>
+      candidature.full_name?.trim() ||
+      candidature.email1?.trim() ||
+      t('candidate_1', 'Candidate 1'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [candidature.full_name, candidature.email1]
+  );
+  const member2Label = useMemo(
+    () =>
+      candidature.full_name2?.trim() ||
+      candidature.email2?.trim() ||
+      t('candidate_2', 'Candidate 2'),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [candidature.full_name2, candidature.email2]
+  );
   const derivedNextStep = useMemo(() => nextPipelineStep(candidature.step), [candidature.step]);
   const nextStep = targetStep || derivedNextStep || "";
   const isAcceptance = templateType === "acceptance";
@@ -147,20 +196,29 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   }, []);
 
   const loadPreview = useCallback(async () => {
+    const requestId = ++previewRequestRef.current;
     setLoading(true);
     setError(null);
     try {
-      const preview = await getEmailPreview(candidature.id, emailTypeForRequest, effectiveStepForRequest, "", "", selectedRejectionReason, quizLink, meetingLink, f2fLink, formattedStartDate);
+      const preview = await getEmailPreview(candidature.id, emailTypeForRequest, effectiveStepForRequest, "", "", selectedRejectionReason, quizLink, meetingLink, f2fLink, formattedStartDate, isPair ? quizLink2 : "");
+      if (requestId !== previewRequestRef.current) return;
       setEditedSubject(preview.subject);
       setEditedBody(preview.body || "");
-      setDisplayBody(stripHtml(preview.body || ""));
+      setDisplayBody(withVisibleLink(stripHtml(preview.body || ""), quizLink));
+      // Member 2's own version (own [Link]); falls back to member 1's text
+      // when the backend has no distinct second body (e.g. same link).
+      const rawMember2 = preview.body2 || preview.body || "";
+      setMember2HtmlBody(rawMember2);
+      setMember2Body(withVisibleLink(stripHtml(rawMember2), (isPair ? quizLink2 : "") || quizLink));
       setBodyModified(false);
+      setMember2BodyModified(false);
     } catch (err: any) {
+      if (requestId !== previewRequestRef.current) return;
       setError(err?.response?.data?.error || t("error_loading_template"));
     } finally {
-      setLoading(false);
+      if (requestId === previewRequestRef.current) setLoading(false);
     }
-  }, [candidature.id, emailTypeForRequest, effectiveStepForRequest, selectedRejectionReason, quizLink, meetingLink, f2fLink, formattedStartDate, t]);
+  }, [candidature.id, emailTypeForRequest, effectiveStepForRequest, selectedRejectionReason, quizLink, quizLink2, isPair, meetingLink, f2fLink, formattedStartDate, t]);
 
   useEffect(() => {
     if (open) loadPreview();
@@ -190,10 +248,11 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
 
   useEffect(() => {
     if (!open) return;
+    if (!subjects) return;
     setQuizLink("");
+    setQuizLink2("");
     setMeetingLink("");
     setF2fLink("");
-    if (!subjects) return;
     const names = (candidature.subject_name || "")
       .split(",")
       .map((n) => n.trim())
@@ -201,7 +260,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     const findByName = (n: string) =>
       subjects.find((s) => s.name === n) ??
       subjects.find((s) => (s.name || "").toLowerCase() === n.toLowerCase());
-    const resolveLink = (pick: (s: (typeof subjects)[number]) => string | undefined): string => {
+    const resolveLink = (pick: (s: NonNullable<typeof subjects>[number]) => string | undefined): string => {
       let auto = "";
       for (const n of names) {
         const s = findByName(n);
@@ -215,7 +274,10 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
       return auto;
     };
     if (isQuiz) {
-      setQuizLink(resolveLink((s) => s.online_quiz_link));
+      const auto = resolveLink((s) => s.online_quiz_link);
+      setQuizLink(auto);
+      // Pre-fill member 2 with the same default; HR can then change it.
+      setQuizLink2(auto);
       return;
     }
     if (isOnlineMeeting) {
@@ -231,20 +293,24 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   const handleSend = async () => {
     setSending(true);
     try {
-      // If the user edited the body, send their plain-text version as-is.
-      // Otherwise send the original HTML body so clickable links (e.g. the
-      // "Address" maps link) are preserved in the sent email.
-      const overrideBody = bodyModified ? displayBody : editedBody;
+      // Each applicant's email is fully independent for pair quiz sends:
+      // member 1 uses body 1 (their own textarea), member 2 uses body 2.
+      // Unedited textareas send the original HTML (clickable links kept);
+      // edited ones send the plain-text version as-is.
+      const overrideBody1 = bodyModified ? displayBody : editedBody;
+      const overrideBody2 = member2BodyModified ? member2Body : member2HtmlBody;
 
       await sendEmail(candidature.id, { 
         type: emailTypeForRequest,
         step: effectiveStepForRequest,
         rejection_reason: templateType === "disapproval" ? selectedRejectionReason : "",
         quiz_link: isQuiz ? quizLink : "",
+        quiz_link2: isQuiz && isPair ? quizLink2 : "",
         meeting_link: isOnlineMeeting ? meetingLink : "",
         f2f_meeting_link: isF2F ? f2fLink : "",
         start_date: isFinal ? formattedStartDate : "",
-        body: overrideBody,
+        body: overrideBody1,
+        body2: isQuiz && isPair ? overrideBody2 : "",
       });
       // For acceptance, also advance the candidature to the target step
       if (templateType === "acceptance" && effectiveStep) {
@@ -295,7 +361,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
   const isSendDisabled = (() => {
     if (sending || loading || !!error) return true;
     if (templateType === "disapproval" && (rejectionReasons?.length ?? 0) > 0 && !selectedRejectionReason) return true;
-    if (isQuiz && !quizLink) return true;
+    // Quiz links no longer have a dedicated input: HR edits the link directly
+    // inside each card's email body, so no link validation is needed.
     if (isOnlineMeeting && !meetingLink) return true;
     if (isF2F && !f2fLink) return true;
     if (isFinal && !formattedStartDate) return true;
@@ -304,7 +371,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
 
   return (
     <Dialog open={open} onOpenChange={(state) => { if (!state) onClose(); }}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={isQuiz && isPair ? "sm:max-w-5xl max-h-[90vh] overflow-y-auto" : "sm:max-w-2xl max-h-[90vh] overflow-y-auto"}>
         <DialogHeader className="border-b pb-3">
           <DialogTitle className="flex items-center gap-2">
             <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
@@ -333,19 +400,21 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
           </div>
         ) : (
           <div className="space-y-4 mt-3">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-              <IconEye className="size-4 shrink-0" />
-              <span>{t("send_email_to")}</span>
-              <strong className="text-foreground">
-                {candidature.full_name || candidature.email1}
-              </strong>
-              <span>({candidature.email1})</span>
-              {candidature.full_name2 && (
-                <span className="text-xs">
-                  + {candidature.full_name2} ({candidature.email2})
-                </span>
-              )}
-            </div>
+            {!(isQuiz && isPair) && (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                <IconEye className="size-4 shrink-0" />
+                <span>{t("send_email_to")}</span>
+                <strong className="text-foreground">
+                  {candidature.full_name || candidature.email1}
+                </strong>
+                <span>({candidature.email1})</span>
+                {candidature.full_name2 && (
+                  <span className="text-xs">
+                    + {candidature.full_name2} ({candidature.email2})
+                  </span>
+                )}
+              </div>
+            )}
             {templateType === "disapproval" && (
               <div className="space-y-2 p-3 border rounded-lg bg-muted/20">
                 <Label className="flex items-center gap-1">
@@ -396,6 +465,51 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                 {formattedStartDate && <p className="text-xs text-muted-foreground">{formattedStartDate}</p>}
               </div>
             )}
+            {isQuiz && !quizLink.trim() && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-200">
+                <IconAlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span>{t("quiz_link_missing_warning")}</span>
+              </div>
+            )}
+            {isQuiz && isPair ? (
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div className="space-y-3 rounded-xl border p-3 shadow-sm">
+                  <div className="flex items-center gap-2 border-b pb-2">
+                    <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">1</div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{member1Label}</p>
+                      <p className="truncate text-[11px] text-muted-foreground">{candidature.email1}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("subject")}</Label>
+                    <Textarea value={editedSubject} onChange={(e) => setEditedSubject(e.target.value)} className="min-h-[60px] text-sm" disabled={sending} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("email_body_member_1", { name: member1Label })}</Label>
+                    <Textarea value={displayBody} onChange={(e) => { setDisplayBody(e.target.value); setBodyModified(true); }} className="min-h-[200px] text-sm font-mono" disabled={sending} />
+                  </div>
+                </div>
+                <div className="space-y-3 rounded-xl border p-3 shadow-sm">
+                  <div className="flex items-center gap-2 border-b pb-2">
+                    <div className="flex size-7 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">2</div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{member2Label}</p>
+                      <p className="truncate text-[11px] text-muted-foreground">{candidature.email2}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("subject")}</Label>
+                    <Textarea value={editedSubject} onChange={(e) => setEditedSubject(e.target.value)} className="min-h-[60px] text-sm" disabled={sending} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("email_body_member_2", { name: member2Label })}</Label>
+                    <Textarea value={member2Body} onChange={(e) => { setMember2Body(e.target.value); setMember2BodyModified(true); }} className="min-h-[200px] text-sm font-mono" disabled={sending} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
             {isAcceptance && !isQuiz && !isOnlineMeeting && !isF2F && !isFinal && (
               <div className="p-3 border rounded-lg bg-[#1d7cc7]/5 border-[#1d7cc7]/10">
                 <p className="text-sm text-[#155a8a] dark:text-[#8fc3e5]">
@@ -427,6 +541,8 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                 disabled={sending}
               />
             </div>
+              </>
+            )}
           </div>
         )}
 

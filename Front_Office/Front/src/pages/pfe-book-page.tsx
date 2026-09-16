@@ -236,6 +236,12 @@ export function PfeBookPage() {
     goTo(5 + idx)
   }
 
+  // Pre-selected subject resolved against the loaded catalog — used by the shortlist page.
+  const shortlistedSubject = React.useMemo(
+    () => subjects.find((s) => s.code === shortlist[0]) ?? null,
+    [subjects, shortlist]
+  )
+
   if (loading) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-[#FFFFFF]">
@@ -965,7 +971,14 @@ export function PfeBookPage() {
               </div>
 
               <div className="mt-8 flex flex-1 min-h-0 flex-col items-center justify-center">
-                {shortlist.length === 0 ? (
+                {subjects.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center gap-3 py-10 text-center px-6">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F1F4F8] border border-[#DCE3EA] text-[#24243C]/40">
+                      <BookmarkIcon className="size-5" />
+                    </div>
+                    <p className="text-sm font-semibold text-[#24243C]">No subjects available</p>
+                  </div>
+                ) : !shortlistedSubject ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-10 text-center px-6">
                     <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F1F4F8] border border-[#DCE3EA] text-[#24243C]/40">
                       <BookmarkIcon className="size-5" />
@@ -975,22 +988,16 @@ export function PfeBookPage() {
                     <Button variant="outline" size="lg" onClick={() => goTo(4)} className="rounded-full mt-2 h-11 px-6 text-sm border-[#DCE3EA] bg-[#F1F4F8] text-[#24243C] fine-hover:bg-[#1D7CC7]/10">Back to subjects list</Button>
                   </div>
                 ) : (
-                  (() => {
-                    const s = subjects.find((sub) => sub.code === shortlist[0])
-                    if (!s) return null
-                    return (
-                      <div className="w-full max-w-2xl rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-6 sm:p-8 text-center shadow-lg">
-                        <span className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-3 py-1 font-mono text-xs font-bold tracking-widest text-[#24243C]/80">{s.code}</span>
-                        <h3 className="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-[#24243C]">{s.name}</h3>
-                        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-                          <Button size="lg" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 font-bold shadow-lg bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] text-sm" onClick={() => navigate("/form")}>
-                            <CheckIcon className="size-4" /> Apply now
-                          </Button>
-                          <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl px-8 h-11 text-sm border-[#DCE3EA] bg-[#F1F4F8] text-[#24243C] fine-hover:bg-[#1D7CC7]/10" onClick={() => goTo(4)}>Choose another subject</Button>
-                        </div>
-                      </div>
-                    )
-                  })()
+                  <div className="w-full max-w-2xl rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-6 sm:p-8 text-center shadow-lg">
+                    <span className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-3 py-1 font-mono text-xs font-bold tracking-widest text-[#24243C]/80">{shortlistedSubject.code}</span>
+                    <h3 className="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-[#24243C]">{shortlistedSubject.name}</h3>
+                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <Button size="lg" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 font-bold shadow-lg bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] text-sm" onClick={() => navigate("/form")}>
+                        <CheckIcon className="size-4" /> Apply now
+                      </Button>
+                      <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl px-8 h-11 text-sm border-[#DCE3EA] bg-[#F1F4F8] text-[#24243C] fine-hover:bg-[#1D7CC7]/10" onClick={() => goTo(4)}>Choose another subject</Button>
+                    </div>
+                  </div>
                 )}
               </div>
 

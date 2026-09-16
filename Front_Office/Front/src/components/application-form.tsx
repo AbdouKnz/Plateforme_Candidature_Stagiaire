@@ -309,7 +309,13 @@ export function ApplicationForm() {
     formData.append("phone1", data.phone)
     formData.append("degree1", data.degreeLevel)
     formData.append("university", data.university)
-    const chosenSubject = subjects.find((s) => data.subjects?.includes(s.name))
+    const findSubjectByName = (name: string) => {
+      // Trim-compare: stored subject names can drift by whitespace
+      // (e.g. "Projet 1 " vs "Projet 1") and exact matching would miss.
+      const t = (name || "").trim();
+      return subjects.find((s) => s.name === name) ?? subjects.find((s) => (s.name || "").trim() === t);
+    };
+    const chosenSubject = data.subjects?.map(findSubjectByName).find(Boolean);
     const subjectPeriod = (chosenSubject?.period || chosenSubject?.duration?.name || data.duration || "").trim()
     formData.append("duration", subjectPeriod)
     formData.append("methode", data.workingMethod)
@@ -317,7 +323,7 @@ export function ApplicationForm() {
     formData.append("subject_name", data.subjects.join(", "))
     // Stable subject identity for duplicate detection (names can be renamed).
     const subjectCodes = (data.subjects ?? [])
-      .map((name) => subjects.find((s) => s.name === name)?.code?.trim())
+      .map((name) => findSubjectByName(name)?.code?.trim())
       .filter((code): code is string => !!code)
     formData.append("subject_code", subjectCodes.join(", "))
 
@@ -694,7 +700,8 @@ export function ApplicationForm() {
                         <FieldGroup>
                           {/* Subject (from back office subject management) - multi-select with checkboxes */}
                           <Controller control={control} name="subjects" render={({ field }) => {
-                            const selectedSubjects = subjects.filter((s) => field.value?.includes(s.name))
+                            const selectedNames = new Set((field.value ?? []).map((n) => (n || "").trim()));
+                            const selectedSubjects = subjects.filter((s) => selectedNames.has((s.name || "").trim()))
                             return (
                               <Field data-invalid={!!errors.subjects}>
                                 <FieldLabel className="text-sm font-semibold">{t("label.subjects")}<RequiredStar /></FieldLabel>

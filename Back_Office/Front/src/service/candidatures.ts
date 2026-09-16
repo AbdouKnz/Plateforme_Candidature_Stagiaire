@@ -78,7 +78,7 @@ export const deleteCandidature = async (id: number): Promise<CandidatureResponse
 
 export const sendEmail = async (
   id: number,
-  data: { type: string; step?: string; interview_date?: string; interview_time?: string; rejection_reason?: string; quiz_link?: string; meeting_link?: string; f2f_meeting_link?: string; start_date?: string; body?: string }
+  data: { type: string; step?: string; interview_date?: string; interview_time?: string; rejection_reason?: string; quiz_link?: string; quiz_link2?: string; meeting_link?: string; f2f_meeting_link?: string; start_date?: string; body?: string; body2?: string }
 ): Promise<CandidatureResponse> => {
   const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/${id}/send-email`, data);
   return response?.data;
@@ -94,10 +94,11 @@ export const getEmailPreview = async (
   quizLink?: string,
   meetingLink?: string,
   f2fLink?: string,
-  startDate?: string
-): Promise<{ to: string; subject: string; body: string }> => {
+  startDate?: string,
+  quizLink2?: string
+): Promise<{ to: string; subject: string; body: string; to2?: string; body2?: string }> => {
   const response = await axiosApi.get(`${CANDIDATURE_ENDPOINT}/${id}/email-preview`, {
-    params: { type, step, interview_date: interviewDate, interview_time: interviewTime, rejection_reason: rejectionReason, quiz_link: quizLink, meeting_link: meetingLink, f2f_meeting_link: f2fLink, start_date: startDate },
+    params: { type, step, interview_date: interviewDate, interview_time: interviewTime, rejection_reason: rejectionReason, quiz_link: quizLink, quiz_link2: quizLink2, meeting_link: meetingLink, f2f_meeting_link: f2fLink, start_date: startDate },
   });
   return response?.data?.data;
 };
@@ -117,6 +118,7 @@ export interface BulkAcceptPayload {
   type: string;
   step?: string;
   quiz_link?: string;
+  quiz_link2?: string;
   meeting_link?: string;
   f2f_meeting_link?: string;
   interview_date?: string;

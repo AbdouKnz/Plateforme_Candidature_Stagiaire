@@ -148,12 +148,21 @@ type SendEmailRequest struct {
 	InterviewTime   string `json:"interview_time"`
 	RejectionReason string `json:"rejection_reason"`
 	QuizLink        string `json:"quiz_link"`
+	// QuizLink2 is the online-quiz link for the SECOND member of a pair
+	// application. When set (and the candidature has an email2), member 2
+	// receives their own email with [Link] replaced by this value while
+	// member 1 keeps QuizLink. Falls back to QuizLink when empty.
+	QuizLink2       string `json:"quiz_link2"`
 	MeetingLink     string `json:"meeting_link"`
 	StartDate       string `json:"start_date"`
 	F2FMeetingLink  string `json:"f2f_meeting_link"`
 	// Body is an optional override. When non-empty it is used as-is instead
 	// of the template-generated body, so the HR can edit the email content.
 	Body string `json:"body"`
+	// Body2 is member 2's own override for pair sends. When non-empty, member
+	// 2 (email2) receives this body instead of Body, so each applicant's
+	// email is fully independent (own text + own [Link]).
+	Body2 string `json:"body2"`
 }
 
 // BulkRejectRequest lets HR reject several candidatures at once with a single
@@ -175,6 +184,9 @@ type BulkAcceptRequest struct {
 	Type           string `json:"type" binding:"required"`
 	Step           string `json:"step,omitempty"`
 	QuizLink       string `json:"quiz_link,omitempty"`
+	// QuizLink2 is the online-quiz link for the second member of pair
+	// applications (see SendEmailRequest.QuizLink2).
+	QuizLink2      string `json:"quiz_link2,omitempty"`
 	MeetingLink    string `json:"meeting_link,omitempty"`
 	F2FMeetingLink string `json:"f2f_meeting_link,omitempty"`
 	InterviewDate  string `json:"interview_date,omitempty"`
@@ -187,6 +199,11 @@ type EmailPreviewResponse struct {
 	To      string `json:"to"`
 	Subject string `json:"subject"`
 	Body    string `json:"body"`
+	// Pair-only extras: when the candidature is a pair and a second quiz
+	// link applies, To2/Body2 carry member 2's version (same subject,
+	// [Link] replaced by their own link). Empty for solo applications.
+	To2   string `json:"to2,omitempty"`
+	Body2 string `json:"body2,omitempty"`
 }
 
 // resolveResponseStatus retourne le statut de l'étape ACTUELLE de la ligne.
