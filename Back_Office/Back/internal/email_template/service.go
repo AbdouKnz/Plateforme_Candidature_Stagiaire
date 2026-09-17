@@ -2,6 +2,8 @@ package email_template
 
 import (
 	"astro-backend/domain"
+	"astro-backend/internal/audit"
+	"astro-backend/pkg"
 	"context"
 	"database/sql"
 	"errors"
@@ -83,6 +85,20 @@ func (s *EmailTemplateService) Create(ctx context.Context, emailTemplate *domain
 		return nil, fmt.Errorf("could not create email template: %w", err)
 	}
 
+	changeDetails := domain.ChangeDetail{
+		Type: pkg.CREATE,
+		Fields: map[string]domain.FieldChange{
+			"Type":    {CreatedValues: emailTemplate.Type, Changed: true},
+			"Subject": {CreatedValues: emailTemplate.Subject, Changed: true},
+			"Body":    {CreatedValues: emailTemplate.Body, Changed: true},
+			"Status":  {CreatedValues: emailTemplate.Status, Changed: true},
+		},
+	}
+
+	if _, err := audit.LogAction(ctx, s.db, pkg.EMAIL_TEMPLATE_MODULE, pkg.CREATE_ACTION, changeDetails); err != nil {
+		log.Error().Err(err).Msg("Failed to log audit action for CreateEmailTemplate")
+	}
+
 	log.Info().Int("id", emailTemplate.ID).Msg("Email template created successfully")
 	return emailTemplate, nil
 }
@@ -94,6 +110,11 @@ func (s *EmailTemplateService) Update(ctx context.Context, id int, request Updat
 	if err != nil {
 		return nil, err
 	}
+
+	oldType := emailTemplate.Type
+	oldSubject := emailTemplate.Subject
+	oldBody := emailTemplate.Body
+	oldStatus := emailTemplate.Status
 
 	if request.Type != "" {
 		emailTemplate.Type = request.Type
@@ -124,6 +145,20 @@ func (s *EmailTemplateService) Update(ctx context.Context, id int, request Updat
 		return nil, fmt.Errorf("could not update email template with ID %d: %w", emailTemplate.ID, err)
 	}
 
+	changeDetails := domain.ChangeDetail{
+		Type: pkg.UPDATE,
+		Fields: map[string]domain.FieldChange{
+			"Type":    {OldValues: oldType, NewValues: emailTemplate.Type, Changed: oldType != emailTemplate.Type},
+			"Subject": {OldValues: oldSubject, NewValues: emailTemplate.Subject, Changed: oldSubject != emailTemplate.Subject},
+			"Body":    {OldValues: oldBody, NewValues: emailTemplate.Body, Changed: oldBody != emailTemplate.Body},
+			"Status":  {OldValues: oldStatus, NewValues: emailTemplate.Status, Changed: oldStatus != emailTemplate.Status},
+		},
+	}
+
+	if _, err := audit.LogAction(ctx, s.db, pkg.EMAIL_TEMPLATE_MODULE, pkg.UPDATE_ACTION, changeDetails); err != nil {
+		log.Error().Err(err).Msg("Failed to log audit action for UpdateEmailTemplate")
+	}
+
 	log.Info().Int("id", id).Msg("Successfully updated email template")
 	return emailTemplate, nil
 }
@@ -147,6 +182,18 @@ func (s *EmailTemplateService) Delete(ctx context.Context, id int) error {
 	if rowsAffected == 0 {
 		log.Warn().Int("id", id).Msg("Delete failed: Email template not found at execution time")
 		return fmt.Errorf("email template with ID %d not found", id)
+	}
+
+	changeDetails := domain.ChangeDetail{
+		Type: pkg.DELETE,
+		Fields: map[string]domain.FieldChange{
+			"Type":    {DeletedValues: emailTemplate.Type, Changed: true},
+			"Subject": {DeletedValues: emailTemplate.Subject, Changed: true},
+		},
+	}
+
+	if _, err := audit.LogAction(ctx, s.db, pkg.EMAIL_TEMPLATE_MODULE, pkg.DELETE_ACTION, changeDetails); err != nil {
+		log.Error().Err(err).Msg("Failed to log audit action for DeleteEmailTemplate")
 	}
 
 	log.Info().Int("id", id).Msg("Successfully deleted email template")

@@ -238,6 +238,20 @@ func (s *CandidatureService) updateDecisionWithAudit(ctx context.Context, candid
 	return nil
 }
 
+// transitionRowWithoutAudit applies a pipeline decision to a row without
+// writing an audit entry. Used for grouped bulk operations where a single
+// mail (and its single audit on the representative row) covers several rows.
+func (s *CandidatureService) transitionRowWithoutAudit(ctx context.Context, candidature *domain.Candidature, decision, reasonCode string) error {
+	if err := applyDecisionToRow(candidature, decision); err != nil {
+		return err
+	}
+	candidature.RejectionReason = reasonCode
+	if _, err := s.db.NewUpdate().Model(candidature).Where("id = ?", candidature.ID).Exec(ctx); err != nil {
+		return fmt.Errorf("could not update candidature status: %w", err)
+	}
+	return nil
+}
+
 func (s *CandidatureService) GetEmailTemplateByType(ctx context.Context, templateType string, step string) (*domain.EmailTemplate, error) {
 	var template domain.EmailTemplate
 	if step != "" {
@@ -438,6 +452,8 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 		query = query.Where("cnd.step = ?", params.Step)
 	}
 
+	query = applyScoreRangeFilter(query, params)
+
 	if sort := scoreSortClause(params.ScoreSortStep, params.ScoreSortDirection); sort != "" {
 		query = query.Order(sort)
 	} else {
@@ -458,18 +474,21 @@ func (s *CandidatureService) GetAll(ctx context.Context, params CandidatureParam
 	return candidatures, nil
 }
 
+// scoreStepColumns whitelists step names to their score column. Shared by the
+// sort clause and the score-range filter so both resolve steps identically.
+var scoreStepColumns = map[string]string{
+	"cv_screening":   "score_cv_screening",
+	"online_quiz":    "score_online_quiz",
+	"online_meeting": "score_online_meeting",
+	"f2f_meeting":    "score_f2f_meeting",
+	"final_decision": "score_final_decision",
+}
+
 // scoreSortClause builds the ORDER BY clause for a step-based score sort using
 // a safe column whitelist. Returns "" when no sort is requested, so callers
 // fall back to the default ordering.
 func scoreSortClause(step, direction string) string {
-	columns := map[string]string{
-		"cv_screening":   "score_cv_screening",
-		"online_quiz":    "score_online_quiz",
-		"online_meeting": "score_online_meeting",
-		"f2f_meeting":    "score_f2f_meeting",
-		"final_decision": "score_final_decision",
-	}
-	col := columns[step]
+	col := scoreStepColumns[step]
 	if col == "" {
 		return ""
 	}
@@ -478,6 +497,31 @@ func scoreSortClause(step, direction string) string {
 		dir = "ASC"
 	}
 	return fmt.Sprintf("cnd.%s %s NULLS LAST", col, dir)
+}
+
+// currentStepScoreExpr resolves each row's own current-step score, mirroring
+// scoreForStep/currentIndex (1→cv default, 2→quiz, 3→online meeting,
+// 4→f2f, 5→final decision).
+const currentStepScoreExpr = `CASE cnd.current_step WHEN 2 THEN cnd.score_online_quiz WHEN 3 THEN cnd.score_online_meeting WHEN 4 THEN cnd.score_f2f_meeting WHEN 5 THEN cnd.score_final_decision ELSE cnd.score_cv_screening END`
+
+// applyScoreRangeFilter restricts rows to the [min, max] score range on the
+// requested step's column (or each row's current-step score when step is
+// empty/"all"). Absent bounds are open-ended; no bounds → query unchanged.
+func applyScoreRangeFilter(query *bun.SelectQuery, params CandidatureParams) *bun.SelectQuery {
+	if params.ScoreMin == nil && params.ScoreMax == nil {
+		return query
+	}
+	expr := currentStepScoreExpr
+	if col := scoreStepColumns[params.ScoreStep]; col != "" {
+		expr = "cnd." + col
+	}
+	if params.ScoreMin != nil && params.ScoreMax != nil {
+		return query.Where(expr+" BETWEEN ? AND ?", *params.ScoreMin, *params.ScoreMax)
+	}
+	if params.ScoreMin != nil {
+		return query.Where(expr+" >= ?", *params.ScoreMin)
+	}
+	return query.Where(expr+" <= ?", *params.ScoreMax)
 }
 
 // storedRelPath returns the path portion after the last "uploads/" segment,
@@ -781,6 +825,30 @@ func (s *CandidatureService) GetEmailPreview(ctx context.Context, id int, templa
 	return resp, nil
 }
 
+// dedupeRejectionRecipients collapses duplicate addresses (case-insensitive,
+// order-preserving) for rejection mails so one inbox receives exactly one
+// mail. Invitations/acceptances keep per-member sends (independent links).
+func dedupeRejectionRecipients(recipients []string, reqType string) []string {
+	if reqType != "disapproval" {
+		return recipients
+	}
+	seen := make(map[string]struct{}, len(recipients))
+	out := make([]string, 0, len(recipients))
+	for _, r := range recipients {
+		key := strings.ToLower(strings.TrimSpace(r))
+		if key == "" {
+			continue
+		}
+		if _, dup := seen[key]; dup {
+			log.Info().Str("recipient", r).Msg("Skipping duplicate rejection email for same address")
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, r)
+	}
+	return out
+}
+
 func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmailRequest) error {
 	log.Info().Int("id", id).Str("type", req.Type).Msg("Sending email for candidature...")
 
@@ -831,6 +899,10 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		recipients := []string{to}
 		if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 			recipients = append(recipients, email2)
+		}
+		recipients = dedupeRejectionRecipients(recipients, req.Type)
+		if len(req.Recipients) > 0 {
+			recipients = dedupeRejectionRecipients(req.Recipients, req.Type)
 		}
 
 		link := resolveEmailLink(req.QuizLink, req.MeetingLink, req.F2FMeetingLink)
@@ -930,11 +1002,16 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	}
 	// Pair application (binôme) : notify both members, sending one email per
 	// member. Even when the two addresses are identical, two separate emails
-	// are sent (each member must receive their own invitation). The pipeline
+	// are sent (each member must receive their own invitation), except for
+	// rejections which are deduped to one mail per address. The pipeline
 	// transition below still applies once to the whole application.
 	recipients := []string{to}
 	if email2 := strings.TrimSpace(candidature.Email2); email2 != "" {
 		recipients = append(recipients, email2)
+	}
+	recipients = dedupeRejectionRecipients(recipients, req.Type)
+	if len(req.Recipients) > 0 {
+		recipients = dedupeRejectionRecipients(req.Recipients, req.Type)
 	}
 	// Per-member links: when QuizLink2 is set and the candidature is a pair,
 	// member 2 (email2) gets their own [Link] value while member 1 (email1)
@@ -1066,10 +1143,10 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	return nil
 }
 
-// BulkReject sends the rejection email to every candidature in ids with the
-// same rejection reason, then marks each row rejected. Each candidature goes
-// through the exact same path as a single rejection (template rendering, one
-// email per member for pairs, audit log, status update).
+// BulkReject rejects every candidature in ids with the same rejection reason.
+// Mail is deduped by address across the whole selection: rows sharing an
+// inbox are all transitioned (status + audit each), but only one rejection
+// mail goes out per address, listing every rejected subject for it.
 func (s *CandidatureService) BulkReject(ctx context.Context, ids []int, rejectionReason string) (int, error) {
 	if len(ids) == 0 {
 		return 0, fmt.Errorf("no candidatures selected")
@@ -1077,13 +1154,91 @@ func (s *CandidatureService) BulkReject(ctx context.Context, ids []int, rejectio
 	if strings.TrimSpace(rejectionReason) == "" {
 		return 0, fmt.Errorf("rejection reason is required")
 	}
-	sent := 0
+	// Load all rows first (fail fast on unknown ids, before sending anything).
+	rows := make([]*domain.Candidature, 0, len(ids))
 	for _, id := range ids {
-		if err := s.SendEmail(ctx, id, SendEmailRequest{Type: "disapproval", RejectionReason: rejectionReason}); err != nil {
-			log.Error().Err(err).Int("id", id).Msg("Bulk reject failed for candidature")
-			return sent, fmt.Errorf("failed to reject candidature %d: %w", id, err)
+		c, err := s.getStoredByID(ctx, id)
+		if err != nil {
+			return 0, err
 		}
-		sent++
+		rows = append(rows, c)
+	}
+	// Group row indexes by normalized email1, preserving input order.
+	type addressGroup struct {
+		address string
+		rowIdx  []int
+	}
+	groups := []*addressGroup{}
+	groupByAddr := make(map[string]*addressGroup)
+	for i, c := range rows {
+		addr := strings.ToLower(strings.TrimSpace(c.Email1))
+		g, ok := groupByAddr[addr]
+		if !ok {
+			g = &addressGroup{address: strings.TrimSpace(c.Email1)}
+			groupByAddr[addr] = g
+			groups = append(groups, g)
+		}
+		g.rowIdx = append(g.rowIdx, i)
+	}
+	mailed := make(map[string]struct{})
+	sent := 0
+	for _, g := range groups {
+		// Extra pair members across the group's rows: one mail each, unless
+		// already mailed for another group.
+		extra := []string{}
+		seenExtra := make(map[string]struct{})
+		for _, i := range g.rowIdx {
+			if e2 := strings.TrimSpace(rows[i].Email2); e2 != "" {
+				key := strings.ToLower(e2)
+				if _, dup := seenExtra[key]; !dup {
+					seenExtra[key] = struct{}{}
+					extra = append(extra, e2)
+				}
+			}
+		}
+		recipients := []string{}
+		if g.address != "" {
+			recipients = append(recipients, g.address)
+		}
+		for _, e := range extra {
+			recipients = append(recipients, e)
+		}
+		fresh := make([]string, 0, len(recipients))
+		for _, r := range recipients {
+			if _, dup := mailed[strings.ToLower(strings.TrimSpace(r))]; !dup {
+				fresh = append(fresh, r)
+			}
+		}
+		if len(fresh) > 0 {
+			rep := rows[g.rowIdx[0]]
+			if err := s.SendEmail(ctx, rep.ID, SendEmailRequest{Type: "disapproval", RejectionReason: rejectionReason, Recipients: fresh}); err != nil {
+				log.Error().Err(err).Str("address", g.address).Msg("Bulk reject failed for address group")
+				return sent, fmt.Errorf("failed to reject applications for %s: %w", g.address, err)
+			}
+			for _, r := range fresh {
+				mailed[strings.ToLower(strings.TrimSpace(r))] = struct{}{}
+			}
+			sent++
+			// Transition the group's remaining rows silently: the group's
+			// single mail (and its single audit on the representative row)
+			// already covers them.
+			for _, i := range g.rowIdx[1:] {
+				if err := s.transitionRowWithoutAudit(ctx, rows[i], "rejected", rejectionReason); err != nil {
+					log.Error().Err(err).Int("id", rows[i].ID).Msg("Bulk reject failed for candidature")
+					return sent, fmt.Errorf("failed to reject candidature %d: %w", rows[i].ID, err)
+				}
+				sent++
+			}
+		} else {
+			// Address already mailed for another group: transition silently.
+			for _, i := range g.rowIdx {
+				if err := s.transitionRowWithoutAudit(ctx, rows[i], "rejected", rejectionReason); err != nil {
+					log.Error().Err(err).Int("id", rows[i].ID).Msg("Bulk reject failed for candidature")
+					return sent, fmt.Errorf("failed to reject candidature %d: %w", rows[i].ID, err)
+				}
+				sent++
+			}
+		}
 	}
 	log.Info().Int("count", sent).Str("reason", rejectionReason).Msg("Bulk rejection complete")
 	return sent, nil
@@ -1266,6 +1421,8 @@ func (s *CandidatureService) Export(ctx context.Context, params CandidatureParam
 		query = query.Where("cnd.step = ?", params.Step)
 	}
 
+	query = applyScoreRangeFilter(query, params)
+
 	if sort := scoreSortClause(params.ScoreSortStep, params.ScoreSortDirection); sort != "" {
 		query = query.Order(sort)
 	} else {
@@ -1373,6 +1530,15 @@ func (s *CandidatureService) ResetPrepare(ctx context.Context, password string) 
 	}
 
 	return s.buildSessionResetWorkbook(ctx)
+}
+
+// VerifyResetPassword checks the reset password without generating anything.
+// Used to gate the reset flow (password screen) before the filename step.
+func (s *CandidatureService) VerifyResetPassword(password string) error {
+	if !verifyResetPassword(password) {
+		return ErrInvalidResetPassword
+	}
+	return nil
 }
 
 // buildSessionResetWorkbook snapshots subjects, candidatures and pipeline

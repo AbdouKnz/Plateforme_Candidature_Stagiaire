@@ -71,6 +71,7 @@ export function useCreateRole() {
     onSuccess: (data) => {
       console.log("Role created successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["roles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -95,6 +96,7 @@ export function useUpdateRole() {
     onSuccess: (data, variables) => {
       console.log("Role updated successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["roles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["role", variables.id] });
       showAlert({
         message: data?.message,
@@ -120,6 +122,7 @@ export function useDeleteRole() {
     onSuccess: (data) => {
       console.log("Role deleted successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["roles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -145,6 +148,7 @@ export function useReassignUsersRole() {
     onSuccess: (data) => {
       console.log("Users reassigned role successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["roles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
      
     },
     onError: (error: any) => {

@@ -147,20 +147,70 @@ export function PfeBookPage() {
 
   const totalPages = React.useMemo(() => 9 + subjects.length, [subjects.length])
 
-  React.useEffect(() => {
-    fetchSubjects()
-      .then(setSubjects)
-      .catch(() => setSubjects([]))
-      .finally(() => setLoading(false))
-  }, [])
+  // Subject catalog follows back-office changes (removed/deactivated projects)
+  // via silent refresh on a timer and whenever the tab regains focus.
+  const SUBJECTS_REFRESH_MS = 15000
 
   React.useEffect(() => {
-    fetchFrontOfficeStatus()
-      .then((status) => {
-        if (status.year) setYear(status.year)
-        if (status.internship_title) setInternshipTitle(status.internship_title)
-      })
-      .catch(() => {})
+    let cancelled = false
+    const loadSubjects = (initial: boolean) => {
+      fetchSubjects()
+        .then((list) => {
+          if (!cancelled) setSubjects(list)
+        })
+        .catch(() => {
+          if (!cancelled && initial) setSubjects([])
+        })
+        .finally(() => {
+          if (!cancelled && initial) setLoading(false)
+        })
+    }
+    loadSubjects(true)
+    const refreshSilently = () => loadSubjects(false)
+    const intervalId = window.setInterval(refreshSilently, SUBJECTS_REFRESH_MS)
+    const handleFocus = () => refreshSilently()
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refreshSilently()
+    }
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [])
+
+  // Internship year/title follow back-office edits: silent refresh on the
+  // same cadence as the subject catalog, plus whenever the tab regains focus.
+  const STATUS_REFRESH_MS = 15000
+
+  React.useEffect(() => {
+    let cancelled = false
+    const loadStatus = () => {
+      fetchFrontOfficeStatus()
+        .then((status) => {
+          if (cancelled) return
+          if (status.year) setYear(status.year)
+          if (status.internship_title) setInternshipTitle(status.internship_title)
+        })
+        .catch(() => {})
+    }
+    loadStatus()
+    const intervalId = window.setInterval(loadStatus, STATUS_REFRESH_MS)
+    const handleFocus = () => loadStatus()
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") loadStatus()
+    }
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
   }, [])
 
   const titleParts = React.useMemo(() => {

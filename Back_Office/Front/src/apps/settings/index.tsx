@@ -3,15 +3,17 @@ import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import { Separator } from '@/components/ui/separator'
 import { IconSettings } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
-import { GraduationCap, Laptop, IdCard, Clock, Tags, Building2, Mail, MailCheck, type LucideIcon } from 'lucide-react'
+import { GraduationCap, Laptop, IdCard, Clock, Tags, Building2, Mail, MailCheck, RotateCcw, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tabs, type VercelTab } from '@/components/ui/vercel-tabs'
+import { useAuthStore } from '@/stores/auth-store'
 
 interface SettingsNavItem {
   title: string
   href: string
   icon: LucideIcon
   color: string
+  superAdminOnly?: boolean
 }
 
 const managementNavItems: SettingsNavItem[] = [
@@ -63,28 +65,44 @@ const managementNavItems: SettingsNavItem[] = [
     icon: Building2,
     color: 'text-orange-500',
   },
+  {
+    title: 'reset_session',
+    href: '/settings/session',
+    icon: RotateCcw,
+    color: 'text-red-500',
+    superAdminOnly: true,
+  },
 ]
 
 export function Settings() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const user = useAuthStore((s) => s.user)
+
+  const visibleNavItems = useMemo(
+    () =>
+      managementNavItems.filter(
+        (item) => !item.superAdminOnly || user?.role_name === 'Super Admin'
+      ),
+    [user?.role_name]
+  )
 
   const tabs: VercelTab[] = useMemo(
     () =>
-      managementNavItems.map((item) => ({
+      visibleNavItems.map((item) => ({
         id: item.href,
         label: t(item.title),
         icon: <item.icon className={cn('size-[18px] shrink-0', item.color)} />,
       })),
-    [t]
+    [t, visibleNavItems]
   )
 
   const activeTab = useMemo(() => {
-    const exact = managementNavItems.find((item) => item.href === pathname)?.href
+    const exact = visibleNavItems.find((item) => item.href === pathname)?.href
     if (exact) return exact
-    return managementNavItems.find((item) => pathname.startsWith(item.href))?.href
-  }, [pathname])
+    return visibleNavItems.find((item) => pathname.startsWith(item.href))?.href
+  }, [pathname, visibleNavItems])
 
   return (
     <div className="flex flex-col grow overflow-hidden">

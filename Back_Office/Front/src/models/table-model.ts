@@ -46,12 +46,14 @@ export interface FilterItem {
   value: string;
 }
 
-export type FormFieldType = "dropdown" | "date" | "text" | "number";
+export type FormFieldType = "dropdown" | "date" | "text" | "number" | "range";
 export interface FormField {
   name: string;
   label: string;
   type: FormFieldType;
-  items?: FilterItem[]; 
+  items?: FilterItem[];
+  // Second key for "range" fields (e.g. from score_min to score_max).
+  toKey?: string;
 }
 
 
@@ -65,5 +67,6 @@ export enum FieldTypeEnum {
   DROPDOWN = "dropdown",
   DATE = "date",
   TEXT = "text",
-  NUMBER = "number"
+  NUMBER = "number",
+  RANGE = "range"
 }

@@ -90,7 +90,7 @@ export function DataTableFilter({
   }
 
   function onSubmit(values: any) {
-    const payload = { ...values }
+    const payload = { ...values, page: 1 }
     if (payload.status === 'all') {
       payload.status = ''
     }
@@ -195,6 +195,38 @@ export function DataTableFilter({
                               className='h-9'
                             />
                           </FormControl>
+                        )}
+
+                        {field.type === 'range' && field.toKey && (
+                          <div className='flex items-center gap-2'>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                max={20}
+                                value={formField.value ?? ''}
+                                onChange={(e) =>
+                                  formField.onChange(e.target.value)
+                                }
+                                placeholder='Min'
+                                className='h-9'
+                              />
+                            </FormControl>
+                            <span className='text-muted-foreground text-sm'>–</span>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                max={20}
+                                value={form.watch(field.toKey) ?? ''}
+                                onChange={(e) =>
+                                  form.setValue(field.toKey!, e.target.value, { shouldDirty: true })
+                                }
+                                placeholder='Max'
+                                className='h-9'
+                              />
+                            </FormControl>
+                          </div>
                         )}
                       </div>
                     )}

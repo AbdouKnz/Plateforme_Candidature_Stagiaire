@@ -17,6 +17,22 @@ export const auditActionTypes = {
   'Logged out': { variant: 'logout' as const },
 }
 
+export const AUDIT_MODULE_LABELS: Record<string, string> = {
+  EmailTemplate: 'Email Template',
+  MailConfig: 'Email Config',
+  Candidature: 'Applications',
+}
+
+// Display-only rename: backend still stores/filters raw values
+// ("Candidature", legacy lowercase "candidature"). Case-insensitive so both
+// spellings render the same label while values stay untouched.
+export const formatAuditModule = (module: string) => {
+  const found = Object.keys(AUDIT_MODULE_LABELS).find(
+    (key) => key.toLowerCase() === module.toLowerCase()
+  )
+  return found ? AUDIT_MODULE_LABELS[found] : module
+}
+
 export const useAuditToolbarProps = () => {
   const { t } = useTranslation()
   const { queryParams, setQueryParams, resetFilterQueryParams } =
@@ -24,20 +40,28 @@ export const useAuditToolbarProps = () => {
   const { data: auditsResponse, isLoading } = useAudits(queryParams)
 
   const moduleItems = React.useMemo(() => {
-    if (!auditsResponse?.filters?.modules) return []
-    return auditsResponse.filters.modules.map((module) => ({
-      label: module,
-      value: module,
-    }))
-  }, [auditsResponse?.filters?.modules])
+    const all = [{ label: t('all'), value: 'all' }]
+    if (!auditsResponse?.filters?.modules) return all
+    return [
+      ...all,
+      ...auditsResponse.filters.modules.map((module) => ({
+        label: formatAuditModule(module),
+        value: module,
+      })),
+    ]
+  }, [auditsResponse?.filters?.modules, t])
 
   const actionItems = React.useMemo(() => {
-    if (!auditsResponse?.filters?.actions) return []
-    return auditsResponse.filters.actions.map((action) => ({
-      label: action === 'accept' ? 'Accept' : action === 'reject' ? 'Reject' : action,
-      value: action,
-    }))
-  }, [auditsResponse?.filters?.actions])
+    const all = [{ label: t('all'), value: 'all' }]
+    if (!auditsResponse?.filters?.actions) return all
+    return [
+      ...all,
+      ...auditsResponse.filters.actions.map((action) => ({
+        label: action === 'accept' ? 'Accept' : action === 'reject' ? 'Reject' : action,
+        value: action,
+      })),
+    ]
+  }, [auditsResponse?.filters?.actions, t])
 
   return {
     tableSearchProps: {

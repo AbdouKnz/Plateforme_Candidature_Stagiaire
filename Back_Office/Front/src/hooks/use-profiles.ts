@@ -45,6 +45,7 @@ export function useCreateProfile() {
     mutationFn: createProfile,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -67,6 +68,7 @@ export function useUpdateProfile() {
     mutationFn: ({ id, data }) => updateProfile(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["profile", variables.id] });
       showAlert({
         message: data?.message,
@@ -90,6 +92,7 @@ export function useDeleteProfile() {
     mutationFn: (id) => deleteProfile(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

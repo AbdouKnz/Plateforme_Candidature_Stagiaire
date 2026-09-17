@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { createDownloadLink, cn } from "@/lib/utils";
 import {
   prepareSessionReset,
+  verifyResetPassword,
   confirmSessionReset,
   type PrepareResetResult,
 } from "@/service/candidatures";
@@ -55,6 +56,7 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
   // Temporary password in local state ONLY
   const [password, setPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   // Progress animation state
   const [progress, setProgress] = useState(0);
@@ -70,11 +72,13 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
   // Ref to cancel interval on unmount/transition
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Clean state when modal opens or closes
+  // Clean state when modal opens or closes. Entry point is the intro card;
+  // password is verified before the filename step.
   const resetModalState = () => {
     setStep("CONFIRM");
     setPassword("");
     setPasswordError("");
+    setVerifying(false);
     setProgress(0);
     setExcelData(null);
     setCustomFilename("");
@@ -125,7 +129,36 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
     };
   }, []);
 
-  // Step 3 -> Step 4: Call /reset/prepare
+  // Password gate: cheap verify-only call. Wrong password stays on this
+  // screen with an inline error; correct password advances to FILENAME.
+  const handleVerifyPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (verifying) return;
+    if (!password.trim()) {
+      setPasswordError(t("password_required", "Password is required"));
+      return;
+    }
+    setPasswordError("");
+    setVerifying(true);
+    try {
+      await verifyResetPassword(password);
+      setStep("FILENAME");
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401 || status === 403) {
+        setPasswordError(t("incorrect_reset_password", "Incorrect reset password"));
+      } else {
+        setPasswordError(
+          err?.response?.data?.error || err?.message || t("unknown_error_occurred", "An unexpected error occurred.")
+        );
+      }
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Filename -> Summary: backup generation happens here (password already
+  // verified; the 401 branch below stays as a safety net).
   const handleStartPrepare = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
@@ -233,7 +266,7 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
   return (
     <AlertDialog open={open} onOpenChange={handleClose}>
       <AlertDialogContent className="sm:max-w-md">
-        {/* ── STEP 1: CONFIRM ── */}
+        {/* ── STEP 1: INTRO (process recap, entry point) ── */}
         {step === "CONFIRM" && (
           <>
             <AlertDialogHeader>
@@ -275,17 +308,12 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
           </>
         )}
 
-        {/* ── STEP 2: PASSWORD ── */}
+        {/* ── STEP 2: PASSWORD (verified on Continue before anything else) ── */}
         {step === "PASSWORD" && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!password.trim()) {
-                setPasswordError(t("password_required", "Password is required"));
-                return;
-              }
-              setPasswordError("");
-              setStep("FILENAME");
+              handleVerifyPassword();
             }}
           >
             <AlertDialogHeader>
@@ -325,24 +353,18 @@ export function SessionResetModal({ open, onOpenChange }: SessionResetModalProps
             </div>
 
             <AlertDialogFooter className="mt-4 gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setPasswordError("");
-                  setStep("CONFIRM");
-                }}
-              >
+              <Button type="button" variant="outline" onClick={() => setStep("CONFIRM")} disabled={verifying}>
                 {t("back", "Back")}
               </Button>
-              <Button type="submit">
+              <Button type="submit" disabled={verifying}>
+                {verifying && <IconLoader2 className="mr-2 size-4 animate-spin" />}
                 {t("continue", "Continue")}
               </Button>
             </AlertDialogFooter>
           </form>
         )}
 
-        {/* ── STEP 3: FILENAME ── */}
+        {/* ── STEP 3: FILENAME (password already verified) ── */}
         {step === "FILENAME" && (
           <form onSubmit={handleStartPrepare}>
             <AlertDialogHeader>

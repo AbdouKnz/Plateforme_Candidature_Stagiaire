@@ -57,6 +57,9 @@ export interface CandidatureQueryParams {
   score_sort?: string;
   score_sort_step?: string;
   score_sort_direction?: string;
+  score_step?: string;
+  score_min?: string;
+  score_max?: string;
 }
 
 export interface RejectionReason {

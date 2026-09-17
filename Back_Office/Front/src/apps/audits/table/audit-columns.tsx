@@ -8,21 +8,23 @@ import * as TablerIcons from "@tabler/icons-react";
 import { useTranslation } from "react-i18next";
 import { Audit } from "@/models/audit-model";
 import { DialogEnum } from "@/models/alert-model";
-import { auditActionTypes } from "./data";
+import { auditActionTypes, formatAuditModule } from "./data";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useAuditStore } from "@/stores/audit-store";
 import { formatAuditDate } from "../format-audit-date";
 
-// Fallback icon per module (lowercased key): covers rows stored before the
-// backend icon map was extended, plus any future unknown module.
-const MODULE_ICON_FALLBACK: Record<string, string> = {
+// Canonical icon per module (lowercased key): the module is the source of
+// truth for display, so legacy/broken stored icon values ("x", "check",
+// mismatched names) can never blank the cell. Every module keeps its own
+// icon; unknown modules fall back to IconClipboardList.
+export const AUDIT_MODULE_ICONS: Record<string, string> = {
   user: "IconUser",
   role: "IconShield",
   auth: "IconKey",
   session: "IconRefresh",
   setting: "IconSettings",
-  degree: "IconCapProjecting",
+  degree: "IconSchool",
   technology: "IconCpu",
   profile: "IconIdBadge",
   duration: "IconClock",
@@ -31,9 +33,11 @@ const MODULE_ICON_FALLBACK: Record<string, string> = {
   candidature: "IconFileDescription",
   emailtemplate: "IconMail",
   emaillog: "IconSend",
-  mailconfig: "IconSettings",
+  mailconfig: "IconMailCog",
   waitlist: "IconCalendarEvent",
 };
+
+const MODULE_ICON_FALLBACK = AUDIT_MODULE_ICONS;
 
 export function useAuditColumns(): ColumnDef<Audit>[] {
   const { t } = useTranslation();
@@ -98,9 +102,18 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
         const module = row.getValue("module") as string;
         type IconName = keyof typeof TablerIcons;
 
-        const iconName = (row.original.icon ||
-          MODULE_ICON_FALLBACK[module.toLowerCase()] ||
-          "") as IconName;
+        // Module-canonical first: stored icon values are legacy/broken for
+        // some rows ("x"/"check" on candidature). Stored value is only used
+        // when valid and no module mapping exists; default guarantees an icon.
+        const moduleIconName = MODULE_ICON_FALLBACK[module.toLowerCase()];
+        const storedIconName = row.original.icon as IconName;
+        const storedValid =
+          !!storedIconName &&
+          (TablerIcons as Record<string, unknown>)[storedIconName] !==
+            undefined;
+        const iconName = (moduleIconName ||
+          (storedValid ? storedIconName : "") ||
+          "IconClipboardList") as IconName;
 
         // Type-safe icon retrieval
         const Icon = TablerIcons[iconName] as
@@ -113,7 +126,7 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
         return (
           <div className="flex items-center gap-2">
             {Icon && <Icon size={16} className="text-muted-foreground" />}
-            <span className="text-sm capitalize">{module}</span>
+            <span className="text-sm capitalize">{formatAuditModule(module)}</span>
           </div>
         );
       },

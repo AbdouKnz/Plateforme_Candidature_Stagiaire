@@ -10,6 +10,7 @@ import {
   useReactTable,
   type ColumnDef,
   type ColumnFiltersState,
+  type Row,
   type RowData,
   type RowSelectionState,
   type SortingState,
@@ -54,6 +55,11 @@ interface DataTableProps<TData extends RowData> {
   enableRowSelection?: boolean
   rowSelection?: Record<string, boolean>
   onRowSelectionChange?: (updater: Updater<RowSelectionState>) => void
+  // Optional per-row selectability (e.g. pending rows only). When provided,
+  // non-matching rows render disabled and header select-all skips them.
+  rowCanSelect?: (row: Row<TData>) => boolean
+  // Called when header select-all is clicked but no selectable row exists.
+  onSelectAllEmpty?: () => void
   toolbarCenter?: ReactNode
 }
 
@@ -70,6 +76,8 @@ export function DataTable<TData extends RowData>({
   enableRowSelection = false,
   rowSelection,
   onRowSelectionChange,
+  rowCanSelect,
+  onSelectAllEmpty,
   toolbarCenter,
 }: DataTableProps<TData>) {
   const { t } = useTranslation()
@@ -87,9 +95,18 @@ export function DataTable<TData extends RowData>({
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && 'indeterminate')
             }
-            onCheckedChange={(value) =>
+            onCheckedChange={(value) => {
+              if (value) {
+                const selectable = table
+                  .getRowModel()
+                  .rows.filter((r) => r.getCanSelect())
+                if (selectable.length === 0) {
+                  onSelectAllEmpty?.()
+                  return
+                }
+              }
               table.toggleAllPageRowsSelected(!!value)
-            }
+            }}
             aria-label='Select all'
             className='ml-4 translate-y-[2px]'
           />
@@ -97,6 +114,7 @@ export function DataTable<TData extends RowData>({
         cell: ({ row }) => (
           <Checkbox
             checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label='Select row'
             className='ml-4 translate-y-[2px]'
@@ -108,7 +126,7 @@ export function DataTable<TData extends RowData>({
       },
       ...columns,
     ] as ColumnDef<TData>[]
-  }, [columns, enableRowSelection])
+  }, [columns, enableRowSelection, onSelectAllEmpty])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
@@ -122,7 +140,7 @@ export function DataTable<TData extends RowData>({
       rowSelection: rowSelection ?? internalRowSelection,
       columnFilters,
     },
-    enableRowSelection,
+    enableRowSelection: enableRowSelection ? (rowCanSelect ?? true) : false,
     onRowSelectionChange: onRowSelectionChange ?? setInternalRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,

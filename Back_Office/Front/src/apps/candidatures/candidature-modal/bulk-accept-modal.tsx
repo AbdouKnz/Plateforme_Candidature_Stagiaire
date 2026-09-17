@@ -152,10 +152,6 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
   }, [quizLink, f2fLink, startDate]);
 
   const handleSend = async () => {
-    if (isQuiz && !quizLink.trim()) {
-      showAlert({ message: t("quiz_link_required"), type: AlertEnum.ERROR });
-      return;
-    }
     if (isF2F && !f2fLink.trim()) {
       showAlert({ message: t("f2f_meeting_link_required"), type: AlertEnum.ERROR });
       return;
@@ -174,13 +170,14 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
         ids,
         type: emailTypeForRequest,
         step: stepForRequest || undefined,
-        quiz_link: isQuiz ? quizLink.trim() : undefined,
+        quiz_link: quizLink.trim() || undefined,
         f2f_meeting_link: isF2F ? f2fLink.trim() : undefined,
         interview_date: isF2F ? interviewDate || undefined : undefined,
         start_date: startDate || undefined,
         body: bodyModified ? displayBody : undefined,
       });
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: t("bulk_accept_success", { count: result?.sent ?? ids.length }),
         type: AlertEnum.SUCCESS,
@@ -234,12 +231,6 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
           </p>
         </DialogHeader>
         <div className="space-y-4 mt-3">
-          {isQuiz && (
-            <div className="space-y-2 p-3 border rounded-lg bg-blue-500/5 border-blue-500/10">
-              <Label>{t("quiz_link")}</Label>
-              <Input value={quizLink} onChange={(e) => setQuizLink(e.target.value)} placeholder="https://..." className="text-sm" disabled={sending} />
-            </div>
-          )}
           {showOnlineMeetingNote && (
             <div className="p-3 border rounded-lg bg-[#1d7cc7]/5 border-[#1d7cc7]/10">
               <p className="text-sm text-[#155a8a] dark:text-[#8fc3e5]">
@@ -296,7 +287,7 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
                 </div>
               )}
               <div className="space-y-2">
-                <Label>{t("subject")}</Label>
+                <Label>{t("email_subject")}</Label>
                 <Textarea value={subject} readOnly className="min-h-[60px] text-sm" />
               </div>
               <div className="space-y-2">

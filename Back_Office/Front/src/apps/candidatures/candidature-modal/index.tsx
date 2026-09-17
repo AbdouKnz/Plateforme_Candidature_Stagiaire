@@ -10,7 +10,7 @@ import { useCandidaturesStore } from "@/stores/candidatures-store";
 
 export function CandidatureModals() {
   const { openCandidature, setOpenCandidature, currentCandidatureId, setCurrentCandidatureId, emailModalData, setEmailModalData } = useCandidaturesStore();
-  const { data: candidature } = useCandidature(currentCandidatureId);
+  const { data: candidature, isFetching: isRefreshingCandidature } = useCandidature(currentCandidatureId);
   const { data: emailCandidature } = useCandidature(emailModalData?.candidatureId ?? null);
 
   const deleteMutation = useDeleteCandidature();
@@ -36,6 +36,7 @@ export function CandidatureModals() {
         onClose={() => handleCloseModal()}
         mode={DialogEnum.VIEW}
         candidature={candidature}
+        isRefreshing={isRefreshingCandidature}
       />
       <CandidatureActionModal
         open={openCandidature === DialogEnum.DELETE}

@@ -59,6 +59,7 @@ export function useCreateCandidature() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
       queryClient.invalidateQueries({ queryKey: ["candidatures", "pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -82,6 +83,7 @@ export function useUpdateCandidature() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
       queryClient.invalidateQueries({ queryKey: ["candidatures", "pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -105,6 +107,7 @@ export function useDeleteCandidature() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
       queryClient.invalidateQueries({ queryKey: ["candidatures", "pipeline"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

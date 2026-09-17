@@ -12,23 +12,42 @@ export function useFrontOfficeStatus() {
   const [status, setStatus] = useState<FrontOfficeStatus | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Short cadence (same as form options) + refetch when the tab regains
+  // focus, so back-office changes (title, year, open/closed) apply without
+  // a manual reload.
+  const STATUS_REFRESH_MS = 15000
+
   useEffect(() => {
-    async function fetchStatus() {
+    let cancelled = false
+
+    async function fetchStatus(initial: boolean) {
       try {
         const res = await fetch("/api/public/front-office/status")
         if (!res.ok) throw new Error("Failed to fetch front office status")
         const body = await res.json()
-        setStatus(body.data ?? body as FrontOfficeStatus)
+        if (!cancelled) setStatus(body.data ?? body as FrontOfficeStatus)
       } catch {
-        setStatus({ is_enabled: true })
+        if (!cancelled && initial) setStatus({ is_enabled: true })
       } finally {
-        setLoading(false)
+        if (!cancelled && initial) setLoading(false)
       }
     }
 
-    fetchStatus()
-    const interval = setInterval(fetchStatus, 300_000)
-    return () => clearInterval(interval)
+    fetchStatus(true)
+    const refreshSilently = () => fetchStatus(false)
+    const interval = setInterval(refreshSilently, STATUS_REFRESH_MS)
+    const handleFocus = () => refreshSilently()
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refreshSilently()
+    }
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
   }, [])
 
   return { status, loading }

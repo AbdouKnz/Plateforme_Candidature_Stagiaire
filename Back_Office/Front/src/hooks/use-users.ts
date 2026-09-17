@@ -68,6 +68,7 @@ export function useCreateUser() {
         type: AlertEnum.SUCCESS,
       })
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['audits'] })
     },
     onError: (error: any) => {
       console.error('Error creating user:', error)
@@ -89,6 +90,7 @@ export function useUpdateUser() {
       console.log('User updated successfully:', data)
 
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['audits'] })
 
       queryClient.invalidateQueries({ queryKey: ['user', variables.id] })
 
@@ -117,6 +119,7 @@ export function useDeleteUser() {
     onSuccess: (data) => {
       console.log('User deleted successfully:', data)
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['audits'] })
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -163,6 +166,7 @@ export function useExportUsers() {
 }
 
 export function useChangePassword() {
+  const queryClient = useQueryClient()
   const { showAlert } = useAlertStore()
 
   return useMutation<
@@ -173,7 +177,8 @@ export function useChangePassword() {
     mutationFn: ({ id, payload }) => changePassword(id, payload),
     onSuccess: (data) => {
       console.log('User password updated successfully:', data)
-
+      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['audits'] })
       showAlert({ message: data?.message, type: AlertEnum.SUCCESS })
     },
     onError: (error: any) => {

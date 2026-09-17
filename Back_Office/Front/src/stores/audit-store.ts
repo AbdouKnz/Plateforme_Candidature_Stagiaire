@@ -32,7 +32,7 @@ export const useAuditStore = create<AuditState>((set) => ({
     set((state) => ({
       queryParams: {
         search: state.queryParams.search,
-        page: state.queryParams.page,
+        page: 1,
         pageSize: state.queryParams.pageSize,
       },
     })),

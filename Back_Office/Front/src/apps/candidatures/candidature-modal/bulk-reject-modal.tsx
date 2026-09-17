@@ -111,6 +111,7 @@ export function BulkRejectModal({ open, onClose, onSent, candidatures, step }: B
       await bulkRejectEmails(ids, selectedRejectionReason);
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
       queryClient.invalidateQueries({ queryKey: ["candidature"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       // Optimistic cache update for immediate feedback
       queryClient.getQueriesData<any[]>({ queryKey: ["candidatures"] }).forEach(([queryKey]) => {
         queryClient.setQueryData<any[]>(queryKey, (old) =>
@@ -202,7 +203,7 @@ export function BulkRejectModal({ open, onClose, onSent, candidatures, step }: B
                 </strong>
               </div>
               <div className="space-y-2">
-                <Label>{t("subject")}</Label>
+                <Label>{t("email_subject")}</Label>
                 <Textarea
                   value={subject}
                   readOnly

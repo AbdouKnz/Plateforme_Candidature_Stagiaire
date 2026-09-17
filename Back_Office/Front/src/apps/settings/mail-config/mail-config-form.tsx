@@ -38,6 +38,7 @@ export function MailConfigForm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mail_config"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({ message: t("mail_config_test_ok"), type: AlertEnum.SUCCESS });
     },
     onError: (err: any) => {

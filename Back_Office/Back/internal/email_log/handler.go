@@ -26,6 +26,7 @@ func (h *EmailLogHandler) GetAllHandler(c *gin.Context) {
 		StartDate:    c.DefaultQuery("start_date", ""),
 		EndDate:      c.DefaultQuery("end_date", ""),
 	}
+	normalizeEmailLogParams(&params)
 
 	response, err := h.Service.GetAll(c.Request.Context(), params)
 	if err != nil {
@@ -45,6 +46,7 @@ func (h *EmailLogHandler) ExportHandler(c *gin.Context) {
 		StartDate:    c.DefaultQuery("start_date", ""),
 		EndDate:      c.DefaultQuery("end_date", ""),
 	}
+	normalizeEmailLogParams(&params)
 
 	exportData, err := h.Service.Export(c.Request.Context(), params)
 	if err != nil {
@@ -57,6 +59,17 @@ func (h *EmailLogHandler) ExportHandler(c *gin.Context) {
 		export.ExportToExcel(c, *exportData)
 	default:
 		export.ExportToPDF(c, *exportData)
+	}
+}
+
+// normalizeEmailLogParams maps "all" dropdown options to no filter (same
+// convention as audits/candidatures).
+func normalizeEmailLogParams(params *EmailLogParams) {
+	if params.TemplateType == "all" {
+		params.TemplateType = ""
+	}
+	if params.Status == "all" {
+		params.Status = ""
 	}
 }
 

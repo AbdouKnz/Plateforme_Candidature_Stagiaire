@@ -10,11 +10,13 @@ import {
   Building2,
   Mail,
   MailCheck,
+  RotateCcw,
   ChevronRight,
   type LucideIcon,
 } from 'lucide-react'
 import { IconSettings } from '@tabler/icons-react'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Collapsible,
@@ -27,6 +29,7 @@ export interface SettingsMenuItem {
   href: string
   icon: LucideIcon
   color: string
+  superAdminOnly?: boolean
 }
 
 export const settingsMenuItems: SettingsMenuItem[] = [
@@ -78,12 +81,24 @@ export const settingsMenuItems: SettingsMenuItem[] = [
     icon: Building2,
     color: 'text-orange-500',
   },
+  {
+    title: 'reset_session',
+    href: '/settings/session',
+    icon: RotateCcw,
+    color: 'text-red-500',
+    superAdminOnly: true,
+  },
 ]
 
 export function SettingsMenu() {
   const { t } = useTranslation()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(true)
+  const user = useAuthStore((s) => s.user)
+
+  const visibleItems = settingsMenuItems.filter(
+    (item) => !item.superAdminOnly || user?.role_name === 'Super Admin'
+  )
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(`${href}/`)
@@ -114,7 +129,7 @@ export function SettingsMenu() {
           </CollapsibleTrigger>
           <CollapsibleContent className="CollapsibleContent">
             <div className="flex flex-col gap-0.5 pt-0.5">
-              {settingsMenuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const active = isActive(item.href)
                 return (
                   <Link

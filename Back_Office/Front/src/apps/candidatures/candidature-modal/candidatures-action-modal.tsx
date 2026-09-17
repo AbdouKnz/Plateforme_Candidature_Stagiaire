@@ -14,8 +14,9 @@ import { type Candidature } from "@/models/candidature-model";
 import { DialogEnum, type DialogType } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUpdateCandidature } from "@/hooks/use-candidatures";
+import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { stepPosition, STEP_VARIANTS, type PipelineStep } from "../pipeline";
@@ -67,6 +68,9 @@ interface CandidatureActionModalProps {
   mode?: DialogType;
   onConfirm?: () => void;
   isDeleting?: boolean;
+  // True while the row data is being refetched (e.g. right after a pipeline
+  // advance), so step-dependent UI doesn't render from a stale cached row.
+  isRefreshing?: boolean;
 }
 
 export function CandidatureActionModal({
@@ -76,6 +80,7 @@ export function CandidatureActionModal({
   mode,
   onConfirm,
   isDeleting,
+  isRefreshing,
 }: CandidatureActionModalProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -87,6 +92,29 @@ export function CandidatureActionModal({
   const [notes, setNotes] = useState(candidature?.notes ?? "");
   const [notesSaved, setNotesSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const viewInitialTab = useCandidaturesStore((s) => s.viewInitialTab);
+  const setViewInitialTab = useCandidaturesStore((s) => s.setViewInitialTab);
+
+  // Fresh tab per opened row: an explicit one-shot request (e.g. scoring from
+  // the tick/X buttons) wins, otherwise fall back to details. The signal is
+  // consumed here so it never leaks into the next opened row. Runs with no
+  // row data yet are skipped: undefined -> id is fetch arrival, not a row
+  // change, and must not clobber the requested tab back to details.
+  const prevTabRowId = useRef<number | null>(null);
+  useEffect(() => {
+    if (!open) {
+      prevTabRowId.current = null;
+      return;
+    }
+    const id = candidature?.id ?? null;
+    if (id === null) return;
+    if (id !== prevTabRowId.current) {
+      prevTabRowId.current = id;
+      setActiveTab(viewInitialTab ?? "details");
+      if (viewInitialTab) setViewInitialTab(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, candidature?.id]);
 
   const [prevNotesKey, setPrevNotesKey] = useState<string>();
   const notesKey = `${candidature?.id ?? "none"}:${candidature?.notes ?? ""}`;
@@ -125,6 +153,7 @@ export function CandidatureActionModal({
           setNotesSaved(true);
           queryClient.invalidateQueries({ queryKey: ["candidatures"] });
           queryClient.invalidateQueries({ queryKey: ["candidature"] });
+          queryClient.invalidateQueries({ queryKey: ["audits"] });
           setTimeout(() => setNotesSaved(false), 2500);
         },
       }
@@ -143,10 +172,11 @@ export function CandidatureActionModal({
       { id: candidature.id, data: data as Partial<Candidature> },
       {
         onSuccess: () => {
-          setScoresSaved(true);
           queryClient.invalidateQueries({ queryKey: ["candidatures"] });
           queryClient.invalidateQueries({ queryKey: ["candidature"] });
-          setTimeout(() => setScoresSaved(false), 2500);
+          queryClient.invalidateQueries({ queryKey: ["audits"] });
+          // Scores saved: close the card right away.
+          onClose();
         },
       }
     );
@@ -399,6 +429,12 @@ export function CandidatureActionModal({
               </div>
             </TabsContent>
             <TabsContent value="scoring" className="mt-3 flex-1 min-h-0 overflow-y-auto pr-1">
+              {isRefreshing && (
+                <div className="mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+                  <IconLoader2 className="size-3.5 animate-spin" />
+                  {t("refreshing_scores", "Refreshing scores…")}
+                </div>
+              )}
               {(() => {
                 const totalScore = Math.round(
                   scoringFields.reduce((acc, { field }) => acc + (Number(scoreDraft[field]) || 0), 0) / scoringFields.length

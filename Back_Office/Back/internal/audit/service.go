@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -23,13 +24,32 @@ func NewAuditService(db *bun.DB) *AuditService {
 	return &AuditService{db: db}
 }
 
+func normalizeAuditEndBound(end string) string {
+	if end == "" {
+		return end
+	}
+	// Frontend sends 'yyyy-MM-dd HH:mm:ss'; docs allow 'YYYY-MM-DD'.
+	// A midnight end ('00:00:00' or date-only) means "whole day" to users,
+	// so extend it to 23:59:59 instead of excluding that day's rows.
+	if t, err := time.Parse("2006-01-02 15:04:05", end); err == nil {
+		if t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 {
+			return t.Format("2006-01-02") + " 23:59:59"
+		}
+		return end
+	}
+	if t, err := time.Parse("2006-01-02", end); err == nil {
+		return t.Format("2006-01-02") + " 23:59:59"
+	}
+	return end
+}
+
 func buildBaseAuditQuery(query *bun.SelectQuery, params AuditParams) *bun.SelectQuery {
 	if params.Action != "" {
-		query = query.Where("action = ?", params.Action)
+		query = query.Where("LOWER(action) = LOWER(?)", params.Action)
 	}
 
 	if params.Module != "" {
-		query = query.Where("module = ?", params.Module)
+		query = query.Where("LOWER(module) = LOWER(?)", params.Module)
 	}
 	if params.TargetID > 0 {
 		query = query.Where("target_id = ?", params.TargetID)
@@ -45,11 +65,11 @@ func buildBaseAuditQuery(query *bun.SelectQuery, params AuditParams) *bun.Select
 		endStr := tomorrow.Format("2006-01-02 15:04:05")
 		query = query.Where("time_stamp >= ? AND time_stamp < ?", startStr, endStr)
 	} else if params.Start != "" && params.End != "" {
-		query = query.Where("time_stamp BETWEEN ? AND ?", params.Start, params.End)
+		query = query.Where("time_stamp BETWEEN ? AND ?", params.Start, normalizeAuditEndBound(params.End))
 	} else if params.Start != "" {
 		query = query.Where("time_stamp >= ?", params.Start)
 	} else if params.End != "" {
-		query = query.Where("time_stamp <= ?", params.End)
+		query = query.Where("time_stamp <= ?", normalizeAuditEndBound(params.End))
 	}
 
 	if params.Search != "" {
@@ -166,9 +186,9 @@ func LogCandidatureStepAction(ctx context.Context, db bun.IDB, targetID int, act
 		fields["reason_code"] = domain.FieldChange{NewValues: reasonCode, Changed: true}
 	}
 
-	icon := "x"
+	icon := "IconX"
 	if action == "accept" {
-		icon = "check"
+		icon = "IconCheck"
 	}
 	auditLog := &domain.AuditLog{
 		ActorID:   actor.UserID,
@@ -328,7 +348,7 @@ var auditIconMap = map[string]string{
 	pkg.AUTH_MODULE:           "IconKey",
 	pkg.SESSION_MODULE:        "IconRefresh",
 	pkg.SETTING_MODULE:        "IconSettings",
-	pkg.DEGREE_MODULE:         "IconCapProjecting",
+	pkg.DEGREE_MODULE:         "IconSchool",
 	pkg.TECHNOLOGY_MODULE:     "IconCpu",
 	pkg.PROFILE_MODULE:        "IconIdBadge",
 	pkg.DURATION_MODULE:       "IconClock",
@@ -337,13 +357,19 @@ var auditIconMap = map[string]string{
 	pkg.CANDIDATURE_MODULE:    "IconFileDescription",
 	pkg.EMAIL_TEMPLATE_MODULE: "IconMail",
 	pkg.EMAIL_LOG_MODULE:      "IconSend",
-	pkg.MAIL_CONFIG_MODULE:    "IconSettings",
+	pkg.MAIL_CONFIG_MODULE:    "IconMailCog",
 	pkg.WAITLIST_MODULE:       "IconCalendarEvent",
 }
 
 func getAuditIcon(module string) string {
 	if icon, ok := auditIconMap[module]; ok {
 		return icon
+	}
+	// Writers use mixed casings (e.g. pipeline rows store "candidature").
+	for key, icon := range auditIconMap {
+		if strings.EqualFold(key, module) {
+			return icon
+		}
 	}
 	return ""
 }

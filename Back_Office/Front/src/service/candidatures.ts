@@ -148,6 +148,10 @@ export interface PrepareResetResult {
   filename: string;
 }
 
+export const verifyResetPassword = async (password: string): Promise<void> => {
+  await axiosApi.post(`${CANDIDATURE_ENDPOINT}/reset/verify`, { password });
+};
+
 export const prepareSessionReset = async (password: string): Promise<PrepareResetResult> => {
   const response = await axiosApi.post(
     `${CANDIDATURE_ENDPOINT}/reset/prepare`,

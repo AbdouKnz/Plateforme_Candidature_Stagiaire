@@ -25,7 +25,7 @@ export const useEmailLogsStore = create<EmailLogsState>((set) => ({
   resetFilterQueryParams: () =>
     set((state) => ({
       queryParams: {
-        page: state.queryParams.page,
+        page: 1,
         pageSize: state.queryParams.pageSize,
         search: state.queryParams.search,
       },

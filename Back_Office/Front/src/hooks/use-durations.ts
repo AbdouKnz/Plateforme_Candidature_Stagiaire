@@ -45,6 +45,7 @@ export function useCreateDuration() {
     mutationFn: createDuration,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["durations"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -67,6 +68,7 @@ export function useUpdateDuration() {
     mutationFn: ({ id, data }) => updateDuration(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["durations"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["duration", variables.id] });
       showAlert({
         message: data?.message,
@@ -90,6 +92,7 @@ export function useDeleteDuration() {
     mutationFn: (id) => deleteDuration(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["durations"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

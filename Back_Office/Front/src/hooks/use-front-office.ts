@@ -28,6 +28,7 @@ export function useToggleFrontOffice() {
     mutationFn: toggleFrontOffice,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["front_office_status"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: (data as any)?.message,
         type: AlertEnum.SUCCESS,

@@ -28,6 +28,7 @@ export function EmailLogs() {
   const totalEmailLogs = emailLogsResponse?.pagination?.totalRows;
 
   const typeItems = [
+    { label: t("all"), value: "all" },
     { label: t("email_template_type_confirmation"), value: "confirmation" },
     { label: t("email_template_type_online_quiz"), value: "online_quiz" },
     { label: t("email_template_type_online_meeting"), value: "online_meeting" },
@@ -38,6 +39,7 @@ export function EmailLogs() {
   ];
 
   const statusItems = [
+    { label: t("all"), value: "all" },
     { label: t("sent"), value: "sent" },
     { label: t("failed"), value: "failed" },
   ];

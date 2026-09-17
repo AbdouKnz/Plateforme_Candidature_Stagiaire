@@ -269,7 +269,7 @@ func (h *CandidatureHandler) GetByIDHandler(c *gin.Context) {
 }
 
 func (h *CandidatureHandler) ParseCandidatureParams(c *gin.Context) CandidatureParams {
-	return CandidatureParams{
+	params := CandidatureParams{
 		Search:             c.DefaultQuery("search", ""),
 		FileType:           c.DefaultQuery("file_type", "pdf"),
 		FullName:           c.DefaultQuery("full_name", ""),
@@ -281,7 +281,39 @@ func (h *CandidatureHandler) ParseCandidatureParams(c *gin.Context) CandidatureP
 		Step:               c.DefaultQuery("step", ""),
 		ScoreSortStep:      c.DefaultQuery("score_sort_step", ""),
 		ScoreSortDirection: c.DefaultQuery("score_sort_direction", ""),
+		ScoreStep:          c.DefaultQuery("score_step", ""),
+		ScoreMin:           parseOptionalInt(c.DefaultQuery("score_min", "")),
+		ScoreMax:           parseOptionalInt(c.DefaultQuery("score_max", "")),
 	}
+	// "all" dropdown options mean no filter (same convention as audits).
+	for _, s := range []*string{&params.CandidatureType, &params.Gender, &params.Degree, &params.SubjectName, &params.Status, &params.Step} {
+		if *s == "all" {
+			*s = ""
+		}
+	}
+	return params
+}
+
+// parseOptionalInt parses an optional integer query param: "" → nil,
+// invalid → nil (ignored), valid → pointer.
+func parseOptionalInt(value string) *int {
+	if value == "" {
+		return nil
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return nil
+	}
+	return &parsed
+}
+
+// validateScoreRange rejects min > max with a 400.
+func validateScoreRange(c *gin.Context, params CandidatureParams) bool {
+	if params.ScoreMin != nil && params.ScoreMax != nil && *params.ScoreMin > *params.ScoreMax {
+		pkg.BadRequest(c, pkg.ErrInvalidRange)
+		return false
+	}
+	return true
 }
 
 func (h *CandidatureHandler) GetRecentHandler(c *gin.Context) {
@@ -304,6 +336,9 @@ func (h *CandidatureHandler) GetPipelineHandler(c *gin.Context) {
 
 func (h *CandidatureHandler) GetAllHandler(c *gin.Context) {
 	params := h.ParseCandidatureParams(c)
+	if !validateScoreRange(c, params) {
+		return
+	}
 
 	candidatures, err := h.Service.GetAll(c, params)
 	if err != nil {
@@ -316,6 +351,9 @@ func (h *CandidatureHandler) GetAllHandler(c *gin.Context) {
 
 func (h *CandidatureHandler) ExportHandler(c *gin.Context) {
 	params := h.ParseCandidatureParams(c)
+	if !validateScoreRange(c, params) {
+		return
+	}
 
 	exportData, err := h.Service.Export(c, params)
 	if err != nil {
@@ -343,6 +381,25 @@ func (h *CandidatureHandler) DeleteHandler(c *gin.Context) {
 	}
 
 	pkg.SuccessL(c, "candidature_deleted_successfully", nil)
+}
+
+func (h *CandidatureHandler) ResetVerifyHandler(c *gin.Context) {
+	var req ResetSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pkg.BadRequest(c, "password is required")
+		return
+	}
+
+	if err := h.Service.VerifyResetPassword(req.Password); err != nil {
+		if errors.Is(err, ErrInvalidResetPassword) {
+			pkg.Unauthorized(c, "Invalid reset password")
+			return
+		}
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	pkg.SuccessL(c, "reset_password_verified", nil)
 }
 
 func (h *CandidatureHandler) ResetPrepareHandler(c *gin.Context) {

@@ -89,7 +89,7 @@ axiosApi.interceptors.response.use(
         return Promise.reject(error);
       }
       // Reset endpoints return 401 for wrong password, not expired token
-      if (originalRequest.url?.includes("/reset/prepare") || originalRequest.url?.includes("/reset/confirm")) {
+      if (originalRequest.url?.includes("/reset/prepare") || originalRequest.url?.includes("/reset/confirm") || originalRequest.url?.includes("/reset/verify")) {
         return Promise.reject(error);
       }
       // Don't retry refresh endpoint itself

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useCandidaturesStore } from "@/stores/candidatures-store";
 import { useAlertStore } from "@/stores/alert-store";
 import { useUpdateCandidature } from "@/hooks/use-candidatures";
+import { useQueryClient } from "@tanstack/react-query";
 import { nextPipelineStep } from "../pipeline";
 import { PipelineStepCell } from "../pipeline-step-cell";
 import { hasCurrentStepScore, currentStepScore, stepScoreField } from "../scoring";
@@ -38,10 +39,29 @@ export function useCandidatureColumns(
   activeStep?: string
 ): ColumnDef<Candidature>[] {
   const { t } = useTranslation();
-  const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData } = useCandidaturesStore();
+  const { setOpenCandidature, setCurrentCandidatureId, setEmailModalData, setViewInitialTab } = useCandidaturesStore();
   const { showAlert } = useAlertStore();
+  const queryClient = useQueryClient();
   const updateCandidatureMutation = useUpdateCandidature();
 
+  const openFreshView = (candidature: Candidature) => {
+    // Force a fresh fetch so step-dependent UI (e.g. scoring locks) never
+    // renders from a stale cached row right after a pipeline advance.
+    queryClient.invalidateQueries({ queryKey: ["candidature", candidature.id] });
+    setCurrentCandidatureId(candidature.id);
+    setOpenCandidature(DialogEnum.VIEW);
+  };
+
+  // Opens the view card directly on the scoring tab with fresh row data.
+  const openScoringTab = (candidature: Candidature) => {
+    queryClient.invalidateQueries({ queryKey: ["candidature", candidature.id] });
+    setCurrentCandidatureId(candidature.id);
+    setViewInitialTab("scoring");
+    setOpenCandidature(DialogEnum.VIEW);
+  };
+
+  // No score for the current step: warn first ("must give a score"); when
+  // the user presses Okay, open the view card directly on the scoring tab.
   const requireStepScore = (candidature: Candidature, action: "advance" | "decline") => {
     if (hasCurrentStepScore(candidature)) return true;
     showAlert({
@@ -50,6 +70,7 @@ export function useCandidatureColumns(
           ? t("score_required_to_decline", { step: t(`pipeline_step_${candidature.step || "cv_screening"}`) })
           : t("score_required_to_advance", { step: t(`pipeline_step_${candidature.step || "cv_screening"}`) }),
       type: AlertEnum.WARNING,
+      onConfirm: () => openScoringTab(candidature),
     });
     return false;
   };
@@ -217,8 +238,7 @@ export function useCandidatureColumns(
               className="size-8 p-0 text-blue-500 hover:border-blue-300 hover:text-blue-600"
               onClick={() => {
                 onView?.(row.original);
-                setCurrentCandidatureId(row.original.id);
-                setOpenCandidature(DialogEnum.VIEW);
+                openFreshView(row.original);
               }}
               title={t("view_candidature")}
             >

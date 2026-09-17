@@ -9,6 +9,8 @@ export interface StepFilters {
   degree?: string;
   subject_name?: string;
   score_sort?: string;
+  score_min?: string;
+  score_max?: string;
 }
 
 interface EmailModalData {
@@ -28,6 +30,10 @@ interface CandidaturesState {
   stepFilters: Partial<Record<PipelineStep | "all", StepFilters>>;
   setStepFilterParams: (step: PipelineStep | "all", params: Partial<StepFilters>) => void;
   resetStepFilterParams: (step: PipelineStep | "all") => void;
+  // One-shot tab request for the view card (e.g. open directly on "scoring").
+  // Consumed and cleared by the modal when it opens.
+  viewInitialTab: string | null;
+  setViewInitialTab: (tab: string | null) => void;
   emailModalData: EmailModalData | null;
   setEmailModalData: (data: EmailModalData | null) => void;
 }
@@ -63,6 +69,8 @@ export const useCandidaturesStore = create<CandidaturesState>((set) => ({
         [step]: {},
       },
     })),
+  viewInitialTab: null,
+  setViewInitialTab: (tab) => set({ viewInitialTab: tab }),
   emailModalData: null,
   setEmailModalData: (data) => set({ emailModalData: data }),
 }));

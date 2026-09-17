@@ -45,6 +45,7 @@ export function useCreateSubject() {
     mutationFn: createSubject,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -67,6 +68,7 @@ export function useUpdateSubject() {
     mutationFn: ({ id, data }) => updateSubject(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["subject", variables.id] });
       showAlert({
         message: data?.message,
@@ -90,6 +92,7 @@ export function useDeleteSubject() {
     mutationFn: (id) => deleteSubject(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

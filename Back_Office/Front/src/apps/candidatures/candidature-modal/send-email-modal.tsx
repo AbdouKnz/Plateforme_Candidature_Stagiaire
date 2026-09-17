@@ -327,6 +327,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
       }
       queryClient.invalidateQueries({ queryKey: ["candidatures"] });
       queryClient.invalidateQueries({ queryKey: ["candidature"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       // Optimistic cache update for immediate feedback
       queryClient.getQueriesData<any[]>({ queryKey: ["candidatures"] })
         .forEach(([queryKey]) => {
@@ -482,7 +483,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("subject")}</Label>
+                    <Label>{t("email_subject")}</Label>
                     <Textarea value={editedSubject} onChange={(e) => setEditedSubject(e.target.value)} className="min-h-[60px] text-sm" disabled={sending} />
                   </div>
                   <div className="space-y-2">
@@ -499,7 +500,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>{t("subject")}</Label>
+                    <Label>{t("email_subject")}</Label>
                     <Textarea value={editedSubject} onChange={(e) => setEditedSubject(e.target.value)} className="min-h-[60px] text-sm" disabled={sending} />
                   </div>
                   <div className="space-y-2">
@@ -521,7 +522,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
               </div>
             )}
             <div className="space-y-2">
-              <Label>{t("subject")}</Label>
+              <Label>{t("email_subject")}</Label>
               <Textarea
                 value={editedSubject}
                 onChange={(e) => setEditedSubject(e.target.value)}

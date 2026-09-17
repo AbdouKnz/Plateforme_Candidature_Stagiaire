@@ -94,26 +94,39 @@ export function Candidatures() {
 
   // Client-side toolbar filters applied AFTER the step filter so each step
   // (including "all") has its own independent filter scope.
-  const { candidature_type: stepType, gender: stepGender, degree: stepDegree, subject_name: stepSubject } = currentStepFilters;
+  const { candidature_type: stepType, gender: stepGender, degree: stepDegree, subject_name: stepSubject, score_min: stepScoreMin, score_max: stepScoreMax } = currentStepFilters;
   const filteredData = useMemo(() => {
     let result = stepData;
-    if (stepType) {
+    if (stepType && stepType !== "all") {
       result = result.filter((d) => {
         const hasSecond = !!d.full_name2;
         return stepType === "pair" ? hasSecond : !hasSecond;
       });
     }
-    if (stepGender) {
+    if (stepGender && stepGender !== "all") {
       result = result.filter((d) => d.gender1 === stepGender || d.gender2 === stepGender);
     }
-    if (stepDegree) {
+    if (stepDegree && stepDegree !== "all") {
       result = result.filter((d) => d.degree1 === stepDegree || d.degree2 === stepDegree);
     }
-    if (stepSubject) {
+    if (stepSubject && stepSubject !== "all") {
       result = result.filter((d) => d.subject_name === stepSubject);
     }
+    // Score range on the active tab's score column ("all" tab uses each row's
+    // own current-step score, mirroring the sort below and the backend CASE).
+    const min = stepScoreMin === '' || stepScoreMin == null ? NaN : Number(stepScoreMin);
+    const max = stepScoreMax === '' || stepScoreMax == null ? NaN : Number(stepScoreMax);
+    if (!Number.isNaN(min) || !Number.isNaN(max)) {
+      const bounds = [min, max].filter((v) => !Number.isNaN(v));
+      const low = Math.min(...bounds);
+      const high = Math.max(...bounds);
+      result = result.filter((d) => {
+        const s = stepFilter === "all" ? currentStepScore(d) : Number((d as any)[stepScoreField(stepFilter)] ?? 0);
+        return s >= low && s <= high;
+      });
+    }
     return result;
-  }, [stepData, stepType, stepGender, stepDegree, stepSubject]);
+  }, [stepData, stepType, stepGender, stepDegree, stepSubject, stepScoreMin, stepScoreMax, stepFilter]);
 
   // Statut affiché : celui de l'étape consultée (stepN_status), pas celui de
   // l'étape courante. Une candidature acceptée en CV puis passée au quiz
@@ -163,6 +176,18 @@ export function Candidatures() {
     const mul = scoreDirection === "asc" ? 1 : -1;
     return [...data].sort((a, b) => (scoreOf(a) - scoreOf(b)) * mul);
   }, [data, scoreDirection, stepFilter]);
+
+  // Bulk selection is restricted to pending rows (active step tab status):
+  // non-pending checkboxes render disabled and select-all skips them.
+  const rowCanSelect = useCallback(
+    (row: { original: Candidature }) =>
+      displayStatus(row.original) === "pending",
+    [displayStatus]
+  );
+
+  const handleSelectAllEmpty = useCallback(() => {
+    showAlert({ message: t("only_pending_selectable"), type: AlertEnum.INFO });
+  }, [showAlert, t]);
 
   const selectedRows = useMemo(
     () => data.filter((c) => rowSelection[String(c.id)]),
@@ -278,6 +303,8 @@ export function Candidatures() {
             enableRowSelection={stepFilter !== "all" && canUpdateCandidatures}
             rowSelection={rowSelection}
             onRowSelectionChange={setRowSelection}
+            rowCanSelect={rowCanSelect}
+            onSelectAllEmpty={handleSelectAllEmpty}
             toolbarCenter={
               <Tabs value={statusFilter} onValueChange={setStatusFilter}>
                 <TabsList>

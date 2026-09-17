@@ -33,6 +33,7 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /app/uploads ./uploads
 
 # Copy entire font directory
+RUN mkdir -p /app/pkg/export/font
 COPY --from=builder /app/pkg/export/font ./pkg/export/font
 
 # Copy binary

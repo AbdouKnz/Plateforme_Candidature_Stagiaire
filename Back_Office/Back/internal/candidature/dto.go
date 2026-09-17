@@ -139,6 +139,13 @@ type CandidatureParams struct {
 	ScoreSortStep string `json:"score_sort_step" form:"score_sort_step"`
 	// ScoreSortDirection is "asc" or "desc" (default "asc").
 	ScoreSortDirection string `json:"score_sort_direction" form:"score_sort_direction"`
+	// ScoreStep picks which step's score column the range filter applies to
+	// (cv_screening | online_quiz | online_meeting | f2f_meeting | final_decision).
+	// Empty (or "all") means each row's own current-step score.
+	ScoreStep string `json:"score_step" form:"score_step"`
+	// ScoreMin/ScoreMax bound the step score (0-20 scale). Nil means open end.
+	ScoreMin *int `json:"score_min" form:"score_min"`
+	ScoreMax *int `json:"score_max" form:"score_max"`
 }
 
 type SendEmailRequest struct {
@@ -163,11 +170,15 @@ type SendEmailRequest struct {
 	// 2 (email2) receives this body instead of Body, so each applicant's
 	// email is fully independent (own text + own [Link]).
 	Body2 string `json:"body2"`
+	// Recipients overrides the row's addresses (internal use only, e.g. bulk
+	// rejection dedupe across rows). When non-empty, SendEmail mails exactly
+	// these addresses instead of building them from the candidature.
+	Recipients []string `json:"-"`
 }
 
 // BulkRejectRequest lets HR reject several candidatures at once with a single
-// rejection reason. One rejection email is sent per candidature (one per
-// member for pairs, even when both addresses are identical).
+// rejection reason. Every row is transitioned (status + audit), but mail is
+// deduped: one rejection email per address, listing all rejected subjects.
 type BulkRejectRequest struct {
 	Ids             []int  `json:"ids" binding:"required"`
 	RejectionReason string `json:"rejection_reason" binding:"required"`

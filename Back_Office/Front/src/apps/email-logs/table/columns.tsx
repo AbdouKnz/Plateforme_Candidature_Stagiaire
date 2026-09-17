@@ -10,18 +10,7 @@ import { DialogEnum } from "@/models/alert-model";
 import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useEmailLogsStore } from "@/stores/email-logs-store";
-
-const typeBadgeVariants: Record<string, "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary"> = {
-  confirmation: "blue",
-  acceptance: "success",
-  online_quiz: "success",
-  online_meeting: "update",
-  f2f_meeting: "warning",
-  final_decision: "success",
-  disapproval: "destructive",
-  reopening: "info",
-  session_reset: "warning",
-};
+import { templateTypeBadgeVariant } from "../template-type";
 
 export function useEmailLogColumns(): ColumnDef<EmailLog>[] {
   const { t } = useTranslation();
@@ -58,7 +47,7 @@ export function useEmailLogColumns(): ColumnDef<EmailLog>[] {
         const subject = row.original.subject || "-";
         return (
           <Badge
-            variant={typeBadgeVariants[row.original.template_type] ?? "secondary"}
+            variant={templateTypeBadgeVariant(row.original.template_type)}
             className="max-w-64 capitalize"
           >
             <LongText>{subject}</LongText>

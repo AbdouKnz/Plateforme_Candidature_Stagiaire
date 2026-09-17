@@ -45,6 +45,7 @@ export function useCreateTechnology() {
     mutationFn: createTechnology,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -67,6 +68,7 @@ export function useUpdateTechnology() {
     mutationFn: ({ id, data }) => updateTechnology(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["technology", variables.id] });
       showAlert({
         message: data?.message,
@@ -90,6 +92,7 @@ export function useDeleteTechnology() {
     mutationFn: (id) => deleteTechnology(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["technologies"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

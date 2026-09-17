@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/uptrace/bun"
@@ -14,6 +15,24 @@ import (
 
 type EmailLogService struct {
 	db *bun.DB
+}
+
+// normalizeEmailLogEndBound treats a midnight end ("00:00:00" or date-only)
+// as "whole day" (extends to 23:59:59) instead of excluding that day's rows.
+func normalizeEmailLogEndBound(end string) string {
+	if end == "" {
+		return end
+	}
+	if t, err := time.Parse("2006-01-02 15:04:05", end); err == nil {
+		if t.Hour() == 0 && t.Minute() == 0 && t.Second() == 0 {
+			return t.Format("2006-01-02") + " 23:59:59"
+		}
+		return end
+	}
+	if t, err := time.Parse("2006-01-02", end); err == nil {
+		return t.Format("2006-01-02") + " 23:59:59"
+	}
+	return end
 }
 
 func (s *EmailLogService) GetAll(ctx context.Context, params EmailLogParams) (*PaginatedEmailLogResponse, error) {
@@ -46,7 +65,7 @@ func (s *EmailLogService) GetAll(ctx context.Context, params EmailLogParams) (*P
 	}
 
 	if params.EndDate != "" {
-		query = query.Where("el.sent_at <= ?", params.EndDate)
+		query = query.Where("el.sent_at <= ?", normalizeEmailLogEndBound(params.EndDate))
 	}
 
 	if params.Page <= 0 {
@@ -159,7 +178,7 @@ func (s *EmailLogService) Export(ctx context.Context, params EmailLogParams) (*e
 	}
 
 	if params.EndDate != "" {
-		query = query.Where("el.sent_at <= ?", params.EndDate)
+		query = query.Where("el.sent_at <= ?", normalizeEmailLogEndBound(params.EndDate))
 	}
 
 	err := query.OrderExpr("el.sent_at DESC").Scan(ctx)

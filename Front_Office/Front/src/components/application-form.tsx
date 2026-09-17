@@ -130,9 +130,48 @@ export function ApplicationForm() {
     },
   })
 
+  // Reference lists (degrees / subjects / types) come from the back office and
+  // can change at any time (subject removed, degree deactivated...). The form
+  // stays mounted while applicants fill it in, so options are refreshed on a
+  // timer and whenever the tab regains focus — no manual reload needed.
+  // Selections that no longer exist are pruned; everything else the user typed
+  // is preserved.
+  const OPTIONS_REFRESH_MS = 15000
+
   React.useEffect(() => {
+    let cancelled = false
+
+    const pruneStaleSelections = (deg: Degree[], subj: Subject[]) => {
+      const subjectNames = new Set(subj.map((s) => (s.name || "").trim()))
+      const currentSubjects = getValues("subjects") ?? []
+      const kept = currentSubjects.filter((n) => subjectNames.has((n || "").trim()))
+      if (kept.length !== currentSubjects.length) {
+        setValue("subjects", kept, { shouldValidate: true })
+      }
+      const degreeNames = new Set(deg.map((d) => d.name))
+      const degreeLevel = getValues("degreeLevel")
+      if (degreeLevel && !degreeNames.has(degreeLevel)) {
+        setValue("degreeLevel", "")
+      }
+      const degree2 = getValues("degree2")
+      if (degree2 && !degreeNames.has(degree2)) {
+        setValue("degree2", "")
+      }
+    }
+
+    const applyOptions = (deg: Degree[], subj: Subject[], typ: Type_[]) => {
+      if (cancelled) return
+      setDegrees(deg)
+      setSubjects(subj)
+      setTypes(typ)
+      pruneStaleSelections(deg, subj)
+    }
+
+    // Initial load: also prefills subjects from the PFE Book shortlist and
+    // surfaces failures loudly.
     Promise.all([fetchDegrees(), fetchSubjects(), fetchTypes()])
       .then(([deg, subj, typ]) => {
+        if (cancelled) return
         setDegrees(deg)
         setSubjects(subj)
         setTypes(typ)
@@ -159,11 +198,39 @@ export function ApplicationForm() {
         }
       })
       .catch((err) => {
+        if (cancelled) return
         console.error("Failed to load form options:", err)
         toast.error("Failed to load form options")
       })
-      .finally(() => setLoadingOptions(false))
-  }, [setValue])
+      .finally(() => {
+        if (!cancelled) setLoadingOptions(false)
+      })
+
+    // Background sync: silent, never toasts, never touches the shortlist
+    // prefill or the loading flag.
+    const refreshSilently = () => {
+      Promise.all([fetchDegrees(), fetchSubjects(), fetchTypes()])
+        .then(([deg, subj, typ]) => applyOptions(deg, subj, typ))
+        .catch((err) => {
+          console.error("Background refresh of form options failed:", err)
+        })
+    }
+
+    const intervalId = window.setInterval(refreshSilently, OPTIONS_REFRESH_MS)
+    const handleFocus = () => refreshSilently()
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refreshSilently()
+    }
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [setValue, getValues])
 
   const watchedSubjects = watch("subjects")
   React.useEffect(() => {

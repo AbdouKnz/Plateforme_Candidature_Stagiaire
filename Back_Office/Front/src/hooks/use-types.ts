@@ -45,6 +45,7 @@ export function useCreateType() {
     mutationFn: createType,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["types"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -67,6 +68,7 @@ export function useUpdateType() {
     mutationFn: ({ id, data }) => updateType(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["types"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["type", variables.id] });
       showAlert({
         message: data?.message,
@@ -90,6 +92,7 @@ export function useDeleteType() {
     mutationFn: (id) => deleteType(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["types"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

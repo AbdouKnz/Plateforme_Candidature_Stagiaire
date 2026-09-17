@@ -45,6 +45,7 @@ export function useCreateDegree() {
     mutationFn: createDegree,
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["degrees"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,
@@ -67,6 +68,7 @@ export function useUpdateDegree() {
     mutationFn: ({ id, data }) => updateDegree(id, data),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["degrees"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["degree", variables.id] });
       showAlert({
         message: data?.message,
@@ -90,6 +92,7 @@ export function useDeleteDegree() {
     mutationFn: (id) => deleteDegree(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["degrees"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: data?.message,
         type: AlertEnum.SUCCESS,

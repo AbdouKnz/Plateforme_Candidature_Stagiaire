@@ -13,6 +13,8 @@ export function useAudits(params?: AuditQueryParams) {
     queryKey: ["audits", params],
     queryFn: () => getAudits(params),
     retry: 1,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
     onError: (error: Error) => {
       console.error("Error fetching audits:", error);
     },

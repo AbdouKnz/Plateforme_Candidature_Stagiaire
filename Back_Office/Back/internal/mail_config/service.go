@@ -62,6 +62,17 @@ func (s *MailConfigService) Update(ctx context.Context, req UpdateMailConfigRequ
 	req.Username = strings.TrimSpace(req.Username)
 	req.From = strings.TrimSpace(req.From)
 	req.FromName = strings.TrimSpace(req.FromName)
+	// Snapshot before overwrite for the audit Before/After view.
+	// Best-effort: on fetch error proceed with zero-value old.
+	old, _ := s.Get(ctx)
+	var oldHost string
+	var oldPort int
+	var oldUsername string
+	if old != nil {
+		oldHost = old.Host
+		oldPort = old.Port
+		oldUsername = old.Username
+	}
 	fields := map[string]string{
 		"host":      req.Host,
 		"port":      strconv.Itoa(req.Port),
@@ -85,7 +96,9 @@ func (s *MailConfigService) Update(ctx context.Context, req UpdateMailConfigRequ
 	audit.LogAction(ctx, s.db, pkg.MAIL_CONFIG_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
 		Type: pkg.UPDATE,
 		Fields: map[string]domain.FieldChange{
-			"host": {NewValues: req.Host, Changed: true},
+			"host":     {OldValues: oldHost, NewValues: req.Host, Changed: oldHost != req.Host},
+			"port":     {OldValues: oldPort, NewValues: req.Port, Changed: oldPort != req.Port},
+			"username": {OldValues: oldUsername, NewValues: req.Username, Changed: oldUsername != req.Username},
 		},
 	})
 	return s.Get(ctx)
@@ -101,7 +114,8 @@ type SMTPConfig struct {
 }
 
 // TestConnection tries to connect to the given SMTP server.
-// If successful, it saves the config to DB and returns nil.
+// It only verifies connectivity and never saves or logs: the caller persists
+// via Update (which writes the single audit row) after approval.
 // NOTE: a successful Dial only proves host/port/auth work. It does NOT prove
 // the From address will be accepted at send time (many providers reject a
 // From that differs from the authenticated account). Send failures caused by
@@ -126,10 +140,6 @@ func (s *MailConfigService) TestConnection(ctx context.Context, req UpdateMailCo
 	}
 	conn.Close()
 
-	_, err = s.Update(ctx, req)
-	if err != nil {
-		return fmt.Errorf("config save failed after test: %w", err)
-	}
 	return nil
 }
 

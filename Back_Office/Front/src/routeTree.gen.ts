@@ -32,6 +32,7 @@ import { Route as AuthenticatedCandidaturesIndexRouteImport } from './routes/_au
 import { Route as AuthenticatedAuditsIndexRouteImport } from './routes/_authenticated/audits/index'
 import { Route as AuthenticatedSettingsTypesRouteImport } from './routes/_authenticated/settings/types'
 import { Route as AuthenticatedSettingsTechnologiesRouteImport } from './routes/_authenticated/settings/technologies'
+import { Route as AuthenticatedSettingsSessionRouteImport } from './routes/_authenticated/settings/session'
 import { Route as AuthenticatedSettingsProfilesRouteImport } from './routes/_authenticated/settings/profiles'
 import { Route as AuthenticatedSettingsMailConfigRouteImport } from './routes/_authenticated/settings/mail-config'
 import { Route as AuthenticatedSettingsFrontOfficeRouteImport } from './routes/_authenticated/settings/front-office'
@@ -166,6 +167,12 @@ const AuthenticatedSettingsTechnologiesRoute =
     path: '/technologies',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsSessionRoute =
+  AuthenticatedSettingsSessionRouteImport.update({
+    id: '/session',
+    path: '/session',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsProfilesRoute =
   AuthenticatedSettingsProfilesRouteImport.update({
     id: '/profiles',
@@ -225,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/settings/front-office': typeof AuthenticatedSettingsFrontOfficeRoute
   '/settings/mail-config': typeof AuthenticatedSettingsMailConfigRoute
   '/settings/profiles': typeof AuthenticatedSettingsProfilesRoute
+  '/settings/session': typeof AuthenticatedSettingsSessionRoute
   '/settings/technologies': typeof AuthenticatedSettingsTechnologiesRoute
   '/settings/types': typeof AuthenticatedSettingsTypesRoute
   '/audits/': typeof AuthenticatedAuditsIndexRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/settings/front-office': typeof AuthenticatedSettingsFrontOfficeRoute
   '/settings/mail-config': typeof AuthenticatedSettingsMailConfigRoute
   '/settings/profiles': typeof AuthenticatedSettingsProfilesRoute
+  '/settings/session': typeof AuthenticatedSettingsSessionRoute
   '/settings/technologies': typeof AuthenticatedSettingsTechnologiesRoute
   '/settings/types': typeof AuthenticatedSettingsTypesRoute
   '/audits': typeof AuthenticatedAuditsIndexRoute
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/front-office': typeof AuthenticatedSettingsFrontOfficeRoute
   '/_authenticated/settings/mail-config': typeof AuthenticatedSettingsMailConfigRoute
   '/_authenticated/settings/profiles': typeof AuthenticatedSettingsProfilesRoute
+  '/_authenticated/settings/session': typeof AuthenticatedSettingsSessionRoute
   '/_authenticated/settings/technologies': typeof AuthenticatedSettingsTechnologiesRoute
   '/_authenticated/settings/types': typeof AuthenticatedSettingsTypesRoute
   '/_authenticated/audits/': typeof AuthenticatedAuditsIndexRoute
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/settings/front-office'
     | '/settings/mail-config'
     | '/settings/profiles'
+    | '/settings/session'
     | '/settings/technologies'
     | '/settings/types'
     | '/audits/'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/settings/front-office'
     | '/settings/mail-config'
     | '/settings/profiles'
+    | '/settings/session'
     | '/settings/technologies'
     | '/settings/types'
     | '/audits'
@@ -383,6 +395,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/front-office'
     | '/_authenticated/settings/mail-config'
     | '/_authenticated/settings/profiles'
+    | '/_authenticated/settings/session'
     | '/_authenticated/settings/technologies'
     | '/_authenticated/settings/types'
     | '/_authenticated/audits/'
@@ -572,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsTechnologiesRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/session': {
+      id: '/_authenticated/settings/session'
+      path: '/session'
+      fullPath: '/settings/session'
+      preLoaderRoute: typeof AuthenticatedSettingsSessionRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/profiles': {
       id: '/_authenticated/settings/profiles'
       path: '/profiles'
@@ -631,6 +651,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsFrontOfficeRoute: typeof AuthenticatedSettingsFrontOfficeRoute
   AuthenticatedSettingsMailConfigRoute: typeof AuthenticatedSettingsMailConfigRoute
   AuthenticatedSettingsProfilesRoute: typeof AuthenticatedSettingsProfilesRoute
+  AuthenticatedSettingsSessionRoute: typeof AuthenticatedSettingsSessionRoute
   AuthenticatedSettingsTechnologiesRoute: typeof AuthenticatedSettingsTechnologiesRoute
   AuthenticatedSettingsTypesRoute: typeof AuthenticatedSettingsTypesRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -646,6 +667,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
       AuthenticatedSettingsFrontOfficeRoute,
     AuthenticatedSettingsMailConfigRoute: AuthenticatedSettingsMailConfigRoute,
     AuthenticatedSettingsProfilesRoute: AuthenticatedSettingsProfilesRoute,
+    AuthenticatedSettingsSessionRoute: AuthenticatedSettingsSessionRoute,
     AuthenticatedSettingsTechnologiesRoute:
       AuthenticatedSettingsTechnologiesRoute,
     AuthenticatedSettingsTypesRoute: AuthenticatedSettingsTypesRoute,

@@ -79,6 +79,7 @@ export function useCreateEmailTemplate() {
     mutationFn: createEmailTemplate,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: successMessages[getLang()].create,
         type: AlertEnum.SUCCESS,
@@ -99,6 +100,7 @@ export function useUpdateEmailTemplate() {
     mutationFn: ({ id, data }) => updateEmailTemplate(id, data),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       queryClient.invalidateQueries({ queryKey: ["email-template", variables.id] });
       showAlert({
         message: successMessages[getLang()].update,
@@ -120,6 +122,7 @@ export function useDeleteEmailTemplate() {
     mutationFn: (id) => deleteEmailTemplate(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      queryClient.invalidateQueries({ queryKey: ["audits"] });
       showAlert({
         message: successMessages[getLang()].delete,
         type: AlertEnum.SUCCESS,

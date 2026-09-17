@@ -18,18 +18,7 @@ import {
 import { Card } from "@/components/ui/card";
 import type { EmailLog } from "@/models/email-log-model";
 import { useTranslation } from "react-i18next";
-
-const typeBadgeVariants: Record<string, "blue" | "success" | "destructive" | "info" | "update" | "warning" | "secondary"> = {
-  confirmation: "blue",
-  acceptance: "success",
-  online_quiz: "success",
-  online_meeting: "update",
-  f2f_meeting: "warning",
-  final_decision: "success",
-  disapproval: "destructive",
-  reopening: "info",
-  session_reset: "warning",
-};
+import { templateTypeBadgeVariant } from "../template-type";
 
 interface EmailLogViewDialogProps {
   emailLog: EmailLog;
@@ -74,10 +63,10 @@ export function EmailLogModal({
               <div className="flex items-center gap-2">
                 <IconBook className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  Subject:
+                  {t("email_subject")}:
                 </span>
                 <Badge
-                  variant={typeBadgeVariants[emailLog.template_type] ?? "secondary"}
+                  variant={templateTypeBadgeVariant(emailLog.template_type)}
                   className="max-w-full"
                 >
                   {emailLog.subject}
@@ -103,7 +92,7 @@ export function EmailLogModal({
 
           <Card className="p-4 rounded-xl">
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-foreground">Email Subject</h3>
+              <h3 className="text-sm font-semibold text-foreground">{t("email_subject")}</h3>
               <p className="text-sm text-muted-foreground bg-muted p-3 rounded-lg">
                 {emailLog.subject}
               </p>

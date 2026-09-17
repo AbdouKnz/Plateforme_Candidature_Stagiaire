@@ -36,7 +36,21 @@ import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { formatAuditDate } from "../format-audit-date";
+import { formatAuditModule } from "../table/data";
 import { STEP_VARIANTS } from "../../candidatures/pipeline";
+import {
+  templateTypeBadgeVariant,
+  templateTypeLabel,
+} from "../../email-logs/template-type";
+
+// Email-template change cards use fixed display rules: Type first with its
+// template badge, Subject labeled Title (matching the template edit UI),
+// then Body, then Status. Raw jsonb key order is scrambled, so entries are
+// reordered explicitly. Other modules keep the generic rendering below.
+const EMAIL_TEMPLATE_FIELD_ORDER = ["Type", "Subject", "Body", "Status"];
+
+const isEmailTemplateModule = (module?: string) =>
+  (module ?? "").toLowerCase() === "emailtemplate";
 
 const statusVariants: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -110,6 +124,36 @@ export function AuditModal({
   const formatStatusValue = (val: any) => {
     if (typeof val !== "string") return formatFieldValue(val);
     return t(`candidature_status_${val}`, { defaultValue: val });
+  };
+
+  const isEmailTemplate = isEmailTemplateModule(audit?.module);
+  const isTemplateTypeKey = (key: string) => isEmailTemplate && key === "Type";
+  const fieldLabel = (key: string) =>
+    isEmailTemplate && key === "Subject" ? t("email_subject") : key;
+
+  const orderedEntries = (Object.entries(fields) as [string, any][]).sort(
+    ([a], [b]) => {
+      if (!isEmailTemplate) return 0;
+      const order = (k: string) => {
+        const idx = EMAIL_TEMPLATE_FIELD_ORDER.indexOf(k);
+        return idx === -1 ? EMAIL_TEMPLATE_FIELD_ORDER.length : idx;
+      };
+      return order(a) - order(b);
+    }
+  );
+
+  // Template types render with their corresponding badge color and translated
+  // label (e.g. online_quiz -> green "Online Quiz"), like everywhere else.
+  const renderTemplateTypeBadge = (val: any, strike?: boolean) => {
+    const type = typeof val === "string" ? val : undefined;
+    return (
+      <Badge
+        variant={templateTypeBadgeVariant(type)}
+        className={cn("capitalize", strike && "line-through")}
+      >
+        <LongText className="max-w-sm">{templateTypeLabel(t, type)}</LongText>
+      </Badge>
+    );
   };
 
   const renderStatusBadge = (value: any) => {
@@ -211,7 +255,7 @@ export function AuditModal({
         });
     }
 
-    return Object.entries(fields).map(([key, value]: [string, any]) => {
+    return orderedEntries.map(([key, value]: [string, any]) => {
       const changed = value.changed;
 
       const singleValueMap: Record<string, any> = {
@@ -222,6 +266,7 @@ export function AuditModal({
       };
 
       if (changeType in singleValueMap) {
+        const singleValue = singleValueMap[changeType];
         return (
           <TableRow key={key}>
             <TableCell>
@@ -229,17 +274,43 @@ export function AuditModal({
                 variant="secondary"
                 className="capitalize font-medium text-md"
               >
-                {key}
+                {fieldLabel(key)}
               </Badge>
             </TableCell>
             <TableCell className="text-muted-foreground">
-              {formatFieldValue(singleValueMap[changeType])}
+              {isTemplateTypeKey(key)
+                ? renderTemplateTypeBadge(singleValue, changeType === ChangeType.DELETE)
+                : formatFieldValue(singleValue)}
             </TableCell>
           </TableRow>
         );
       }
 
       if (changeType === ChangeType.UPDATE) {
+        const before = isTemplateTypeKey(key) ? (
+          renderTemplateTypeBadge(value.old_values, changed)
+        ) : changed ? (
+          <Badge className="capitalize flex items-center bg-destructive/10 text-destructive rounded-full line-through">
+            <LongText className="max-w-sm">
+              {formatFieldValue(value.old_values)}
+            </LongText>
+          </Badge>
+        ) : (
+          <LongText className="max-w-sm">{formatFieldValue(value.old_values)}</LongText>
+        );
+        const after = isTemplateTypeKey(key) ? (
+          renderTemplateTypeBadge(value.new_values)
+        ) : changed ? (
+          <Badge className="capitalize flex items-center rounded-full border-none bg-green-600/10 text-green-600">
+            <LongText className="max-w-sm">
+              {formatFieldValue(value.new_values)}
+            </LongText>
+          </Badge>
+        ) : (
+          <LongText className="max-w-sm">
+            {formatFieldValue(value.new_values)}
+          </LongText>
+        );
         return (
           <TableRow key={key}>
             <TableCell>
@@ -247,35 +318,13 @@ export function AuditModal({
                 variant="secondary"
                 className="capitalize font-medium text-md"
               >
-                {key}
+                {fieldLabel(key)}
               </Badge>
             </TableCell>
 
-            <TableCell>
-              {changed ? (
-                <Badge className="capitalize flex items-center bg-destructive/10 text-destructive rounded-full line-through">
-                 
-                 <LongText className="max-w-sm">
-                  {formatFieldValue(value.old_values)}</LongText>
-                </Badge>
-              ) : (
-                    <LongText className="max-w-sm">{formatFieldValue(value.old_values)}</LongText>
-                
-              )}
-            </TableCell>
+            <TableCell>{before}</TableCell>
 
-            <TableCell>
-              {changed ? (
-                <Badge className="capitalize flex items-center rounded-full border-none bg-green-600/10 text-green-600">
-                   <LongText className="max-w-sm">
-                 
-                  {formatFieldValue(value.new_values)}</LongText>
-                </Badge>
-              ) : (
-                 <LongText className="max-w-sm">
-                {formatFieldValue(value.new_values)}</LongText>
-              )}
-            </TableCell>
+            <TableCell>{after}</TableCell>
           </TableRow>
         );
       }
@@ -351,7 +400,7 @@ export function AuditModal({
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   Module:
                 </span>
-                <span>{audit?.module ?? "Unknown"}</span>
+                <span>{audit?.module ? formatAuditModule(audit.module) : "Unknown"}</span>
               </div>
 
               {audit?.applicant_name ? (

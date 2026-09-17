@@ -36,6 +36,7 @@ export const useCandidatureToolbarProps = (opts?: {
   // status is different).
   const typeItems = useMemo(
     () => [
+      { label: t('all'), value: 'all' },
       { label: t('solo'), value: 'solo' },
       { label: t('pair'), value: 'pair' },
     ],
@@ -44,6 +45,7 @@ export const useCandidatureToolbarProps = (opts?: {
 
   const genderItems = useMemo(
     () => [
+      { label: t('all'), value: 'all' },
       { label: t('male'), value: 'Male' },
       { label: t('female'), value: 'Female' },
     ],
@@ -51,21 +53,25 @@ export const useCandidatureToolbarProps = (opts?: {
   )
 
   const degreeItems = useMemo(
-    () =>
-      (degrees ?? []).map((d) => ({
+    () => [
+      { label: t('all'), value: 'all' },
+      ...(degrees ?? []).map((d) => ({
         label: d.name,
         value: d.name,
       })),
-    [degrees]
+    ],
+    [degrees, t]
   )
 
   const subjectItems = useMemo(
-    () =>
-      (subjects ?? []).map((s) => ({
+    () => [
+      { label: t('all'), value: 'all' },
+      ...(subjects ?? []).map((s) => ({
         label: s.name,
         value: s.name,
       })),
-    [subjects]
+    ],
+    [subjects, t]
   )
 
   // Direction-only dropdown: the table sorts by the CURRENT step's score
@@ -103,7 +109,16 @@ export const useCandidatureToolbarProps = (opts?: {
 
   const handleSetFilter = useCallback(
     (params: Record<string, any>) => {
-      setStepFilterParams(activeStep, params)
+      const next = { ...params }
+      // Min/max come back as strings from number inputs: normalize so an
+      // inverted range still filters sensibly instead of matching nothing.
+      const min = next.score_min === '' || next.score_min == null ? NaN : Number(next.score_min)
+      const max = next.score_max === '' || next.score_max == null ? NaN : Number(next.score_max)
+      if (!Number.isNaN(min) && !Number.isNaN(max) && min > max) {
+        next.score_min = String(max)
+        next.score_max = String(min)
+      }
+      setStepFilterParams(activeStep, next)
     },
     [activeStep, setStepFilterParams]
   )
@@ -118,6 +133,8 @@ export const useCandidatureToolbarProps = (opts?: {
     degree: currentStepFilters.degree ?? '',
     subject_name: currentStepFilters.subject_name ?? '',
     score_sort: currentStepFilters.score_sort ?? '',
+    score_min: currentStepFilters.score_min ?? '',
+    score_max: currentStepFilters.score_max ?? '',
   }), [currentStepFilters])
 
   return {
@@ -163,9 +180,19 @@ export const useCandidatureToolbarProps = (opts?: {
           type: FieldTypeEnum.DROPDOWN,
           items: scoreSortItems,
         },
+        {
+          name: 'score_min',
+          toKey: 'score_max',
+          label: t('score_range'),
+          type: FieldTypeEnum.RANGE,
+        },
       ],
     },
     exportFunction: (props: { fileType: FileType }) =>
-      exportCandidatures(props.fileType, { ...queryParams, ...currentStepFilters }),
+      exportCandidatures(props.fileType, {
+        ...queryParams,
+        ...currentStepFilters,
+        score_step: activeStep !== 'all' ? activeStep : '',
+      }),
   }
 }
