@@ -295,6 +295,7 @@ export const fr = {
   'audit_action_Delete': 'Supprimer',
   'audit_action_Login': 'Connecté',
   'audit_action_Logout': 'Déconnecté',
+  'session_reset_by_user': 'L\'utilisateur {{name}} a réinitialisé la session',
 
   // ==========================================
   // PROFILE, ACCOUNT & APPLICATION SETTINGS

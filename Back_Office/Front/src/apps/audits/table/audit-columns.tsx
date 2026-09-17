@@ -14,6 +14,27 @@ import { cn } from "@/lib/utils";
 import { useAuditStore } from "@/stores/audit-store";
 import { formatAuditDate } from "../format-audit-date";
 
+// Fallback icon per module (lowercased key): covers rows stored before the
+// backend icon map was extended, plus any future unknown module.
+const MODULE_ICON_FALLBACK: Record<string, string> = {
+  user: "IconUser",
+  role: "IconShield",
+  auth: "IconKey",
+  session: "IconRefresh",
+  setting: "IconSettings",
+  degree: "IconCapProjecting",
+  technology: "IconCpu",
+  profile: "IconIdBadge",
+  duration: "IconClock",
+  type: "IconTags",
+  subject: "IconNotebook",
+  candidature: "IconFileDescription",
+  emailtemplate: "IconMail",
+  emaillog: "IconSend",
+  mailconfig: "IconSettings",
+  waitlist: "IconCalendarEvent",
+};
+
 export function useAuditColumns(): ColumnDef<Audit>[] {
   const { t } = useTranslation();
 
@@ -77,9 +98,9 @@ export function useAuditColumns(): ColumnDef<Audit>[] {
         const module = row.getValue("module") as string;
         type IconName = keyof typeof TablerIcons;
 
-        const iconName = module.toLowerCase() === "candidature"
-          ? "IconFileDescription"
-          : row.original.icon as IconName;
+        const iconName = (row.original.icon ||
+          MODULE_ICON_FALLBACK[module.toLowerCase()] ||
+          "") as IconName;
 
         // Type-safe icon retrieval
         const Icon = TablerIcons[iconName] as

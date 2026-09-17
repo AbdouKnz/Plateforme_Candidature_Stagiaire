@@ -1,37 +1,47 @@
-import { useState, useEffect } from "react"
-import { motion } from "motion/react"
-import { useNavigate } from "react-router-dom"
-import { useTranslation } from "@/context/language-context"
-import { useTheme } from "@/context/theme-context"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { LanguageToggle } from "@/components/language-toggle"
-import { AuroraBackground } from "@/components/ui/animated-background"
-import { subscribeWaitlist } from "@/service/front-office"
-import { z } from "zod"
+import { useState, useEffect } from "react";
+import { motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/context/language-context";
+import { useTheme } from "@/context/theme-context";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
+import { AuroraBackground } from "@/components/ui/animated-background";
+import { subscribeWaitlist } from "@/service/front-office";
+import { z } from "zod";
 
 interface ClosedPageProps {
-  reopeningDate?: string
-  closedMessage?: string
+  reopeningDate?: string;
+  closedMessage?: string;
 }
 
-const emailSchema = z.string().email()
+const emailSchema = z.string().email();
 
-type SubscribeState = "idle" | "loading" | "success" | "already" | "error"
+type SubscribeState = "idle" | "loading" | "success" | "already" | "error";
 
 function formatDate(dateStr: string): string {
-  if (!dateStr) return ""
-  const parts = dateStr.split("-")
-  if (parts.length !== 3) return dateStr
-  return `${parts[2]}/${parts[1]}/${parts[0]}`
+  if (!dateStr) return "";
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return dateStr;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
 
-const TOTAL = { days: 365, hours: 24, minutes: 60, seconds: 60 }
+const TOTAL = { days: 365, hours: 24, minutes: 60, seconds: 60 };
 
-function CountdownCircle({ value, label, max, isDark }: { value: number; label: string; max: number; isDark: boolean }) {
-  const radius = 72
-  const circumference = 2 * Math.PI * radius
-  const progress = Math.max(0, Math.min(value / max, 1))
-  const offset = circumference * (1 - progress)
+function CountdownCircle({
+  value,
+  label,
+  max,
+  isDark,
+}: {
+  value: number;
+  label: string;
+  max: number;
+  isDark: boolean;
+}) {
+  const radius = 72;
+  const circumference = 2 * Math.PI * radius;
+  const progress = Math.max(0, Math.min(value / max, 1));
+  const offset = circumference * (1 - progress);
 
   return (
     <motion.div
@@ -77,79 +87,90 @@ function CountdownCircle({ value, label, max, isDark }: { value: number; label: 
           </motion.span>
         </div>
       </div>
-      <span className={`mt-3 text-xs font-bold tracking-[0.15em] uppercase ${isDark ? "text-white/50" : "text-muted-foreground"}`}>
+      <span
+        className={`mt-3 text-xs font-bold tracking-[0.15em] uppercase ${isDark ? "text-white/50" : "text-muted-foreground"}`}
+      >
         {label}
       </span>
     </motion.div>
-  )
+  );
 }
 
 export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
-  const navigate = useNavigate()
-  const t = useTranslation()
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === "dark"
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-  const [email, setEmail] = useState("")
-  const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle")
-  const [errorMsg, setErrorMsg] = useState("")
-  const [hasReopeningDate, setHasReopeningDate] = useState(false)
+  const navigate = useNavigate();
+  const t = useTranslation();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
+  const [email, setEmail] = useState("");
+  const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [hasReopeningDate, setHasReopeningDate] = useState(false);
 
   useEffect(() => {
-    if (!reopeningDate) return
-    setHasReopeningDate(true)
-    const targetDate = new Date(reopeningDate)
-    if (isNaN(targetDate.getTime())) return
+    if (!reopeningDate) return;
+    setHasReopeningDate(true);
+    const targetDate = new Date(reopeningDate);
+    if (isNaN(targetDate.getTime())) return;
 
     function updateCountdown() {
-      const now = new Date()
-      const diff = targetDate.getTime() - now.getTime()
+      const now = new Date();
+      const diff = targetDate.getTime() - now.getTime();
       if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-        return
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
       }
       setTimeLeft({
         days: Math.floor(diff / (1000 * 60 * 60 * 24)),
         hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((diff / (1000 * 60)) % 60),
         seconds: Math.floor((diff / 1000) % 60),
-      })
+      });
     }
 
-    updateCountdown()
-    const interval = setInterval(updateCountdown, 1000)
-    return () => clearInterval(interval)
-  }, [reopeningDate])
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [reopeningDate]);
 
   const items = [
     { value: timeLeft.days, label: t("closed.days"), max: TOTAL.days },
     { value: timeLeft.hours, label: t("closed.hours"), max: TOTAL.hours },
     { value: timeLeft.minutes, label: t("closed.mins"), max: TOTAL.minutes },
     { value: timeLeft.seconds, label: t("closed.seconds"), max: TOTAL.seconds },
-  ]
+  ];
 
   const handleSubscribe = async () => {
-    const parsed = emailSchema.safeParse(email)
+    const parsed = emailSchema.safeParse(email);
     if (!parsed.success) {
-      setErrorMsg(t("closed.invalidEmail"))
-      setSubscribeState("error")
-      return
+      setErrorMsg(t("closed.invalidEmail"));
+      setSubscribeState("error");
+      return;
     }
-    setSubscribeState("loading")
-    setErrorMsg("")
+    setSubscribeState("loading");
+    setErrorMsg("");
     try {
-      await subscribeWaitlist(parsed.data)
-      setSubscribeState("success")
+      await subscribeWaitlist(parsed.data);
+      setSubscribeState("success");
     } catch (err: any) {
-      const msg = err?.message ?? ""
-      if (msg.includes("already subscribed") || msg.includes("duplicate") || msg.includes("already exists")) {
-        setSubscribeState("already")
+      const msg = err?.message ?? "";
+      if (
+        msg.includes("already subscribed") ||
+        msg.includes("duplicate") ||
+        msg.includes("already exists")
+      ) {
+        setSubscribeState("already");
       } else {
-        setErrorMsg(t("closed.subscribeError"))
-        setSubscribeState("error")
+        setErrorMsg(t("closed.subscribeError"));
+        setSubscribeState("error");
       }
     }
-  }
+  };
 
   return (
     <AuroraBackground className="min-h-svh">
@@ -174,7 +195,9 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className={`mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium tracking-wider ${isDark ? "border-white/10 bg-white/5 text-white/60" : "border-primary/20 bg-primary/10 text-primary"}`}
         >
-          {reopeningDate ? `${t("closed.reopeningDate")} ${formatDate(reopeningDate)}` : t("closed.title")}
+          {reopeningDate
+            ? `${t("closed.reopeningDate")} ${formatDate(reopeningDate)}`
+            : t("closed.title")}
         </motion.div>
 
         <motion.h1
@@ -194,7 +217,13 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
             className="mt-12 flex flex-wrap items-center justify-center gap-6 sm:gap-8 lg:gap-12"
           >
             {items.map((item) => (
-              <CountdownCircle key={item.label} value={item.value} label={item.label} max={item.max} isDark={isDark} />
+              <CountdownCircle
+                key={item.label}
+                value={item.value}
+                label={item.label}
+                max={item.max}
+                isDark={isDark}
+              />
             ))}
           </motion.div>
         )}
@@ -217,11 +246,15 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           className="mt-8 text-center"
         >
           {subscribeState === "success" ? (
-            <p className={`text-sm font-bold ${isDark ? "text-accent" : "text-primary"}`}>
+            <p
+              className={`text-sm font-bold ${isDark ? "text-accent" : "text-primary"}`}
+            >
               {t("closed.subscribeSuccess")}
             </p>
           ) : subscribeState === "already" ? (
-            <p className={`text-sm font-bold ${isDark ? "text-accent" : "text-accent"}`}>
+            <p
+              className={`text-sm font-bold ${isDark ? "text-accent" : "text-accent"}`}
+            >
               {t("closed.subscribeSuccess")}
             </p>
           ) : (
@@ -230,20 +263,38 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value.replace(/:/g, "")); setErrorMsg("") }}
+                  onChange={(e) => {
+                    setEmail(e.target.value.replace(/:/g, ""));
+                    setErrorMsg("");
+                  }}
                   placeholder={t("closed.emailPlaceholder")}
                   className={`h-11 w-full max-w-64 rounded-xl border px-4 text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-secondary"} ${errorMsg ? "border-destructive" : ""}`}
                 />
                 <button
                   onClick={handleSubscribe}
                   disabled={!email || subscribeState === "loading"}
-                  className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-secondary px-5 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="inline-flex h-11 cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl bg-gradient-to-r from-primary to-secondary px-7 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {subscribeState === "loading" ? (
                     <span className="flex items-center gap-1.5">
-                      <svg className="animate-spin size-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="animate-spin size-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       {t("closed.sending")}
                     </span>
@@ -264,16 +315,8 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6"
-        >
-          <button
-            onClick={() => navigate("/pfe-book")}
-            className="inline-flex h-12 cursor-pointer items-center gap-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary px-7 text-sm font-bold text-white shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.03] active:scale-100"
-          >
-            {t("closed.aboutUs")}
-          </button>
-
-        </motion.div>
+        ></motion.div>
       </div>
     </AuroraBackground>
-  )
+  );
 }

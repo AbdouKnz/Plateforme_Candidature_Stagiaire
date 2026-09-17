@@ -39,7 +39,7 @@ func buildBaseAuditQuery(query *bun.SelectQuery, params AuditParams) *bun.Select
 	query = query.Where("NOT (LOWER(module) = ? AND LOWER(action) NOT IN (?, ?))", "candidature", "accept", "reject")
 
 	if params.Start == "" && params.End == "" {
-		today := time.Now().UTC().Truncate(24 * time.Hour)
+		today := time.Now().Truncate(24 * time.Hour)
 		tomorrow := today.Add(24 * time.Hour)
 		startStr := today.Format("2006-01-02 15:04:05")
 		endStr := tomorrow.Format("2006-01-02 15:04:05")
@@ -178,7 +178,9 @@ func LogCandidatureStepAction(ctx context.Context, db bun.IDB, targetID int, act
 		Action:    action,
 		Change:    domain.ChangeDetail{Type: "step_status", Fields: fields},
 		Icon:      icon,
-		Timestamp: actionAt.UTC().Format("2006-01-02 15:04:05"),
+		// Server-local wall clock (naive, no offset): the whole time_stamp
+		// column follows the server clock and is displayed verbatim.
+		Timestamp: actionAt.Format("2006-01-02 15:04:05"),
 	}
 	if _, err := db.NewInsert().Model(auditLog).Exec(ctx); err != nil {
 		return fmt.Errorf("could not log candidature step action: %w", err)
@@ -321,14 +323,22 @@ func LogAction(ctx context.Context, db bun.IDB, module, action string, change do
 }
 
 var auditIconMap = map[string]string{
-	pkg.USER_MODULE:        "IconUser",
-	pkg.ROLE_MODULE:        "IconShield",
-	pkg.AUTH_MODULE:        "IconKey",
-	pkg.SETTING_MODULE:     "IconSettings",
-	pkg.SUBJECT_MODULE:     "IconNotebook",
-	pkg.CANDIDATURE_MODULE: "IconFileDescription",
-	pkg.EMAIL_LOG_MODULE:   "IconSend",
-	pkg.SESSION_MODULE:     "IconRefresh",
+	pkg.USER_MODULE:           "IconUser",
+	pkg.ROLE_MODULE:           "IconShield",
+	pkg.AUTH_MODULE:           "IconKey",
+	pkg.SESSION_MODULE:        "IconRefresh",
+	pkg.SETTING_MODULE:        "IconSettings",
+	pkg.DEGREE_MODULE:         "IconCapProjecting",
+	pkg.TECHNOLOGY_MODULE:     "IconCpu",
+	pkg.PROFILE_MODULE:        "IconIdBadge",
+	pkg.DURATION_MODULE:       "IconClock",
+	pkg.TYPE_MODULE:           "IconTags",
+	pkg.SUBJECT_MODULE:        "IconNotebook",
+	pkg.CANDIDATURE_MODULE:    "IconFileDescription",
+	pkg.EMAIL_TEMPLATE_MODULE: "IconMail",
+	pkg.EMAIL_LOG_MODULE:      "IconSend",
+	pkg.MAIL_CONFIG_MODULE:    "IconSettings",
+	pkg.WAITLIST_MODULE:       "IconCalendarEvent",
 }
 
 func getAuditIcon(module string) string {

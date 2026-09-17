@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 
 type BulkTemplateType = "acceptance" | "disapproval";
 
-import { PIPELINE_STEPS, DEFAULT_STEP } from "./pipeline";
+import { PIPELINE_STEPS, DEFAULT_STEP, type PipelineStep } from "./pipeline";
 import { hasCurrentStepScore, currentStepScore, stepScoreField } from "./scoring";
 import { PipelineNav } from "./pipeline-nav";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -41,7 +41,7 @@ const statusTabs = [
 export function Candidatures() {
   const { t } = useTranslation();
   const { showAlert } = useAlertStore();
-  const { queryParams, currentCandidatureId, openCandidature } = useCandidaturesStore();
+  const { queryParams, stepFilters, currentCandidatureId, openCandidature } = useCandidaturesStore();
   const selectedCandidatureId = openCandidature === DialogEnum.VIEW ? currentCandidatureId : null;
   const [statusFilter, setStatusFilter] = useState("all");
   const [stepFilter, setStepFilter] = useState("all");
@@ -49,20 +49,17 @@ export function Candidatures() {
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
   const [bulkAcceptOpen, setBulkAcceptOpen] = useState(false);
 
-  // Status filtering is owned exclusively by the status tabs below (per-step,
-  // client-side). Never send `status` to the server: its overall-status filter
-  // would hide candidates whose status in the selected step differs.
-  // Same for score sorting: the toolbar only picks a direction, each step tab
-  // sorts by its own score column client-side.
-  const {
-    status: _ignoredServerStatusFilter,
-    score_sort: _ignoredServerScoreSort,
-    score_sort_step: _ignoredServerScoreStep,
-    score_sort_direction: _ignoredServerScoreDir,
-    ...fetchParams
-  } = queryParams;
+  // Only send `search` to the server. All toolbar filters (type, gender,
+  // degree, subject, score_sort) are stored per-step and applied client-side
+  // after the step filter so each pipeline step has its own independent scope.
+  // Memoized so the react-query key stays referentially stable.
+  const fetchParams = useMemo(
+    () => ({ search: queryParams.search }),
+    [queryParams.search]
+  );
   const { data: candidatures } = useCandidatures(fetchParams);
-  const rawScoreSort = queryParams.score_sort ?? "";
+  const currentStepFilters = stepFilters[stepFilter as PipelineStep | 'all'] ?? {};
+  const rawScoreSort = currentStepFilters.score_sort ?? "";
   const scoreDirection =
     rawScoreSort === "desc" || rawScoreSort.endsWith(":desc")
       ? "desc"
@@ -95,6 +92,29 @@ export function Candidatures() {
     return allData.filter((d) => d[col] != null);
   }, [allData, stepFilter]);
 
+  // Client-side toolbar filters applied AFTER the step filter so each step
+  // (including "all") has its own independent filter scope.
+  const { candidature_type: stepType, gender: stepGender, degree: stepDegree, subject_name: stepSubject } = currentStepFilters;
+  const filteredData = useMemo(() => {
+    let result = stepData;
+    if (stepType) {
+      result = result.filter((d) => {
+        const hasSecond = !!d.full_name2;
+        return stepType === "pair" ? hasSecond : !hasSecond;
+      });
+    }
+    if (stepGender) {
+      result = result.filter((d) => d.gender1 === stepGender || d.gender2 === stepGender);
+    }
+    if (stepDegree) {
+      result = result.filter((d) => d.degree1 === stepDegree || d.degree2 === stepDegree);
+    }
+    if (stepSubject) {
+      result = result.filter((d) => d.subject_name === stepSubject);
+    }
+    return result;
+  }, [stepData, stepType, stepGender, stepDegree, stepSubject]);
+
   // Statut affiché : celui de l'étape consultée (stepN_status), pas celui de
   // l'étape courante. Une candidature acceptée en CV puis passée au quiz
   // affiche donc "accepted" dans l'onglet CV et "pending" dans l'onglet quiz.
@@ -109,25 +129,25 @@ export function Candidatures() {
   );
 
   const counts = useMemo(() => {
-    const pending = stepData.filter((d) => displayStatus(d) === "pending").length;
-    const accepted = stepData.filter((d) => {
+    const pending = filteredData.filter((d) => displayStatus(d) === "pending").length;
+    const accepted = filteredData.filter((d) => {
       const s = displayStatus(d);
       return s === "accepted" || s === "invited";
     }).length;
-    const rejected = stepData.filter((d) => displayStatus(d) === "rejected").length;
-    return { all: stepData.length, pending, accepted, rejected };
-  }, [stepData, displayStatus]);
+    const rejected = filteredData.filter((d) => displayStatus(d) === "rejected").length;
+    return { all: filteredData.length, pending, accepted, rejected };
+  }, [filteredData, displayStatus]);
 
   const data = useMemo(() => {
-    if (statusFilter === "all") return stepData;
-    if (statusFilter === "pending") return stepData.filter((d) => displayStatus(d) === "pending");
+    if (statusFilter === "all") return filteredData;
+    if (statusFilter === "pending") return filteredData.filter((d) => displayStatus(d) === "pending");
     if (statusFilter === "accepted")
-      return stepData.filter((d) => {
+      return filteredData.filter((d) => {
         const s = displayStatus(d);
         return s === "accepted" || s === "invited";
       });
-    return stepData.filter((d) => displayStatus(d) === statusFilter);
-  }, [stepData, statusFilter, displayStatus]);
+    return filteredData.filter((d) => displayStatus(d) === statusFilter);
+  }, [filteredData, statusFilter, displayStatus]);
 
   // Score sort, applied automatically per step tab: on a step tab rows are
   // ordered by that step's score column; on "all" each row uses its own
@@ -183,7 +203,9 @@ export function Candidatures() {
     displayStatus,
     stepFilter === "all" ? undefined : stepFilter
   );
-  const toolbarProps = useCandidatureToolbarProps();
+  const toolbarProps = useCandidatureToolbarProps({
+    stepFilter,
+  });
 
   return (
     <>

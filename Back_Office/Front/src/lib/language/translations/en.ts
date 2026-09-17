@@ -319,6 +319,7 @@ export const en = {
   'audit_action_Delete': 'Delete',
   'audit_action_Login': 'Logged in',
   'audit_action_Logout': 'Logged out',
+  'session_reset_by_user': 'The user {{name}} has reset the session',
 
   // ==========================================
   // PROFILE, ACCOUNT & APPLICATION SETTINGS

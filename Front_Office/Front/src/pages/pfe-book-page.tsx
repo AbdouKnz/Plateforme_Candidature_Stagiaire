@@ -928,24 +928,18 @@ export function PfeBookPage() {
             </span>
           </div>
           <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-6 overflow-hidden">
-            <div className="flex-1 flex flex-col justify-center w-full max-w-[1300px] mx-auto gap-8">
-              {/* Top row: photo + quote — layout from reference */}
-              <div className="flex flex-col lg:flex-row gap-6 lg:gap-6 items-stretch">
-                {/* Photo — left, transparent cutout placed directly on the page */}
-                <div className="lg:w-[52%] relative min-h-[380px] sm:min-h-[420px] lg:min-h-0 flex items-end justify-center bg-transparent">
-                  <img src="/Sheryl_cutout.png" alt="Sheryl Sandberg" className="relative z-10 w-full h-[380px] sm:h-[420px] lg:h-full object-contain object-center lg:object-bottom" loading="lazy" />
+            <div className="flex-1 flex flex-col justify-center w-full max-w-[1000px] mx-auto">
+              {/* Centered quote card — photo removed, quote only */}
+              <div className="relative rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur px-6 py-10 sm:p-12 lg:p-14 flex flex-col items-center text-center shadow-[0_0_40px_rgba(29,124,199,0.15)] overflow-hidden">
+                <div className="relative flex size-14 items-center justify-center rounded-full bg-[#1D7CC7] text-[#FFFFFF] shadow">
+                  <QuoteIcon className="size-6" strokeWidth={2.2} />
                 </div>
-                {/* Quote — right, speech bubble */}
-                <div className="lg:w-[48%] relative rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-8 sm:p-10 lg:p-10 xl:p-12 flex flex-col justify-center shadow-[0_0_40px_rgba(29,124,199,0.15)]">
-                  <div className="hidden lg:block absolute top-1/2 -left-3 -translate-y-1/2 size-6 rotate-45 border-l border-b border-[#1D7CC7]/40 bg-[#F1F4F8]" />
-                  <div className="hidden lg:block absolute top-1/2 -left-3 -translate-y-1/2 size-6 rotate-45 border-l border-b border-[#1D7CC7]/40 bg-[#FFFFFF] blur-[1px] -z-10" />
-                  <div className="space-y-2 mt-3">
-                    <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-[#24243C]">“If you&apos;re offered a seat on a rocket ship,</p>
-                    <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-[#24243C]">don’t ask what seat. Just get on.”</p>
-                  </div>
-                  <div className="mt-8 h-px w-12 bg-[#1D7CC7]/50" />
-                  <p className="mt-6 text-xs font-bold tracking-widest text-[#12B9DA] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
+                <div className="relative mt-6 space-y-2">
+                  <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-[#24243C]">“If you&apos;re offered a seat on a rocket ship,</p>
+                  <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-[#24243C]">don’t ask what seat. Just get on.”</p>
                 </div>
+                <div className="relative mt-8 h-px w-12 bg-[#1D7CC7]/50" />
+                <p className="relative mt-6 text-xs font-bold tracking-widest text-[#12B9DA] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
               </div>
             </div>
           </div>

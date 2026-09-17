@@ -201,7 +201,9 @@ func applyDecisionToRow(c *domain.Candidature, decision string) error {
 }
 
 func (s *CandidatureService) updateDecisionWithAudit(ctx context.Context, candidature *domain.Candidature, decision, reasonCode string) error {
-	actionAt := time.Now().UTC()
+	// Server-local wall clock: audit timestamps are stored naive and
+	// displayed verbatim, so they must follow the server clock (no UTC).
+	actionAt := time.Now()
 	stepIndex := currentIndex(candidature)
 	step := pipelineDBSteps[stepIndex-1]
 	oldValue := getStepStatus(candidature, stepIndex)

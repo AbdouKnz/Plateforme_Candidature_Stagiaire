@@ -66,6 +66,18 @@ export function DataTableFilter({
   const form = useForm({
     defaultValues: getDefaultValues(),
   })
+
+  // Re-sync the form when the active step's saved filters change (e.g.
+  // switching pipeline tabs). Stringified key keeps the effect from firing
+  // on every render — only real value changes reset the form.
+  const defaultsKey = JSON.stringify(tableFilterProps.formDefaultValues)
+  const prevDefaultsKey = React.useRef(defaultsKey)
+  React.useEffect(() => {
+    if (prevDefaultsKey.current !== defaultsKey) {
+      prevDefaultsKey.current = defaultsKey
+      form.reset(getDefaultValues())
+    }
+  }, [defaultsKey])
   const startDate = form.watch('start')
   const endDate = form.watch('end')
   function handleDateChange(field: any, date: Date | undefined) {
@@ -129,6 +141,7 @@ export function DataTableFilter({
                         {field.type === 'dropdown' && (
                           <SelectDropdown
                             defaultValue={formField.value}
+                            isControlled
                             onValueChange={formField.onChange}
                             placeholder={`${t('select')} ${field.label.toLowerCase()}`}
                             items={field.items || []}

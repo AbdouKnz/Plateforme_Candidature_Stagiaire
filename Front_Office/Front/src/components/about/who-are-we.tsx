@@ -111,8 +111,8 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             loading="eager"
             className={
               compact
-                ? "h-64 w-full rounded-[20px] border border-[#D7E6F2] object-cover object-center sm:h-72 lg:h-[320px] " + CARD_SHADOW
-                : "h-[240px] w-full rounded-[20px] border border-[#D7E6F2] object-cover object-center sm:h-[260px] lg:h-[395px] " + CARD_SHADOW
+                ? "h-64 w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-72 lg:h-[320px] " + CARD_SHADOW
+                : "h-[240px] w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-[260px] lg:h-[395px] " + CARD_SHADOW
             }
           />
         </div>

@@ -27,6 +27,7 @@ import {
   IconClock,
   IconReportSearch,
   IconHistory,
+  IconRefresh,
 } from "@tabler/icons-react";
 import { FileIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -82,6 +83,7 @@ export function AuditModal({
   const changeType = audit?.change?.type ?? "";
   const fields = audit?.change?.fields ?? {};
   const isStepStatusChange = changeType === "step_status";
+  const isReset = changeType.toLowerCase() === "reset";
 
   const formatFieldValue = (val: any) => {
     if (val === null || val === undefined) return "-";
@@ -370,14 +372,27 @@ export function AuditModal({
             </div>
           </Card>
 
-          <Card className="overflow-hidden">
-            <Table>
-              <TableHeader className="bg-accent text-sm text-foreground">
-                {renderTableHeader()}
-              </TableHeader>
-              <TableBody>{renderTableRows()}</TableBody>
-            </Table>
-          </Card>
+          {!isReset && (
+            <Card className="overflow-hidden">
+              <Table>
+                <TableHeader className="bg-accent text-sm text-foreground">
+                  {renderTableHeader()}
+                </TableHeader>
+                <TableBody>{renderTableRows()}</TableBody>
+              </Table>
+            </Card>
+          )}
+
+          {isReset && (
+            <Card className="p-4 rounded-xl bg-accent">
+              <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                <IconRefresh className="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" />
+                <span className="font-medium">
+                  {t('session_reset_by_user', { name: audit?.actor_name ?? 'Unknown' })}
+                </span>
+              </div>
+            </Card>
+          )}
         </div>
       </DialogContent>
     </Dialog>
