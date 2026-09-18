@@ -20,9 +20,11 @@ type SubscribeState = "idle" | "loading" | "success" | "already" | "error";
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "";
-  const parts = dateStr.split("-");
+  const [datePart, timePart] = dateStr.split(" ");
+  const parts = datePart.split("-");
   if (parts.length !== 3) return dateStr;
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  const formatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return timePart ? `${formatted} ${timePart.slice(0, 5)}` : formatted;
 }
 
 const TOTAL = { days: 365, hours: 24, minutes: 60, seconds: 60 };

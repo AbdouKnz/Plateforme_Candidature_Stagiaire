@@ -15,7 +15,7 @@ type SelectDropdownProps = {
   defaultValue: string | undefined
   placeholder?: string
   isPending?: boolean
-  items: { label: ReactNode; value: string }[] | undefined
+  items: { label: ReactNode; value: string; disabled?: boolean }[] | undefined
   disabled?: boolean
   className?: string
   isControlled?: boolean
@@ -51,8 +51,8 @@ export function SelectDropdown({
             </div>
           </SelectItem>
         ) : (
-          items?.map(({ label, value }) => (
-            <SelectItem key={value} value={value}>
+          items?.map(({ label, value, disabled: itemDisabled }) => (
+            <SelectItem key={value} value={value} disabled={itemDisabled}>
               {label}
             </SelectItem>
           ))

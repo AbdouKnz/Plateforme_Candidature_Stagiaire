@@ -18,11 +18,12 @@ import { AxiosError } from "axios";
 import { AlertEnum } from "@/models/alert-model";
 import { useAlertStore } from "@/stores/alert-store";
 
-export function useDegrees(params?: DegreeQueryParams) {
+export function useDegrees(params?: DegreeQueryParams, enabled = true) {
   return useQuery<Degree[], Error>({
     queryKey: ["degrees", params],
     queryFn: () => getDegrees(params),
     retry: 1,
+    enabled,
   } as UseQueryOptions<Degree[], Error>);
 }
 

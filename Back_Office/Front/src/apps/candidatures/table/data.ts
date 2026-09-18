@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useCandidaturesStore, type StepFilters } from '@/stores/candidatures-store'
 import { useSubjects } from '@/hooks/use-subjects'
 import { useDegrees } from '@/hooks/use-degrees'
+import { usePermissions } from '@/hooks/use-permissions'
 import { exportCandidatures } from '@/service/candidatures'
 import type { FileType } from '@/models/export-model'
 import { FieldTypeEnum } from '@/models/table-model'
@@ -17,8 +18,11 @@ export const useCandidatureToolbarProps = (opts?: {
   stepFilter?: string
 }) => {
   const { t } = useTranslation()
-  const { data: subjects } = useSubjects()
-  const { data: degrees } = useDegrees()
+  const { modulePermissions } = usePermissions()
+  // Subject/degree filter dropdowns need those lists: skip the requests for
+  // roles lacking their view permission so no forbidden call fires.
+  const { data: subjects } = useSubjects(undefined, modulePermissions.subjects?.canView ?? false)
+  const { data: degrees } = useDegrees(undefined, modulePermissions.settings?.canView ?? false)
   const { queryParams, setQueryParams, stepFilters, setStepFilterParams, resetStepFilterParams } =
     useCandidaturesStore()
 
@@ -188,11 +192,13 @@ export const useCandidatureToolbarProps = (opts?: {
         },
       ],
     },
-    exportFunction: (props: { fileType: FileType }) =>
-      exportCandidatures(props.fileType, {
-        ...queryParams,
-        ...currentStepFilters,
-        score_step: activeStep !== 'all' ? activeStep : '',
-      }),
+    exportFunction: modulePermissions.candidatures?.canCreate
+      ? (props: { fileType: FileType }) =>
+          exportCandidatures(props.fileType, {
+            ...queryParams,
+            ...currentStepFilters,
+            score_step: activeStep !== 'all' ? activeStep : '',
+          })
+      : undefined,
   }
 }

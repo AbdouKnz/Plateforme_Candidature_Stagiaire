@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, CalendarDays, Clock, Eye, FolderKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/use-permissions";
 
 const avatarColors = [
   "from-[#1d7cc7] to-[#12b9da]",
@@ -48,6 +49,9 @@ export function RecentApplicationsCard() {
   const { data: candidatures, isLoading } = useRecentCandidatures();
   const setCurrentCandidatureId = useCandidaturesStore((s) => s.setCurrentCandidatureId);
   const setOpenCandidature = useCandidaturesStore((s) => s.setOpenCandidature);
+  // Dashboard-only roles must not leave the dashboard: view-all and row
+  // view buttons render only with candidatures-view permission.
+  const canViewCandidatures = usePermissions().modulePermissions.candidatures?.canView ?? false;
 
   const handleView = (id: number) => {
     setCurrentCandidatureId(id);
@@ -65,14 +69,16 @@ export function RecentApplicationsCard() {
             </div>
             {t("recent_applications")}
           </CardTitle>
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/candidatures" })}
-            className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            {t("view_all")}
-            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-          </button>
+          {canViewCandidatures && (
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/candidatures" })}
+              className="group inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+            >
+              {t("view_all")}
+              <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -138,14 +144,16 @@ export function RecentApplicationsCard() {
                       <span className={cn("size-1.5 rounded-full", style.dot)} />
                       {t(statusLabelKey(status, c.gender1))}
                     </Badge>
-                    <button
-                      type="button"
-                      onClick={() => handleView(c.id)}
-                      title={t("view")}
-                      className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
-                    >
-                      <Eye className="size-4" />
-                    </button>
+                    {canViewCandidatures && (
+                      <button
+                        type="button"
+                        onClick={() => handleView(c.id)}
+                        title={t("view")}
+                        className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                      >
+                        <Eye className="size-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               );

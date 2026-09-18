@@ -420,6 +420,98 @@ export function SubjectsActionModal({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="duration_id"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>
+                        {t("project_period")}
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value ? String(field.value) : ""}
+                          onValueChange={(val) =>
+                            form.setValue(
+                              "duration_id",
+                              Number(val),
+                              { shouldValidate: true },
+                            )
+                          }
+                          disabled={isView}
+                        >
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder={t("select_project_period")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {durations.map((d) => (
+                              <SelectItem key={d.id} value={String(d.id)}>
+                                {d.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="image_path"
+                  render={() => (
+                    <FormItem className="space-y-1.5">
+                      <FormLabel>
+                        {t("subject_image")}
+                      </FormLabel>
+                      <FormControl>
+                        <div className="mt-1.5 flex items-center gap-3">
+                          {!isView ? (
+                            <>
+                              <label
+                                htmlFor="subject-image-input"
+                                className={cn(
+                                  "inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg border border-dashed px-4 text-sm font-medium transition-colors",
+                                  form.formState.errors.image_path
+                                    ? "border-destructive/60 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                                    : "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
+                                )}
+                              >
+                                {t("browse")}
+                              </label>
+                              <Input
+                                id="subject-image-input"
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] ?? null;
+                                  setImageFile(file);
+                                  setImagePreview(null);
+                                  if (file) form.clearErrors("image_path");
+                                }}
+                              />
+                              <span className={cn("min-w-0 flex-1 truncate text-sm", form.formState.errors.image_path ? "text-destructive" : "text-muted-foreground")}>
+                                {imageFile
+                                  ? imageFile.name
+                                  : subject?.image_path
+                                    ? subject.image_path.split("/").pop()
+                                    : t("no_file_chosen")}
+                              </span>
+                            </>
+                          ) : subject?.image_path ? (
+                            <span className="truncate text-sm text-muted-foreground">
+                              {subject.image_path.split("/").pop()}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* RIGHT */}
@@ -513,105 +605,6 @@ export function SubjectsActionModal({
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-[2fr_3fr]">
-                  <div className="rounded-xl border border-border/60 p-4">
-                    <FormField
-                      control={form.control}
-                      name="duration_id"
-                      render={({ field }) => (
-                        <FormItem className="space-y-1.5">
-                          <FormLabel>
-                            {t("project_period")}
-                          </FormLabel>
-                          <FormControl>
-                            <Select
-                              value={field.value ? String(field.value) : ""}
-                              onValueChange={(val) =>
-                                form.setValue(
-                                  "duration_id",
-                                  Number(val),
-                                  { shouldValidate: true },
-                                )
-                              }
-                              disabled={isView}
-                            >
-                              <SelectTrigger className="w-full h-9">
-                                <SelectValue placeholder={t("select_project_period")} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {durations.map((d) => (
-                                  <SelectItem key={d.id} value={String(d.id)}>
-                                    {d.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className={cn("rounded-xl border p-4", form.formState.errors.image_path ? "border-destructive/60" : "border-border/60")}>
-                    <FormField
-                      control={form.control}
-                      name="image_path"
-                      render={() => (
-                        <FormItem className="space-y-1.5">
-                          <FormLabel>
-                            {t("subject_image")}
-                          </FormLabel>
-                          <FormControl>
-                            <div className="mt-1.5 flex items-center gap-3">
-                              {!isView ? (
-                                <>
-                                  <label
-                                    htmlFor="subject-image-input"
-                                    className={cn(
-                                      "inline-flex h-9 shrink-0 cursor-pointer items-center rounded-lg border border-dashed px-4 text-sm font-medium transition-colors",
-                                      form.formState.errors.image_path
-                                        ? "border-destructive/60 bg-destructive/5 text-destructive hover:bg-destructive/10"
-                                        : "border-primary/40 bg-primary/5 text-primary hover:bg-primary/10"
-                                    )}
-                                  >
-                                    {t("browse")}
-                                  </label>
-                                  <Input
-                                    id="subject-image-input"
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0] ?? null;
-                                      setImageFile(file);
-                                      setImagePreview(null);
-                                      if (file) form.clearErrors("image_path");
-                                    }}
-                                  />
-                                  <span className={cn("min-w-0 flex-1 truncate text-sm", form.formState.errors.image_path ? "text-destructive" : "text-muted-foreground")}>
-                                    {imageFile
-                                      ? imageFile.name
-                                      : subject?.image_path
-                                        ? subject.image_path.split("/").pop()
-                                        : t("no_file_chosen")}
-                                  </span>
-                                </>
-                              ) : subject?.image_path ? (
-                                <span className="truncate text-sm text-muted-foreground">
-                                  {subject.image_path.split("/").pop()}
-                                </span>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">—</span>
-                              )}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
               </div>
             </div>
 

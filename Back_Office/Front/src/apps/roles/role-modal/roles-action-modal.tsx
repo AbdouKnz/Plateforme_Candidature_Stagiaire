@@ -62,6 +62,12 @@ const TWO_LEVEL_VIEW = "1000";
 const TWO_LEVEL_FULL = "1111";
 const TWO_LEVEL_NONE = "0000";
 
+// Display-only rename for technical module keys. Permission logic, payloads,
+// and backend keys always use the raw module_name (e.g. "candidatures").
+const MODULE_DISPLAY_NAMES: Record<string, string> = {
+  candidatures: "Application",
+};
+
 interface RolesActionModalProps {
   role?: Role;
   modules: Module[];
@@ -489,7 +495,7 @@ export function RolesActionModal({
                                     <Icon className="w-4 h-4 text-muted-foreground" />
                                   ) : null;
                                 })()}
-                                {module.module_name}
+                                {MODULE_DISPLAY_NAMES[module.module_name] ?? module.module_name}
                               </TableCell>
 
                               {actions.map((action) => {

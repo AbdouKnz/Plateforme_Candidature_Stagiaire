@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/tooltip";
 import { IconInfoCircle, IconSend } from "@tabler/icons-react";
 import { useEmailLogsStore } from "@/stores/email-logs-store";
+import { usePermissions } from "@/hooks/use-permissions";
+import { ModuleEnum } from "@/models/module-model";
 import { DialogEnum } from "@/models/alert-model";
 import { exportEmailLogs } from "@/service/email-logs";
 import { FieldTypeEnum } from "@/models/table-model";
@@ -20,6 +22,8 @@ import { FieldTypeEnum } from "@/models/table-model";
 export function EmailLogs() {
   const { t } = useTranslation();
   const { queryParams, setQueryParams, resetFilterQueryParams, currentEmailLogId, openEmailLog } = useEmailLogsStore();
+  const { canCreate } = usePermissions();
+  const canExportEmailLogs = canCreate(ModuleEnum.EmailLogs);
   const selectedEmailLogId = openEmailLog === DialogEnum.VIEW ? currentEmailLogId : null;
   const { data: emailLogsResponse, isLoading } = useEmailLogs(queryParams);
   const data = useMemo(() => emailLogsResponse?.data ?? [], [emailLogsResponse?.data]);
@@ -120,8 +124,10 @@ export function EmailLogs() {
                   },
                 ],
               },
-              exportFunction: (props) =>
-                exportEmailLogs(props.fileType, queryParams),
+              exportFunction: canExportEmailLogs
+                ? (props) =>
+                    exportEmailLogs(props.fileType, queryParams)
+                : undefined,
             }}
           />
         </div>

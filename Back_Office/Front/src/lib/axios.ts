@@ -161,16 +161,10 @@ axiosApi.interceptors.response.use(
       }
     }
 
-    // ========================================
-    // 403 FORBIDDEN
-    // ========================================
-    if (error.response?.status === 403) {
-      useAlertStore.getState().showAlert({
-        type: AlertEnum.WARNING,
-        message:
-          "Access Forbidden! You do not have permission to perform this action.",
-      });
-    }
+    // NOTE: no global toast for 403 — backend still enforces permissions and
+    // the UI gates actions/menus by permission, so forbidden responses stay
+    // silent instead of popping "Access Forbidden" on allowed pages whose
+    // auxiliary requests the role may not view.
 
     // ========================================
     // 500 INTERNAL SERVER ERROR

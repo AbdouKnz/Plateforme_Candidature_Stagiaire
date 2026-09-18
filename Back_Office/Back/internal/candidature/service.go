@@ -1659,9 +1659,10 @@ func (s *CandidatureService) ResetConfirm(ctx context.Context, password string) 
 		return fmt.Errorf("could not delete email logs: %w", err)
 	}
 
-	// 2. Delete all audit logs related to candidatures and subjects
-	if _, err := tx.NewDelete().Model((*domain.AuditLog)(nil)).Where("LOWER(module) IN ('candidature', 'subject')").Exec(ctx); err != nil {
-		log.Error().Err(err).Msg("Failed to delete candidature and subject audit logs in reset transaction")
+	// 2. Delete subject audit logs. Candidature ("applications") audit logs are
+	// deliberately kept across resets so the pipeline history survives.
+	if _, err := tx.NewDelete().Model((*domain.AuditLog)(nil)).Where("LOWER(module) = ?", "subject").Exec(ctx); err != nil {
+		log.Error().Err(err).Msg("Failed to delete subject audit logs in reset transaction")
 		return fmt.Errorf("could not delete audit logs: %w", err)
 	}
 

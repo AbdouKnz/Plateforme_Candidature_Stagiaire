@@ -18,11 +18,12 @@ import { AxiosError } from "axios";
 import { AlertEnum } from "@/models/alert-model";
 import { useAlertStore } from "@/stores/alert-store";
 
-export function useSubjects(params?: SubjectQueryParams) {
+export function useSubjects(params?: SubjectQueryParams, enabled = true) {
   return useQuery<Subject[], Error>({
     queryKey: ["subjects", params],
     queryFn: () => getSubjects(params),
     retry: 1,
+    enabled,
   } as UseQueryOptions<Subject[], Error>);
 }
 

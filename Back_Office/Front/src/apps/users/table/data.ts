@@ -17,7 +17,9 @@ export const useUserToolbarProps = () => {
     useUsersStore();
   const { modulePermissions } = usePermissions();
   const canCreateUser = modulePermissions.users?.canCreate;
-  const { data: rolesData } = useRoles();
+  // Role filter dropdown needs the roles list: skip the request entirely for
+  // roles without roles-view so no forbidden call fires.
+  const { data: rolesData } = useRoles(undefined, modulePermissions.roles?.canView ?? false);
 
   const roleItems = [
     { label: t("all"), value: "all" },
@@ -65,7 +67,9 @@ export const useUserToolbarProps = () => {
       ],
     },
 
-    exportFunction: (props: { fileType: FileType }) =>
-      exportUsers(props.fileType, queryParams),
+    exportFunction: canCreateUser
+      ? (props: { fileType: FileType }) =>
+          exportUsers(props.fileType, queryParams)
+      : undefined,
   };
 };

@@ -21,11 +21,12 @@ import { AlertEnum } from "@/models/alert-model";
 import { ID } from "@/models/api";
 import { useAlertStore } from "@/stores/alert-store";
 
-export function useRoles(params?: RoleQueryParams) {
+export function useRoles(params?: RoleQueryParams, enabled = true) {
   return useQuery<Role[], Error>({
     queryKey: ["roles", params],
     queryFn: () => getRoles(params),
     retry: 1,
+    enabled,
     onError: (error: Error) => {
       console.error("Error fetching roles:", error);
     },

@@ -5,6 +5,7 @@ import { exportAudits } from '@/service/audit'
 import { useTranslation } from 'react-i18next'
 import { useAuditStore } from '@/stores/audit-store'
 import { useAudits } from '@/hooks/use-audit'
+import { usePermissions } from '@/hooks/use-permissions'
 
 export const auditActionTypes = {
   Create: { variant: 'success' as const },
@@ -21,6 +22,7 @@ export const AUDIT_MODULE_LABELS: Record<string, string> = {
   EmailTemplate: 'Email Template',
   MailConfig: 'Email Config',
   Candidature: 'Applications',
+  Type: 'Application type',
 }
 
 // Display-only rename: backend still stores/filters raw values
@@ -37,6 +39,7 @@ export const useAuditToolbarProps = () => {
   const { t } = useTranslation()
   const { queryParams, setQueryParams, resetFilterQueryParams } =
     useAuditStore()
+  const { modulePermissions } = usePermissions()
   const { data: auditsResponse, isLoading } = useAudits(queryParams)
 
   const moduleItems = React.useMemo(() => {
@@ -103,7 +106,9 @@ export const useAuditToolbarProps = () => {
       ],
     },
 
-    exportFunction: (props: { fileType: FileType }) =>
-      exportAudits(props.fileType, queryParams),
+    exportFunction: modulePermissions.audits?.canCreate
+      ? (props: { fileType: FileType }) =>
+          exportAudits(props.fileType, queryParams)
+      : undefined,
   }
 }

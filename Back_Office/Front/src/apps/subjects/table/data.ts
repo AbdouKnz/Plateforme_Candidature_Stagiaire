@@ -25,7 +25,9 @@ export const useSubjectToolbarProps = () => {
           addFunction: () => setOpenSubject(DialogEnum.ADD),
         }
       : undefined,
-    exportFunction: (props: { fileType: FileType }) =>
-      exportSubjects(props.fileType, queryParams),
+    exportFunction: canCreateSubject
+      ? (props: { fileType: FileType }) =>
+          exportSubjects(props.fileType, queryParams)
+      : undefined,
   };
 };

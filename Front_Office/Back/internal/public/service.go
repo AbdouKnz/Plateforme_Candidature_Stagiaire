@@ -410,7 +410,29 @@ func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string,
 		}
 	}
 
+	// Effective open: visitors see the open site as soon as the reopening
+	// moment passes, even before the Back_Office lazy flip persists (it owns
+	// persistence + waitlist notification). Read-only here by design.
+	if !isEnabled && reopeningDue(reopeningDate) {
+		isEnabled = true
+	}
+
 	return isEnabled, reopeningDate, year, internshipTitle, nil
+}
+
+// reopeningDue reports whether a stored reopening value ("2006-01-02 15:04",
+// optional seconds, or legacy date-only = start of that day) has passed in
+// server-local wall clock. Empty/unparseable means manual-only.
+func reopeningDue(value string) bool {
+	for _, layout := range []string{"2006-01-02 15:04:05", "2006-01-02 15:04"} {
+		if t, err := time.ParseInLocation(layout, value, time.Local); err == nil {
+			return !time.Now().Before(t)
+		}
+	}
+	if t, err := time.ParseInLocation("2006-01-02", value, time.Local); err == nil {
+		return !time.Now().Before(t)
+	}
+	return false
 }
 
 func (s *PublicService) SubscribeWaitlist(ctx context.Context, email string) error {
