@@ -186,7 +186,7 @@ export function Candidatures() {
   );
 
   const handleSelectAllEmpty = useCallback(() => {
-    showAlert({ message: t("only_pending_selectable"), type: AlertEnum.INFO });
+    showAlert({ message: t("only_pending_selectable"), type: AlertEnum.WARNING });
   }, [showAlert, t]);
 
   const selectedRows = useMemo(
