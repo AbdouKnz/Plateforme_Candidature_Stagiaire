@@ -17,7 +17,7 @@ export function HomePage() {
         <Navbar />
 
         {/* ── Hero ── */}
-        <section className="relative flex min-h-[90vh] items-center px-6 pt-32 pb-20 sm:px-8">
+        <section className="relative flex flex-1 items-center px-4 pt-32 pb-20 sm:px-8">
           <div className="mx-auto w-full max-w-4xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
               <SparklesIcon className="size-3.5" />
@@ -51,7 +51,9 @@ export function HomePage() {
           </div>
         </section>
 
-        <Footer />
+        <div className="shrink-0">
+          <Footer />
+        </div>
     </AuroraBackground>
   )
 }

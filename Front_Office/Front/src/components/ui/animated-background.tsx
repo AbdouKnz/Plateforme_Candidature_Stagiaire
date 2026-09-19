@@ -36,7 +36,7 @@ export function AuroraBackground({ children, className = "" }: AuroraBackgroundP
         />
       </div>
 
-      <div className="relative z-10">{children}</div>
+      <div className={`relative z-10 flex min-h-svh flex-col ${className}`}>{children}</div>
     </div>
   )
 }

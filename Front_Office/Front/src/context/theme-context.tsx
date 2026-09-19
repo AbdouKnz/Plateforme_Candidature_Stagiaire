@@ -21,31 +21,14 @@ function applyTheme(resolved: "light" | "dark") {
   document.documentElement.classList.toggle("dark", resolved === "dark")
 }
 
-function getStoredTheme(): Theme {
-  try {
-    const stored = localStorage.getItem("theme")
-    if (stored === "light" || stored === "dark" || stored === "system")
-      return stored
-  } catch {}
-  return "system"
-}
-
-function storeTheme(theme: Theme) {
-  try {
-    localStorage.setItem("theme", theme)
-  } catch {}
-}
-
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = React.useState<Theme>(getStoredTheme)
-  const [resolvedTheme, setResolved] = React.useState<"light" | "dark">(() => {
-    const t = getStoredTheme()
-    return t === "system" ? getSystemTheme() : t
-  })
+  // Always start from the browser theme on every open; a manual choice
+  // lives only in memory for the session (no persistence).
+  const [theme, setThemeState] = React.useState<Theme>("system")
+  const [resolvedTheme, setResolved] = React.useState<"light" | "dark">(getSystemTheme)
 
   const setTheme = React.useCallback((newTheme: Theme) => {
     setThemeState(newTheme)
-    storeTheme(newTheme)
     const resolved = newTheme === "system" ? getSystemTheme() : newTheme
     setResolved(resolved)
     applyTheme(resolved)

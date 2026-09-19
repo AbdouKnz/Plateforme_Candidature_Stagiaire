@@ -14,6 +14,7 @@ import {
   ArrowRightIcon,
   BookmarkIcon,
   BookmarkCheckIcon,
+  BookOpenIcon,
   GraduationCapIcon,
   UsersIcon,
   LightbulbIcon,
@@ -363,7 +364,7 @@ export function PfeBookPage() {
             >
               <div className="inline-flex items-center gap-2 rounded-full border border-[#1D7CC7]/40 bg-[#1D7CC7]/10 backdrop-blur px-4 py-1.5">
                 <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-                <span className="text-[12px] font-bold tracking-[0.18em] text-[#24243C] uppercase">Internship Program 2027</span>
+                <span className="text-[12px] font-bold tracking-[0.18em] text-[#24243C] uppercase">Internship Program </span>
               </div>
             </motion.div>
 
@@ -1004,7 +1005,7 @@ export function PfeBookPage() {
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={9 + subjects.length} total={totalPages} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-4 overflow-hidden">
-            <div className="mx-auto flex w-full max-w-[900px] flex-1 min-h-0 flex-col justify-center">
+            <div className="mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col justify-center">
               <div className="text-center max-w-2xl mx-auto shrink-0">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1D7CC7] px-3.5 py-1 text-[12px] font-bold tracking-widest text-[#FFFFFF] uppercase shadow">
                   <BookmarkCheckIcon className="size-3" /> Your choice
@@ -1032,14 +1033,79 @@ export function PfeBookPage() {
                     <Button variant="outline" size="lg" onClick={() => goTo(4)} className="rounded-full mt-2 h-11 px-6 text-sm border-[#DCE3EA] bg-[#F1F4F8] text-[#24243C] fine-hover:bg-[#1D7CC7]/10">Back to subjects list</Button>
                   </div>
                 ) : (
-                  <div className="w-full max-w-2xl rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur p-6 sm:p-8 text-center shadow-lg">
-                    <span className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-3 py-1 font-mono text-xs font-bold tracking-widest text-[#24243C]/80">{shortlistedSubject.code}</span>
-                    <h3 className="mt-4 text-xl sm:text-2xl font-bold tracking-tight text-[#24243C]">{shortlistedSubject.name}</h3>
-                    <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-                      <Button size="lg" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 font-bold shadow-lg bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] text-sm" onClick={() => navigate("/form")}>
-                        <CheckIcon className="size-4" /> Apply now
+                  <div className="w-full max-w-5xl max-h-full overflow-y-auto scrollbar-thin">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <article
+                        aria-label="Subject name"
+                        className="rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 text-left shadow-lg"
+                      >
+                        <div className="flex items-start gap-4 sm:gap-5">
+                          <div
+                            aria-hidden="true"
+                            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] border border-[#DCE3EA] shadow-sm"
+                          >
+                            <BookOpenIcon className="size-5 text-[#24243C]" strokeWidth={1.8} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                              Subject name :
+                            </p>
+                            <p className="mt-1.5 text-lg sm:text-xl font-bold tracking-tight text-[#24243C] break-words">
+                              {shortlistedSubject.name}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                      <article
+                        aria-label="Profile"
+                        className="rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 text-left shadow-lg"
+                      >
+                        <div className="flex items-start gap-4 sm:gap-5">
+                          <div
+                            aria-hidden="true"
+                            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] border border-[#DCE3EA] shadow-sm"
+                          >
+                            <UserIcon className="size-5 text-[#24243C]" strokeWidth={1.8} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                              Profile :
+                            </p>
+                            <p className="mt-1.5 text-base sm:text-lg font-bold text-[#24243C] break-words">
+                              {shortlistedSubject.profiles && shortlistedSubject.profiles.length > 0
+                                ? shortlistedSubject.profiles.map((p) => p.name).join(" / ")
+                                : "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                      <article
+                        aria-label="Period"
+                        className="rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 text-left shadow-lg"
+                      >
+                        <div className="flex items-start gap-4 sm:gap-5">
+                          <div
+                            aria-hidden="true"
+                            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] border border-[#DCE3EA] shadow-sm"
+                          >
+                            <CalendarIcon className="size-5 text-[#24243C]" strokeWidth={1.8} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                              Period :
+                            </p>
+                            <p className="mt-1.5 text-base sm:text-lg font-bold text-[#24243C] break-words">
+                              {shortlistedSubject.period || shortlistedSubject.duration?.name || "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </article>
+                    </div>
+                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+                      <Button size="lg" aria-label="Apply now" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 font-bold shadow-lg bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] text-sm" onClick={() => navigate("/form")}>
+                        <CheckIcon className="size-4" aria-hidden="true" /> Apply now
                       </Button>
-                      <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-xl px-8 h-11 text-sm border-[#DCE3EA] bg-[#F1F4F8] text-[#24243C] fine-hover:bg-[#1D7CC7]/10" onClick={() => goTo(4)}>Choose another subject</Button>
+                      <Button variant="outline" size="lg" aria-label="Choose another subject" className="w-full sm:w-auto rounded-2xl border border-[#1D7CC7]/40 bg-white text-[#24243C] dark:bg-white dark:text-[#24243C] dark:border-[#1D7CC7]/40 fine-hover:bg-[#1D7CC7]/5 fine-hover:text-[#24243C] px-9 h-12 text-sm font-bold" onClick={() => goTo(4)}>Choose another subject</Button>
                     </div>
                   </div>
                 )}

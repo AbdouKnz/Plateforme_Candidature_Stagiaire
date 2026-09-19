@@ -1,65 +1,149 @@
 import { useTranslation } from "@/context/language-context"
-import { useTheme } from "@/context/theme-context"
+
+interface ContactItemData {
+  icon: string
+  text?: string
+  lines?: string[]
+  href?: string
+}
+
+function ContactItem({ item }: { item: ContactItemData }) {
+  const textContent = item.lines ? (
+    <span className="min-w-0 text-sm text-foreground">
+      {item.lines.map((line, i) => (
+        <span key={i} className="block break-words">
+          {line}
+        </span>
+      ))}
+    </span>
+  ) : (
+    <span className="min-w-0 break-words text-sm text-foreground">{item.text}</span>
+  )
+  const content = (
+    <>
+      <img src={item.icon} alt="" className="size-4 shrink-0" />
+      {textContent}
+    </>
+  )
+
+  return (
+    <li className="flex items-center gap-2.5">
+      {item.href ? (
+        <a
+          href={item.href}
+          target={item.href.startsWith("http") ? "_blank" : undefined}
+          rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+          className="flex min-w-0 items-center gap-2.5 rounded-md transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]"
+        >
+          {content}
+        </a>
+      ) : (
+        <span className="flex min-w-0 items-center gap-2.5">{content}</span>
+      )}
+    </li>
+  )
+}
+
+function ContactSection({
+  title,
+  items,
+  className = "",
+}: {
+  title: string
+  items: ContactItemData[]
+  className?: string
+}) {
+  return (
+    <section aria-label={title} className={`min-w-0 ${className}`}>
+      <h4 className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#12B9DA]">
+        {title}
+      </h4>
+      <ul className="mt-3 flex flex-col gap-2.5">
+        {items.map((item) => (
+          <ContactItem key={`${title}-${item.text ?? item.lines?.join("|")}`} item={item} />
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function LegalRow() {
+  const t = useTranslation()
+  return (
+    <div className="mt-6 flex flex-col items-center justify-between gap-2 border-t border-border/40 pt-4 sm:flex-row">
+      <p className="text-xs text-muted-foreground">
+        &copy; {new Date().getFullYear()} Park &amp; Charge. {t("footer.rights")}
+      </p>
+      <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+        <span className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]">
+          {t("footer.privacy")}
+        </span>
+        <span aria-hidden="true" className="text-xs text-muted-foreground/50">
+          |
+        </span>
+        <span className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]">
+          {t("footer.terms")}
+        </span>
+      </nav>
+    </div>
+  )
+}
 
 export function Footer() {
   const t = useTranslation()
-  const { resolvedTheme } = useTheme()
+
+  const infos: ContactItemData[] = [
+    {
+      icon: "/email.png",
+      text: t("footer.email"),
+      href: `mailto:${t("footer.email")}`,
+    },
+    {
+      icon: "/phone.png",
+      text: t("footer.phone"),
+      href: "tel:+21626342040",
+    },
+  ]
+
+  const social: ContactItemData[] = [
+    {
+      icon: "/linkedin.png",
+      text: t("footer.linkedin"),
+      href: "https://www.linkedin.com/company/park-and-charge-tn/",
+    },
+    {
+      icon: "/WhiteBlueCircle.png",
+      text: "Park&Charge.io",
+      href: "https://parkandcharge.io/",
+    },
+  ]
+
+  const address: ContactItemData[] = [
+    {
+      icon: "/adress.png",
+      lines: [t("footer.location_line1"), t("footer.location_line2")],
+    },
+  ]
 
   return (
-    <footer className="border-t border-border/40 bg-transparent dark:border-white/10">
-      <div className="mx-auto w-full px-5 py-12 sm:px-12 sm:py-16 lg:px-16">
-        <div className="grid gap-12 md:grid-cols-3">
-          <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <img src="/PC_Logo.png" alt="Park&Charge" className="h-10 w-auto" />
-            </div>
-            <p className="max-w-md text-sm leading-relaxed text-muted-foreground dark:text-muted-foreground">
-              {t("footer.description")}
-            </p>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground mb-4">
-              {t("footer.contactTitle")}
-            </h4>
-            <div className="flex flex-col gap-3">
-              <div className="flex items-start gap-2.5 text-sm text-foreground/70 dark:text-muted-foreground">
-                <img src="/adress.png" alt="" className="size-4 shrink-0" />
-                <span>{t("footer.location")}</span>
-              </div>
-              <a href={`mailto:${t("footer.email")}`} className="flex items-start gap-2.5 break-all text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-                <img src="/email.png" alt="" className="size-4 shrink-0" />
-                {t("footer.email")}
-              </a>
-              <a href="tel:+21626342040" className="flex items-center gap-2.5 text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-                <img src="/phone.png" alt="" className="size-4 shrink-0" />
-                {t("footer.phone")}
-              </a>
-              <a href="https://www.linkedin.com/company/park-and-charge-tn/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-                <img src="/linkedin.png" alt="" className="size-4 shrink-0" />
-                LinkedIn
-              </a>
-              <a href="https://parkandcharge.io/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 text-sm text-foreground/70 hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground transition-colors">
-                <img src="/WhiteBlueCircle.png" alt="" className="size-4 shrink-0" />
-                Park&Charge.io
-              </a>
+    <footer className="bg-transparent">
+      <div className="w-full px-4 py-6 sm:px-8 lg:px-16 lg:py-8">
+          <div className="flex flex-col gap-6 sm:grid sm:grid-cols-2 lg:flex lg:flex-row lg:items-start lg:justify-between lg:gap-8">
+            <ContactSection title="INFOS" items={infos} />
+            <ContactSection
+              title="SOCIAL"
+              items={social}
+              className="lg:border-l lg:border-border/40 lg:pl-8"
+            />
+            <div className="min-w-0 sm:col-span-2 lg:col-span-1">
+              <ContactSection
+                title="ADDRESS"
+                items={address}
+                className="lg:border-l lg:border-border/40 lg:pl-8"
+              />
             </div>
           </div>
-        </div>
-
-        <div className="mt-12 pt-8 border-t border-border/50 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-foreground/60 dark:text-muted-foreground/60">
-            &copy; {new Date().getFullYear()} Park & Charge. {t("footer.rights")}
-          </p>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-foreground/60 hover:text-foreground dark:text-muted-foreground/60 dark:hover:text-muted-foreground transition-colors cursor-pointer">
-              {t("footer.privacy")}
-            </span>
-            <span className="text-xs text-foreground/60 hover:text-foreground dark:text-muted-foreground/60 dark:hover:text-muted-foreground transition-colors cursor-pointer">
-              {t("footer.terms")}
-            </span>
-          </div>
-        </div>
+        <LegalRow />
       </div>
     </footer>
   )
