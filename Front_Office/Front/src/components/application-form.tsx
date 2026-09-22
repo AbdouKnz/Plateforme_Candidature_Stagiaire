@@ -767,8 +767,6 @@ export function ApplicationForm() {
                         <FieldGroup>
                           {/* Subject (from back office subject management) - multi-select with checkboxes */}
                           <Controller control={control} name="subjects" render={({ field }) => {
-                            const selectedNames = new Set((field.value ?? []).map((n) => (n || "").trim()));
-                            const selectedSubjects = subjects.filter((s) => selectedNames.has((s.name || "").trim()))
                             return (
                               <Field data-invalid={!!errors.subjects}>
                                 <FieldLabel className="text-sm font-semibold">{t("label.subjects")}<RequiredStar /></FieldLabel>
@@ -794,22 +792,6 @@ export function ApplicationForm() {
                                   invalid={!!errors.subjects}
                                 />
 
-                                {/* Selected subjects details */}
-                                {selectedSubjects.length > 0 && (
-                                  <div className="mt-3 flex flex-wrap gap-3">
-                                    {selectedSubjects.map((subj) => (
-                                      <div
-                                        key={subj.id}
-                                        className="rounded-xl border border-border/60 bg-card px-4 py-3 shadow-sm min-w-[200px] flex-1"
-                                      >
-                                        <p className="text-sm font-semibold text-foreground">
-                                          {subj.name}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-
                                 <FieldError errors={[errors.subjects]} />
                               </Field>
                             )
@@ -818,9 +800,11 @@ export function ApplicationForm() {
 
                           {/* Earliest start date */}
                           <Controller control={control} name="startDate" render={({ field }) => (
-                            <Field data-invalid={!!errors.startDate} className="@md/field-group:max-w-xs">
-                              <FieldLabel htmlFor="startDate" className="text-sm font-semibold">{t("label.startDate")}<RequiredStar /></FieldLabel>
-                              <MondayPicker value={field.value || undefined} onChange={field.onChange} onBlur={field.onBlur} fieldName="startDate" min={startMin} max={startMax} invalid={!!errors.startDate} />
+                            <Field data-invalid={!!errors.startDate} className="w-full max-w-none @md/field-group:max-w-none">
+                              <FieldLabel htmlFor="startDate" className="text-sm font-semibold whitespace-nowrap">{t("label.startDate")}<RequiredStar /></FieldLabel>
+                              <div className="w-full max-w-xs">
+                                <MondayPicker value={field.value || undefined} onChange={field.onChange} onBlur={field.onBlur} fieldName="startDate" min={startMin} max={startMax} invalid={!!errors.startDate} />
+                              </div>
                               <FieldError errors={[errors.startDate]} />
                             </Field>
                           )} />

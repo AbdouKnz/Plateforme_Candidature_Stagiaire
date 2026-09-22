@@ -70,14 +70,14 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
     <div
       className={
         compact
-          ? "flex min-h-full w-full flex-col px-6 py-5 sm:px-8 lg:my-auto lg:px-12"
+          ? "flex min-h-full w-full flex-col px-4 py-4 sm:px-8 lg:my-auto lg:px-12"
           : "flex w-full flex-col px-6 py-4 sm:px-10 lg:my-auto lg:px-12"
       }
     >
       {/* ── HERO (40/60) ── */}
       <section
         aria-labelledby="who-are-we-heading"
-        className="grid flex-none grid-cols-1 items-center gap-6 lg:grid-cols-[40%_1fr] lg:gap-10"
+        className="grid flex-none grid-cols-1 items-center gap-4 sm:gap-6 lg:grid-cols-[40%_1fr] lg:gap-10"
       >
         <div className="min-w-0 lg:self-center">
           <span className="inline-flex items-center rounded-full bg-[#10A9E8] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
@@ -87,7 +87,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             id="who-are-we-heading"
             className={
               compact
-                ? "mt-3 text-4xl font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-5xl lg:text-[68px]"
+                ? "mt-3 text-3xl font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-5xl lg:text-[68px]"
                 : "mt-4 text-[42px] font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-[56px] lg:text-[76px]"
             }
           >
@@ -111,7 +111,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             loading="eager"
             className={
               compact
-                ? "h-64 w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-72 lg:h-[320px] " + CARD_SHADOW
+                ? "h-48 w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-72 lg:h-[320px] " + CARD_SHADOW
                 : "h-[240px] w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-[260px] lg:h-[395px] " + CARD_SHADOW
             }
           />
@@ -123,7 +123,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         aria-label="About Park and Charge"
         className={
         compact
-          ? "mt-4 grid flex-none grid-cols-1 gap-3 lg:grid-cols-[38%_1fr] lg:gap-5"
+          ? "mt-3 grid flex-none grid-cols-1 gap-2.5 sm:mt-4 sm:gap-3 lg:grid-cols-[38%_1fr] lg:gap-5"
           : "mt-4 grid flex-none grid-cols-1 gap-4 lg:mt-4 lg:grid-cols-[38%_1fr] lg:gap-4"
         }
       >
@@ -131,7 +131,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         <article
           className={
             compact
-              ? `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-5 ${CARD_SHADOW}`
+              ? `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 sm:p-5 ${CARD_SHADOW}`
               : `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 lg:p-[18px] ${CARD_SHADOW}`
           }
         >
@@ -147,7 +147,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           <div
             className={
               compact
-                ? "mt-3 space-y-2.5 text-[17.5px] leading-[1.4] text-[#64748B]"
+                ? "mt-3 space-y-2.5 text-[15.5px] sm:text-[17.5px] leading-[1.4] text-[#64748B]"
                 : "mt-3 space-y-3 text-[15px] leading-[1.4] text-[#64748B]"
             }
           >
@@ -175,7 +175,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           <article
             className={
               compact
-                ? `min-w-0 flex-none rounded-[18px] border border-[#D7E6F2] bg-white p-4 ${CARD_SHADOW}`
+                ? `min-w-0 flex-none rounded-[18px] border border-[#D7E6F2] bg-white p-3.5 sm:p-4 ${CARD_SHADOW}`
                 : `min-w-0 flex-none rounded-[18px] border border-[#D7E6F2] bg-white p-3.5 ${CARD_SHADOW}`
             }
           >
@@ -203,7 +203,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           <article
             className={
               compact
-                ? `flex min-h-0 min-w-0 flex-col rounded-[18px] border border-[#D7E6F2] bg-white p-4 ${CARD_SHADOW}`
+                ? `flex min-h-0 min-w-0 flex-col rounded-[18px] border border-[#D7E6F2] bg-white p-3.5 sm:p-4 ${CARD_SHADOW}`
                 : `flex min-h-0 min-w-0 flex-col rounded-[18px] border border-[#D7E6F2] bg-white p-4 ${CARD_SHADOW}`
             }
           >
@@ -248,7 +248,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         className={compact ? "mt-4 flex-none" : "mt-3 flex-none"}
       >
         <div
-          className={`flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-5 py-3 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-8 lg:px-6`}
+          className={`flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-4 py-3 sm:px-5 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-8 lg:px-6`}
         >
           <div className="min-w-0 shrink-0">
             <h2 className="whitespace-nowrap text-xl font-bold tracking-tight text-[#0B1B45] lg:text-2xl">
@@ -260,7 +260,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             {PARTNERS.map((p, i) => (
               <li
                 key={p.name}
-                className={`flex h-12 min-w-0 items-center justify-center px-2 lg:h-[54px] ${
+                className={`flex h-10 sm:h-12 min-w-0 items-center justify-center px-2 lg:h-[54px] ${
                   i > 0 ? "sm:border-l sm:border-[#D7E6F2]" : ""
                 }`}
               >

@@ -34,6 +34,8 @@ import {
   CalendarIcon,
   GlobeIcon,
   LayersIcon,
+  TagIcon,
+  FolderIcon,
 } from "lucide-react"
 
 function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -54,9 +56,9 @@ const WHY_STEPS = [
 ]
 
 const MINDSET_STEPS = [
-  { n: "01", title: "We will challenge you", desc: "We are different, join us to know how.", icon: ScaleIcon },
-  { n: "02", title: "We will push you", desc: "Some say we are defined by our limitations, get ready for self awareness.", icon: LightbulbIcon },
-  { n: "03", title: "Even if you fail, you will succeed", desc: "The road to success is paved by stepstones of failures.", icon: HeartHandshakeIcon },
+  { n: "01", title: "We will challenge you", desc: "We are different, join us to know how.", img: "/Challenge.png", pos: "object-center" },
+  { n: "02", title: "We will push you", desc: "Some say we are defined by our limitations, get ready for self awareness.", img: "/Push.png", pos: "object-center" },
+  { n: "03", title: "Even if you fail, you will succeed", desc: "The road to success is paved by stepstones of failures.", img: "/Success.png", pos: "object-center" },
 ]
 
 const STORAGE_KEY = "pfe-book-shortlist"
@@ -147,6 +149,8 @@ export function PfeBookPage() {
   const [activePage, setActivePage] = React.useState(0)
 
   const totalPages = React.useMemo(() => 9 + subjects.length, [subjects.length])
+  // Displayed book numbers exclude the unnumbered cover (Who Are We = 01).
+  const displayTotal = totalPages - 1
 
   // Subject catalog follows back-office changes (removed/deactivated projects)
   // via silent refresh on a timer and whenever the tab regains focus.
@@ -436,10 +440,10 @@ export function PfeBookPage() {
           data-page={1}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
         >
-          <PageHeader number={1} total={totalPages} />
+          <PageHeader number={1} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col overflow-hidden bg-[#FCFDFE]">
-            {/* Who are we? — reference About layout, fitted to the slide (no inner scrollbar on desktop) */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin lg:overflow-hidden">
+            {/* Who are we? — single scroll on small screens, fitted no-scroll on desktop */}
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y scrollbar-thin pb-6 lg:overflow-hidden lg:pb-0">
               <WhoAreWeContent compact />
             </div>
           </div>
@@ -452,7 +456,7 @@ export function PfeBookPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={2} total={totalPages} />
+          <PageHeader number={2} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-3 sm:px-4 lg:px-8 xl:px-10 py-2 sm:py-3 overflow-hidden">
             {/* header - keep your template typography/colors but follow photo layout (centered title + subtitle) */}
             <div className="text-center shrink-0">
@@ -531,7 +535,7 @@ export function PfeBookPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={3} total={totalPages} />
+          <PageHeader number={3} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
             <div className="flex flex-1 flex-col justify-center w-full">
               <div className="text-center max-w-3xl mx-auto shrink-0">
@@ -589,7 +593,7 @@ export function PfeBookPage() {
           <div className="absolute -top-1/3 left-1/2 h-[70vh] w-[110vw] -translate-x-1/2 rounded-full bg-[#1D7CC7]/20 blur-[160px]" />
           <div className="absolute -right-[10%] bottom-0 h-[50vh] w-[60vw] rounded-full bg-[#0F5C9E]/15 blur-[140px]" />
           <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={4} total={totalPages} />
+          <PageHeader number={4} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col py-4 overflow-hidden">
             <div className="flex w-full flex-1 min-h-0 flex-col">
               <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
@@ -612,7 +616,7 @@ export function PfeBookPage() {
                     </thead>
                     <tbody className="divide-y divide-[#DCE3EA]">
                       {subjects.map((s, idx) => {
-                        const pageNum = 6 + idx
+                        const pageNum = 5 + idx
                         const profile = s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"
                         return (
                           <tr key={s.id} onClick={() => scrollToSubject(s.code)} className="cursor-pointer group transition-colors fine-hover:bg-[#1D7CC7]/5 h-[100px]">
@@ -665,7 +669,7 @@ export function PfeBookPage() {
         {/* ── SUBJECT PAGES ── FULL-PAGE LAYOUT */}
         {subjects.map((s, idx) => {
           const isSelected = has(s.code)
-          const pageNo = 6 + idx
+          const pageNo = 5 + idx
           return (
             <section
               key={s.id}
@@ -695,7 +699,7 @@ export function PfeBookPage() {
                   </div>
                   {/* page number */}
                   <span className="shrink-0 inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-3 py-1.5 text-[12px] font-mono tracking-[0.18em] text-[#24243C]/50">
-                    {String(pageNo).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
+                    {String(pageNo).padStart(2, "0")} / {String(displayTotal).padStart(2, "0")}
                   </span>
                 </div>
 
@@ -823,14 +827,14 @@ export function PfeBookPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={6 + subjects.length} total={totalPages} />
+          <PageHeader number={5 + subjects.length} total={displayTotal} />
           {/* stepped cards — same content/colors, layout like Why Intern With Us */}
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
             <div className="flex flex-1 flex-col justify-center w-full">
               <div className="text-center max-w-3xl mx-auto shrink-0">
                 <span className="inline-flex items-center rounded-full bg-[#1D7CC7] px-3.5 py-1 text-[12px] font-bold tracking-widest text-[#FFFFFF] uppercase shadow">OUR MINDSET</span>
                 <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none">
-                  <span className="text-[#24243C]">We will </span><span className="text-[#12B9DA]">challenge</span><span className="text-[#24243C]"> you</span>
+                  <span className="text-[#12B9DA]">Don't apply! <br></br></span><span className="text-[#24243C]">If you are not willing to be challenged</span>
                 </h2>
               </div>
 
@@ -839,8 +843,8 @@ export function PfeBookPage() {
                 <div className="relative hidden md:grid grid-cols-3 gap-x-8 lg:gap-x-10 xl:gap-x-14">
                   {MINDSET_STEPS.map((c) => (
                     <div key={c.n} className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex size-20 xl:size-28 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(29,124,199,0.4)]">
-                        <c.icon className="size-9 xl:size-12 text-[#FFFFFF]" strokeWidth={1.6} />
+                      <div className="relative z-10 flex size-28 xl:size-36 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(29,124,199,0.4)]">
+                        <img src={c.img} alt={c.title} className={`size-full object-cover rounded-full ${c.pos}`} loading="lazy" />
                       </div>
                       <span className="relative mt-4 xl:mt-5 text-xs xl:text-sm font-bold text-[#12B9DA]">{c.n}</span>
                       <h3 className="relative mt-1.5 text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-[#24243C] text-balance">{c.title}</h3>
@@ -855,8 +859,8 @@ export function PfeBookPage() {
                   <div className="flex flex-col gap-14">
                     {MINDSET_STEPS.map((c) => (
                       <div key={c.n} className="relative flex flex-col items-center text-center">
-                        <div className="relative z-10 flex size-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(29,124,199,0.4)]">
-                          <c.icon className="size-11 text-[#FFFFFF]" strokeWidth={1.6} />
+                        <div className="relative z-10 flex size-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(29,124,199,0.4)]">
+                          <img src={c.img} alt={c.title} className={`size-full object-cover rounded-full ${c.pos}`} loading="lazy" />
                         </div>
                         <span className="relative mt-4 text-xs font-bold text-[#12B9DA]">{c.n}</span>
                         <h3 className="relative mt-1.5 text-lg sm:text-xl font-bold leading-tight tracking-tight text-[#24243C] text-balance">{c.title}</h3>
@@ -878,7 +882,7 @@ export function PfeBookPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={7 + subjects.length} total={totalPages} />
+          <PageHeader number={6 + subjects.length} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
             <div className="flex flex-1 flex-col justify-center w-full">
               <div className="text-center max-w-3xl mx-auto shrink-0">
@@ -888,10 +892,14 @@ export function PfeBookPage() {
                 </h2>
               </div>
 
-              <div className="relative w-full max-w-[1440px] mx-auto mt-10 lg:mt-14 flex-1 min-h-0 flex flex-col justify-center">
-                <div className="relative hidden md:grid grid-cols-3 gap-x-12 lg:gap-x-16 xl:gap-x-20">
-                  {/* horizontal connectors with arrows — step 1→2 and 2→3 */}
-                  <div aria-hidden className="absolute left-[16.66%] right-[16.66%] top-[64px] xl:top-[80px] flex items-center pointer-events-none">
+              <div className="relative w-full max-w-[1440px] mx-auto mt-6 lg:mt-8 flex-1 min-h-0 flex flex-col justify-center">
+                <div className="relative hidden md:grid grid-cols-4 gap-x-6 lg:gap-x-8 xl:gap-x-10">
+                  {/* horizontal connectors with arrows — step 1→2, 2→3 and 3→4 */}
+                  <div aria-hidden className="absolute left-[12.5%] right-[12.5%] top-[88px] xl:top-[104px] flex items-center pointer-events-none">
+                    <div className="flex-1 flex items-center">
+                      <div className="flex-1 h-[2px] bg-[#1D7CC7]/70" />
+                      <ArrowRightIcon className="size-4 xl:size-5 text-[#1D7CC7] -ml-1 shrink-0" strokeWidth={2.5} />
+                    </div>
                     <div className="flex-1 flex items-center">
                       <div className="flex-1 h-[2px] bg-[#1D7CC7]/70" />
                       <ArrowRightIcon className="size-4 xl:size-5 text-[#1D7CC7] -ml-1 shrink-0" strokeWidth={2.5} />
@@ -901,25 +909,27 @@ export function PfeBookPage() {
                       <ArrowRightIcon className="size-4 xl:size-5 text-[#1D7CC7] -ml-1 shrink-0" strokeWidth={2.5} />
                     </div>
                   </div>
-                  <div aria-hidden className="absolute left-[16.66%] right-[16.66%] top-[64px] xl:top-[80px] h-[10px] -translate-y-[4px] flex pointer-events-none">
+                  <div aria-hidden className="absolute left-[12.5%] right-[12.5%] top-[88px] xl:top-[104px] h-[10px] -translate-y-[4px] flex pointer-events-none">
+                    <div className="flex-1 mx-2 h-[10px] bg-[#1D7CC7]/15 blur-[6px] rounded-full" />
                     <div className="flex-1 mx-2 h-[10px] bg-[#1D7CC7]/15 blur-[6px] rounded-full" />
                     <div className="flex-1 mx-2 h-[10px] bg-[#1D7CC7]/15 blur-[6px] rounded-full" />
                   </div>
                   {[
                     { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-[38%_50%]" },
-                    { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills.", img: "/Online_Assesement.jpg", pos: "object-center" },
-                    { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
+                    { step: "02", title: "Online Quiz", desc: "A short online quiz to assess your fundamentals.", img: "/Online_Assesement.jpg", pos: "object-center" },
+                    { step: "03", title: "Online Interview", desc: "A remote interview to discuss your background and motivation.", img: "/Online_Interview.jpeg", pos: "object-center" },
+                    { step: "04", title: "F2F Meeting", desc: "Final face-to-face meeting with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
                   ].map((s) => (
                     <div key={s.step} className="relative flex flex-col items-center text-center">
                       <div className="relative z-10 shrink-0">
-                        <div className="flex size-32 xl:size-40 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#1D7CC7]/60 bg-[#FFFFFF] shadow-[0_0_45px_rgba(29,124,199,0.4)]">
+                        <div className="flex size-44 xl:size-52 items-center justify-center overflow-hidden rounded-3xl border-2 border-[#1D7CC7]/60 bg-[#FFFFFF] shadow-[0_0_45px_rgba(29,124,199,0.4)]">
                           <img src={s.img} alt={s.title} className={`size-full object-cover ${s.pos}`} loading="lazy" />
                         </div>
                         <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#1D7CC7]/40 bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] px-3 py-1 text-xs xl:text-sm font-black tracking-wide text-[#FFFFFF] shadow">Step {Number(s.step)}</span>
                       </div>
-                      <h3 className="relative mt-7 xl:mt-8 text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-[#24243C] text-balance">{s.title}</h3>
+                      <h3 className="relative mt-6 text-lg sm:text-xl lg:text-[22px] font-bold leading-tight tracking-tight text-[#24243C] text-balance">{s.title}</h3>
                       <div className="relative mt-2.5 h-[3px] w-10 rounded-full bg-gradient-to-r from-[#1D7CC7] to-[#12B9DA]" />
-                      <p className="relative mt-2.5 text-[15.5px] sm:text-base lg:text-lg leading-[1.5] text-[#24243C]/80 font-medium max-w-[clamp(220px,22vw,300px)]">{s.desc}</p>
+                      <p className="relative mt-2.5 text-[15.5px] sm:text-base lg:text-base leading-[1.5] text-[#24243C]/80 font-medium max-w-[clamp(160px,18vw,240px)]">{s.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -935,20 +945,26 @@ export function PfeBookPage() {
                       <div className="flex-1 w-[2px] bg-[#1D7CC7]/70" />
                       <ArrowRightIcon className="size-4 text-[#1D7CC7] rotate-90 -mt-1 shrink-0" strokeWidth={2.5} />
                     </div>
+                    <div className="flex-1 flex flex-col items-center">
+                      <div className="flex-1 w-[2px] bg-[#1D7CC7]/70" />
+                      <ArrowRightIcon className="size-4 text-[#1D7CC7] rotate-90 -mt-1 shrink-0" strokeWidth={2.5} />
+                    </div>
                   </div>
                   <div aria-hidden className="absolute left-1/2 top-[72px] bottom-[72px] w-2 -translate-x-1/2 flex flex-col pointer-events-none">
+                    <div className="flex-1 mx-auto w-2 bg-[#1D7CC7]/10 blur-[6px] rounded-full my-2" />
                     <div className="flex-1 mx-auto w-2 bg-[#1D7CC7]/10 blur-[6px] rounded-full my-2" />
                     <div className="flex-1 mx-auto w-2 bg-[#1D7CC7]/10 blur-[6px] rounded-full my-2" />
                   </div>
                   <div className="flex flex-col gap-14">
                     {[
                       { step: "01", title: "CV Screening", desc: "We review your application and CV to understand your profile and aspirations.", img: "/CV_Screening.jpg", pos: "object-[38%_50%]" },
-                      { step: "02", title: "Online Assessment", desc: "A hands-on task or technical assessment to showcase your skills.", img: "/Online_Assesement.jpg", pos: "object-center" },
-                      { step: "03", title: "On-Site Evaluation", desc: "Final interview with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
+                      { step: "02", title: "Online Quiz", desc: "A short online quiz to assess your fundamentals.", img: "/Online_Assesement.jpg", pos: "object-center" },
+                      { step: "03", title: "Online Interview", desc: "A remote interview to discuss your background and motivation.", img: "/Online_Interview.jpeg", pos: "object-center" },
+                      { step: "04", title: "F2F Meeting", desc: "Final face-to-face meeting with the team to align on project and culture.", img: "/OnSite_Evaluation.jpg", pos: "object-center" },
                     ].map((s) => (
                       <div key={s.step} className="relative flex flex-col items-center text-center">
                         <div className="relative z-10 shrink-0">
-                          <div className="flex size-36 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#1D7CC7]/60 bg-[#FFFFFF] shadow-[0_0_30px_rgba(29,124,199,0.4)]">
+                          <div className="flex size-52 items-center justify-center overflow-hidden rounded-3xl border-2 border-[#1D7CC7]/60 bg-[#FFFFFF] shadow-[0_0_30px_rgba(29,124,199,0.4)]">
                             <img src={s.img} alt={s.title} className={`size-full object-cover ${s.pos}`} loading="lazy" />
                           </div>
                           <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-[#1D7CC7]/40 bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] px-3 py-1 text-xs font-black tracking-wide text-[#FFFFFF] shadow">Step {Number(s.step)}</span>
@@ -975,22 +991,35 @@ export function PfeBookPage() {
           <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
             <BrandLogo className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
             <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-3 py-1.5 text-[12px] font-mono tracking-[0.2em] text-[#24243C]/70">
-              {String(8 + subjects.length).padStart(2, "0")} / {String(totalPages).padStart(2, "0")}
+              {String(7 + subjects.length).padStart(2, "0")} / {String(displayTotal).padStart(2, "0")}
             </span>
           </div>
-          <div className="relative z-10 flex flex-1 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-6 overflow-hidden">
-            <div className="flex-1 flex flex-col justify-center w-full max-w-[1000px] mx-auto">
-              {/* Centered quote card — photo removed, quote only */}
-              <div className="relative rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur px-6 py-10 sm:p-12 lg:p-14 flex flex-col items-center text-center shadow-[0_0_40px_rgba(29,124,199,0.15)] overflow-hidden">
-                <div className="relative flex size-14 items-center justify-center rounded-full bg-[#1D7CC7] text-[#FFFFFF] shadow">
-                  <QuoteIcon className="size-6" strokeWidth={2.2} />
+          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-6 overflow-hidden">
+            <div className="flex-1 min-h-0 flex flex-col justify-center w-full max-w-[1000px] mx-auto overflow-y-auto scrollbar-thin">
+              {/* Editorial quote card — same colors + text, new layout */}
+              <div className="relative rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur px-6 py-10 sm:p-12 lg:p-14 flex flex-col text-left sm:text-center shadow-[0_0_40px_rgba(29,124,199,0.15)] overflow-hidden">
+                <span aria-hidden="true" className="pointer-events-none absolute -top-8 left-4 sm:left-8 select-none text-[120px] sm:text-[180px] leading-none font-black text-[#1D7CC7]/10">
+                  &ldquo;
+                </span>
+                <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 right-6 select-none text-[11px] font-bold tracking-[0.3em] text-[#1D7CC7]/10 uppercase">
+                  Rocket ship
+                </span>
+                <div className="relative flex items-center justify-between gap-4">
+                  <span className="inline-flex items-center rounded-full border border-[#1D7CC7]/40 bg-white px-3 py-1 text-[11px] font-bold tracking-[0.2em] text-[#1D7CC7] uppercase">
+                    Quote to remember
+                  </span>
+                  <div className="flex size-12 items-center justify-center rounded-2xl bg-[#1D7CC7] text-[#FFFFFF] shadow shrink-0">
+                    <QuoteIcon className="size-6" strokeWidth={2.2} />
+                  </div>
                 </div>
-                <div className="relative mt-6 space-y-2">
-                  <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-[#24243C]">“If you&apos;re offered a seat on a rocket ship,</p>
-                  <p className="text-xl sm:text-2xl lg:text-[28px] xl:text-[32px] font-medium leading-relaxed text-[#24243C]">don’t ask what seat. Just get on.”</p>
+                <blockquote className="relative mt-8 text-2xl sm:text-3xl lg:text-[34px] font-medium leading-[1.4] text-[#24243C] text-balance">
+                  <span className="block">&ldquo;If you&apos;re offered a seat on a rocket ship,</span>
+                  <span className="block sm:ml-8">don&rsquo;t ask what seat. Just get on.&rdquo;</span>
+                </blockquote>
+                <div className="relative mt-8 flex items-center gap-4 justify-start sm:justify-center">
+                  <span className="h-[3px] w-10 rounded-full bg-gradient-to-r from-[#1D7CC7] to-[#12B9DA] shrink-0" />
+                  <p className="text-xs font-bold tracking-widest text-[#12B9DA] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
                 </div>
-                <div className="relative mt-8 h-px w-12 bg-[#1D7CC7]/50" />
-                <p className="relative mt-6 text-xs font-bold tracking-widest text-[#12B9DA] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
               </div>
             </div>
           </div>
@@ -1003,120 +1032,132 @@ export function PfeBookPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={9 + subjects.length} total={totalPages} />
-          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-4 overflow-hidden">
-            <div className="mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col justify-center">
+          <PageHeader number={8 + subjects.length} total={displayTotal} />
+          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-2 sm:py-4 overflow-y-auto scrollbar-thin">
+            <div className="mx-auto flex w-full max-w-5xl shrink-0 flex-col justify-start gap-4 sm:gap-6 py-2">
               <div className="text-center max-w-2xl mx-auto shrink-0">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1D7CC7] px-3.5 py-1 text-[12px] font-bold tracking-widest text-[#FFFFFF] uppercase shadow">
-                  <BookmarkCheckIcon className="size-3" /> Your choice
+                <span className="inline-flex items-center rounded-full bg-[#1D7CC7] px-3.5 py-1 text-[12px] font-bold tracking-widest text-[#FFFFFF] uppercase shadow">
+                  PROJECT SUMMARY
                 </span>
-                <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-[#24243C] leading-none">
-                  This is the <span className="text-[#12B9DA]">subject</span> you selected
+                <h2 className="mt-2 sm:mt-3 text-2xl sm:text-4xl font-bold tracking-tight text-[#24243C] leading-tight">
+                  Your <span className="text-[#12B9DA]">selected</span> project
                 </h2>
+                <p className="mt-1.5 sm:mt-2 text-[13px] sm:text-[15px] leading-relaxed text-[#24243C]/60">
+                  Here&rsquo;s a quick summary before you apply.
+                </p>
               </div>
 
-              <div className="mt-8 flex flex-1 min-h-0 flex-col items-center justify-center">
+              <div className="flex shrink-0 flex-col items-center justify-start">
                 {subjects.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-10 text-center px-6">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F1F4F8] border border-[#DCE3EA] text-[#24243C]/40">
-                      <BookmarkIcon className="size-5" />
+                  <div className="w-full max-w-5xl rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 shadow-lg">
+                    <div className="flex flex-col items-center justify-center gap-3 py-6 text-center px-6">
+                      <div className="flex size-12 items-center justify-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] text-[#1D7CC7]">
+                        <BookmarkIcon className="size-5" />
+                      </div>
+                      <p className="text-sm font-semibold text-[#24243C]">No subjects available</p>
                     </div>
-                    <p className="text-sm font-semibold text-[#24243C]">No subjects available</p>
                   </div>
                 ) : !shortlistedSubject ? (
-                  <div className="flex flex-col items-center justify-center gap-3 py-10 text-center px-6">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-[#F1F4F8] border border-[#DCE3EA] text-[#24243C]/40">
-                      <BookmarkIcon className="size-5" />
+                  <div className="w-full max-w-5xl rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 shadow-lg">
+                    <div className="flex flex-col items-center justify-center gap-3 py-6 text-center px-6">
+                      <div className="flex size-12 items-center justify-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] text-[#1D7CC7]">
+                        <BookmarkIcon className="size-5" />
+                      </div>
+                      <p className="text-sm font-semibold text-[#24243C]">No subject selected.</p>
+                      <p className="text-xs text-[#24243C]/55 max-w-sm leading-relaxed">Go back to the subjects list and pre-select the one you want.</p>
+                      <Button variant="outline" size="lg" onClick={() => goTo(4)} className="rounded-xl mt-2 h-11 px-6 text-sm border-[#1D7CC7]/40 bg-white text-[#24243C] fine-hover:bg-[#1D7CC7]/5">Back to subjects list</Button>
                     </div>
-                    <p className="text-sm font-semibold text-[#24243C]">No subject selected.</p>
-                    <p className="text-xs text-[#24243C]/55 max-w-sm leading-relaxed">Go back to the subjects list and pre-select the one you want.</p>
-                    <Button variant="outline" size="lg" onClick={() => goTo(4)} className="rounded-full mt-2 h-11 px-6 text-sm border-[#DCE3EA] bg-[#F1F4F8] text-[#24243C] fine-hover:bg-[#1D7CC7]/10">Back to subjects list</Button>
                   </div>
                 ) : (
-                  <div className="w-full max-w-5xl max-h-full overflow-y-auto scrollbar-thin">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                      <article
-                        aria-label="Subject name"
-                        className="rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 text-left shadow-lg"
-                      >
-                        <div className="flex items-start gap-4 sm:gap-5">
-                          <div
-                            aria-hidden="true"
-                            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] border border-[#DCE3EA] shadow-sm"
-                          >
-                            <BookOpenIcon className="size-5 text-[#24243C]" strokeWidth={1.8} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
-                              Subject name :
-                            </p>
-                            <p className="mt-1.5 text-lg sm:text-xl font-bold tracking-tight text-[#24243C] break-words">
-                              {shortlistedSubject.name}
-                            </p>
+                  <div className="w-full max-w-5xl shrink-0 pb-4">
+                    <div className="w-full rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-4 sm:p-8 text-left shadow-lg">
+                      <div className="flex items-start gap-4 sm:gap-5 px-1 sm:px-2">
+                        <div
+                          aria-hidden="true"
+                          className="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA]"
+                        >
+                          <TagIcon className="size-5 text-[#1D7CC7]" strokeWidth={1.8} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                            PROJECT CODE
+                          </p>
+                          <p className="mt-1.5 text-base sm:text-xl font-bold tracking-tight text-[#24243C] break-words">
+                            {shortlistedSubject.code}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="my-3 sm:my-6 h-px bg-[#DCE3EA]" />
+
+                      <div className="flex items-start gap-4 sm:gap-5 px-1 sm:px-2">
+                        <div
+                          aria-hidden="true"
+                          className="flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA]"
+                        >
+                          <FolderIcon className="size-5 text-[#1D7CC7]" strokeWidth={1.8} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                            PROJECT NAME
+                          </p>
+                          <p className="mt-1.5 text-base sm:text-xl font-bold tracking-tight leading-snug text-[#24243C] break-words">
+                            {shortlistedSubject.name}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="my-3 sm:my-6 h-px bg-[#DCE3EA]" />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                        <div className="rounded-xl border border-[#DCE3EA] bg-[#F1F4F8]/40 p-3 sm:p-4">
+                          <div className="flex items-start gap-4 min-w-0">
+                            <div
+                              aria-hidden="true"
+                              className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA]"
+                            >
+                              <CalendarIcon className="size-5 text-[#1D7CC7]" strokeWidth={1.8} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                                PERIOD
+                              </p>
+                              <p className="mt-1.5 text-base sm:text-lg font-bold leading-snug text-[#24243C] break-words uppercase">
+                                {shortlistedSubject.period || shortlistedSubject.duration?.name || "—"}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </article>
-                      <article
-                        aria-label="Profile"
-                        className="rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 text-left shadow-lg"
-                      >
-                        <div className="flex items-start gap-4 sm:gap-5">
-                          <div
-                            aria-hidden="true"
-                            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] border border-[#DCE3EA] shadow-sm"
-                          >
-                            <UserIcon className="size-5 text-[#24243C]" strokeWidth={1.8} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
-                              Profile :
-                            </p>
-                            <p className="mt-1.5 text-base sm:text-lg font-bold text-[#24243C] break-words">
-                              {shortlistedSubject.profiles && shortlistedSubject.profiles.length > 0
-                                ? shortlistedSubject.profiles.map((p) => p.name).join(" / ")
-                                : "—"}
-                            </p>
+                        <div className="rounded-xl border border-[#DCE3EA] bg-[#F1F4F8]/40 p-4">
+                          <div className="flex items-start gap-4 min-w-0">
+                            <div
+                              aria-hidden="true"
+                              className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA]"
+                            >
+                              <UserIcon className="size-5 text-[#1D7CC7]" strokeWidth={1.8} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
+                                PROFILE
+                              </p>
+                              <p className="mt-1.5 text-base sm:text-lg font-bold leading-snug text-[#24243C] break-words uppercase">
+                                {shortlistedSubject.profiles && shortlistedSubject.profiles.length > 0
+                                  ? shortlistedSubject.profiles.map((p) => p.name).join(" / ")
+                                  : "—"}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </article>
-                      <article
-                        aria-label="Period"
-                        className="rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-6 sm:p-8 text-left shadow-lg"
-                      >
-                        <div className="flex items-start gap-4 sm:gap-5">
-                          <div
-                            aria-hidden="true"
-                            className="flex size-11 sm:size-12 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] border border-[#DCE3EA] shadow-sm"
-                          >
-                            <CalendarIcon className="size-5 text-[#24243C]" strokeWidth={1.8} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase">
-                              Period :
-                            </p>
-                            <p className="mt-1.5 text-base sm:text-lg font-bold text-[#24243C] break-words">
-                              {shortlistedSubject.period || shortlistedSubject.duration?.name || "—"}
-                            </p>
-                          </div>
-                        </div>
-                      </article>
+                      </div>
                     </div>
-                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-                      <Button size="lg" aria-label="Apply now" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 font-bold shadow-lg bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] text-sm" onClick={() => navigate("/form")}>
-                        <CheckIcon className="size-4" aria-hidden="true" /> Apply now
+                    <div className="mt-4 sm:mt-6 flex shrink-0 flex-col sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-3 pb-1">
+                      <Button variant="outline" size="lg" aria-label="Choose another project" className="w-full sm:w-auto rounded-2xl border border-[#1D7CC7]/40 bg-white text-[#24243C] dark:bg-white dark:text-[#24243C] dark:border-[#1D7CC7]/40 fine-hover:bg-[#1D7CC7]/5 fine-hover:text-[#24243C] px-9 h-11 sm:h-12 text-sm font-bold" onClick={() => goTo(4)}>Choose another project</Button>
+                      <Button size="lg" aria-label="Apply for this project" className="w-full sm:w-auto gap-2 rounded-xl px-8 h-11 sm:h-12 font-bold shadow-lg bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] text-sm" onClick={() => navigate("/form")}>
+                        <CheckIcon className="size-4" aria-hidden="true" /> Apply for this project
                       </Button>
-                      <Button variant="outline" size="lg" aria-label="Choose another subject" className="w-full sm:w-auto rounded-2xl border border-[#1D7CC7]/40 bg-white text-[#24243C] dark:bg-white dark:text-[#24243C] dark:border-[#1D7CC7]/40 fine-hover:bg-[#1D7CC7]/5 fine-hover:text-[#24243C] px-9 h-12 text-sm font-bold" onClick={() => goTo(4)}>Choose another subject</Button>
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Mobile CTA */}
-              <div className="mt-4 hidden md:hidden flex-col items-center gap-2">
-                <Button disabled={shortlist.length === 0} size="lg" className="w-full gap-2 rounded-xl px-8 h-11 font-bold shadow bg-[#1D7CC7] text-[#FFFFFF] fine-hover:bg-[#0F5C9E] disabled:bg-[#F1F4F8] disabled:text-[#24243C]/40 text-sm" onClick={() => navigate("/form")}>
-                  <CheckIcon className="size-4" /> Apply now
-                </Button>
-                <Button variant="ghost" size="sm" className="rounded-full text-[#24243C]/60 fine-hover:text-[#24243C] fine-hover:bg-[#1D7CC7]/10" onClick={() => goTo(4)}>Back to index</Button>
               </div>
             </div>
           </div>
