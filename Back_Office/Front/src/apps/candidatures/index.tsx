@@ -117,9 +117,10 @@ export function Candidatures() {
     const min = stepScoreMin === '' || stepScoreMin == null ? NaN : Number(stepScoreMin);
     const max = stepScoreMax === '' || stepScoreMax == null ? NaN : Number(stepScoreMax);
     if (!Number.isNaN(min) || !Number.isNaN(max)) {
-      const bounds = [min, max].filter((v) => !Number.isNaN(v));
-      const low = Math.min(...bounds);
-      const high = Math.max(...bounds);
+      // Open-ended when one side is empty: Min-only means >= min,
+      // Max-only means <= max (a single bound must not collapse to equality).
+      const low = Number.isNaN(min) ? -Infinity : min;
+      const high = Number.isNaN(max) ? Infinity : max;
       result = result.filter((d) => {
         const s = stepFilter === "all" ? currentStepScore(d) : Number((d as any)[stepScoreField(stepFilter)] ?? 0);
         return s >= low && s <= high;
@@ -164,7 +165,8 @@ export function Candidatures() {
 
   // Score sort, applied automatically per step tab: on a step tab rows are
   // ordered by that step's score column; on "all" each row uses its own
-  // current-step score.
+  // current-step score. Unscored rows (0, shown as "-") always sit last,
+  // in both directions — only scored rows (> 0) take part in the ordering.
   const sortedData = useMemo(() => {
     if (!scoreDirection) return data;
     const scoreOf = (d: Candidature): number => {
@@ -174,7 +176,9 @@ export function Candidatures() {
       return typeof v === "number" ? v : Number(v) || 0;
     };
     const mul = scoreDirection === "asc" ? 1 : -1;
-    return [...data].sort((a, b) => (scoreOf(a) - scoreOf(b)) * mul);
+    const scored = data.filter((d) => scoreOf(d) > 0).sort((a, b) => (scoreOf(a) - scoreOf(b)) * mul);
+    const unscored = data.filter((d) => scoreOf(d) <= 0);
+    return [...scored, ...unscored];
   }, [data, scoreDirection, stepFilter]);
 
   // Bulk selection is restricted to pending rows (active step tab status):
@@ -224,7 +228,9 @@ export function Candidatures() {
     (candidature) => {
       setStepFilter(candidature.step || DEFAULT_STEP);
     },
-    stepFilter !== "all" && canUpdateCandidatures,
+    // Tick/cross step actions on every tab including "all": handlers resolve
+    // the email from each row's own step, and non-pending rows stay disabled.
+    canUpdateCandidatures,
     displayStatus,
     stepFilter === "all" ? undefined : stepFilter
   );

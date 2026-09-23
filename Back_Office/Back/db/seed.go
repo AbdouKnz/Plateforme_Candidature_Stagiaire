@@ -712,7 +712,8 @@ func MigrateEmailLogsTable(ctx context.Context, db *bun.DB) error {
 				subject_name VARCHAR(255) NOT NULL,
 				status VARCHAR(50) NOT NULL DEFAULT 'sent',
 				sent_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-				error_message TEXT NOT NULL DEFAULT ''
+				error_message TEXT NOT NULL DEFAULT '',
+				bcc TEXT NOT NULL DEFAULT ''
 			)
 		`)
 		if err != nil {
@@ -733,7 +734,8 @@ func MigrateEmailLogsTable(ctx context.Context, db *bun.DB) error {
 				ADD COLUMN IF NOT EXISTS subject_name VARCHAR(255) NOT NULL DEFAULT '',
 				ADD COLUMN IF NOT EXISTS status VARCHAR(50) NOT NULL DEFAULT 'sent',
 				ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-				ADD COLUMN IF NOT EXISTS error_message TEXT NOT NULL DEFAULT ''
+				ADD COLUMN IF NOT EXISTS error_message TEXT NOT NULL DEFAULT '',
+				ADD COLUMN IF NOT EXISTS bcc TEXT NOT NULL DEFAULT ''
 		`)
 		if err != nil {
 			log.Error().Err(err).Msg("Failed to migrate email_logs table columns")

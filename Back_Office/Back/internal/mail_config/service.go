@@ -27,7 +27,7 @@ func NewMailConfigService(db *bun.DB) *MailConfigService {
 
 func (s *MailConfigService) Get(ctx context.Context) (*MailConfigResponse, error) {
 	log.Info().Msg("Fetching mail config...")
-	keys := []string{"host", "port", "username", "password", "from", "from_name"}
+	keys := []string{"host", "port", "username", "password", "from", "from_name", "default_bcc"}
 	var settings []*domain.Setting
 	err := s.db.NewSelect().Model(&settings).Where(`"group" = ? AND "key" IN (?)`, ConfigGroup, bun.In(keys)).Scan(ctx)
 	if err != nil {
@@ -48,6 +48,8 @@ func (s *MailConfigService) Get(ctx context.Context) (*MailConfigResponse, error
 			resp.From = s.Value
 		case "from_name":
 			resp.FromName = s.Value
+		case "default_bcc":
+			resp.DefaultBcc = s.Value
 		}
 	}
 	if resp.Port == 0 {
@@ -62,24 +64,28 @@ func (s *MailConfigService) Update(ctx context.Context, req UpdateMailConfigRequ
 	req.Username = strings.TrimSpace(req.Username)
 	req.From = strings.TrimSpace(req.From)
 	req.FromName = strings.TrimSpace(req.FromName)
+	req.DefaultBcc = strings.TrimSpace(req.DefaultBcc)
 	// Snapshot before overwrite for the audit Before/After view.
 	// Best-effort: on fetch error proceed with zero-value old.
 	old, _ := s.Get(ctx)
 	var oldHost string
 	var oldPort int
 	var oldUsername string
+	var oldDefaultBcc string
 	if old != nil {
 		oldHost = old.Host
 		oldPort = old.Port
 		oldUsername = old.Username
+		oldDefaultBcc = old.DefaultBcc
 	}
 	fields := map[string]string{
-		"host":      req.Host,
-		"port":      strconv.Itoa(req.Port),
-		"username":  req.Username,
-		"password":  req.Password,
-		"from":      req.From,
-		"from_name": req.FromName,
+		"host":        req.Host,
+		"port":        strconv.Itoa(req.Port),
+		"username":    req.Username,
+		"password":    req.Password,
+		"from":        req.From,
+		"from_name":   req.FromName,
+		"default_bcc": req.DefaultBcc,
 	}
 	for key, value := range fields {
 		var existing domain.Setting
@@ -96,21 +102,23 @@ func (s *MailConfigService) Update(ctx context.Context, req UpdateMailConfigRequ
 	audit.LogAction(ctx, s.db, pkg.MAIL_CONFIG_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
 		Type: pkg.UPDATE,
 		Fields: map[string]domain.FieldChange{
-			"host":     {OldValues: oldHost, NewValues: req.Host, Changed: oldHost != req.Host},
-			"port":     {OldValues: oldPort, NewValues: req.Port, Changed: oldPort != req.Port},
-			"username": {OldValues: oldUsername, NewValues: req.Username, Changed: oldUsername != req.Username},
+			"host":        {OldValues: oldHost, NewValues: req.Host, Changed: oldHost != req.Host},
+			"port":        {OldValues: oldPort, NewValues: req.Port, Changed: oldPort != req.Port},
+			"username":    {OldValues: oldUsername, NewValues: req.Username, Changed: oldUsername != req.Username},
+			"default_bcc": {OldValues: oldDefaultBcc, NewValues: req.DefaultBcc, Changed: oldDefaultBcc != req.DefaultBcc},
 		},
 	})
 	return s.Get(ctx)
 }
 
 type SMTPConfig struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	From     string
-	FromName string
+	Host       string
+	Port       int
+	Username   string
+	Password   string
+	From       string
+	FromName   string
+	DefaultBcc string
 }
 
 // TestConnection tries to connect to the given SMTP server.
@@ -145,7 +153,7 @@ func (s *MailConfigService) TestConnection(ctx context.Context, req UpdateMailCo
 
 // GetSMTPConfig reads SMTP settings from the database mail_config group.
 func GetSMTPConfig(ctx context.Context, db *bun.DB) (*SMTPConfig, error) {
-	keys := []string{"host", "port", "username", "password", "from", "from_name"}
+	keys := []string{"host", "port", "username", "password", "from", "from_name", "default_bcc"}
 	var settings []*domain.Setting
 	err := db.NewSelect().Model(&settings).Where(`"group" = ? AND "key" IN (?)`, ConfigGroup, bun.In(keys)).Scan(ctx)
 	if err != nil {
@@ -166,6 +174,8 @@ func GetSMTPConfig(ctx context.Context, db *bun.DB) (*SMTPConfig, error) {
 			cfg.From = strings.TrimSpace(s.Value)
 		case "from_name":
 			cfg.FromName = strings.TrimSpace(s.Value)
+		case "default_bcc":
+			cfg.DefaultBcc = strings.TrimSpace(s.Value)
 		}
 	}
 	if cfg.Port == 0 {

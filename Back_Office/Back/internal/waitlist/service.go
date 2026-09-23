@@ -2,6 +2,7 @@ package waitlist
 
 import (
 	"astro-backend/domain"
+	"astro-backend/internal/email_footer"
 	"astro-backend/internal/mail_config"
 	mailPkg "astro-backend/pkg/mail"
 	"context"
@@ -116,6 +117,8 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 	}
 
 	mailer := mailPkg.NewMailer(smtpCfg.Host, smtpCfg.Port, smtpCfg.Username, smtpCfg.Password, smtpCfg.From, smtpCfg.FromName)
+	footerCfg := email_footer.GetEmailFooter(ctx, s.db)
+	footer := &mailPkg.EmailFooter{Phone: footerCfg.Phone, Email: footerCfg.Email, Linkedin: footerCfg.Linkedin, Website: footerCfg.Website, AddressURL: footerCfg.AddressURL}
 	notified := 0
 
 	for {
@@ -151,6 +154,7 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 				To:      []string{sub.Email},
 				Subject: template.Subject,
 				Body:    body,
+				Footer:  footer,
 			}
 
 			var sendErr error

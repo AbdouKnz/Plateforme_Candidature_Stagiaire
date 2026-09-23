@@ -1,21 +1,19 @@
+import { useLocation } from "@tanstack/react-router"
 import { Main } from "@/components/layout/main"
-import { FrontOfficeForm } from './front-office-form'
-import { useTranslation } from "react-i18next"
-import { Building2 } from "lucide-react"
+import { FrontOfficeStatusCard } from './front-office-status-card'
+import { FrontOfficeInfoCard } from './front-office-info-card'
+import { FrontOfficeFooterCard } from './front-office-footer-card'
+import { parseFrontOfficeTab } from './tabs'
 
 export function SettingsFrontOffice() {
-  const { t } = useTranslation()
+  const search = useLocation({ select: (location) => location.search })
+  const activeTab = parseFrontOfficeTab(
+    (search as Record<string, unknown> | undefined)?.tab
+  )
+
   return (
     <Main>
-      <div className="mb-2 flex flex-wrap items-center space-x-2">
-        <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-          <Building2 className="size-5" />
-        </div>
-        <h2 className="text-2xl font-bold tracking-tight">
-          {t("front_office_management")}
-        </h2>
-      </div>
-      <FrontOfficeForm />
+      {activeTab === 'status' ? <FrontOfficeStatusCard /> : activeTab === 'info' ? <FrontOfficeInfoCard /> : <FrontOfficeFooterCard />}
     </Main>
   )
 }

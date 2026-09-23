@@ -11,6 +11,7 @@ export interface EmailLog {
   subject_name: string;
   status: string;
   sent_at: string;
+  bcc: string;
 }
 
 export interface EmailLogQueryParams {

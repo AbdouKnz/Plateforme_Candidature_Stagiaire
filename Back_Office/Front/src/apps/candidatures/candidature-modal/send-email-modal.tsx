@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/date-picker";
-import { format } from 'date-fns'
+import { format, addDays, startOfDay } from 'date-fns'
 import { IconMail, IconSend, IconEye, IconAlertCircle, IconCalendarEvent } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Candidature, RejectionReason } from "@/models/candidature-model";
@@ -175,11 +175,10 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
     return isNaN(d.getTime()) ? undefined : d;
   }, [startDate]);
 
-  const minDate = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
+  // Start date lower bound: tomorrow at the earliest — today is not a valid
+  // start date. Computed per render (not memoized) so the bound stays fresh
+  // even if the app is left open past midnight.
+  const minStartDate = startOfDay(addDays(new Date(), 1));
 
   // Calendar range: from the current year (e.g. 2026) up to a far-future
   // year so the year dropdown contains only usable years and HR can freely
@@ -458,7 +457,7 @@ export function SendEmailModal({ open, onClose, onSent, candidature, templateTyp
                   onSelect={handleStartDateSelect}
                   placeholder={t("select_start_date")}
                   disabled={sending}
-                  fromDate={minDate}
+                  fromDate={minStartDate}
                   fromYear={currentYear}
                   toYear={maxYear}
                   disableWeekends

@@ -358,6 +358,10 @@ var auditIconMap = map[string]string{
 	pkg.EMAIL_TEMPLATE_MODULE: "IconMail",
 	pkg.EMAIL_LOG_MODULE:      "IconSend",
 	pkg.MAIL_CONFIG_MODULE:    "IconMailCog",
+	pkg.EMAIL_FOOTER_MODULE:   "IconMailOpened",
+	pkg.FRONT_OFFICE_STATUS_MODULE: "IconPower",
+	pkg.FRONT_OFFICE_FOOTER_MODULE: "IconLayoutBottombar",
+	pkg.INTERNSHIP_TITLE_MODULE:    "IconIdBadge",
 	pkg.WAITLIST_MODULE:       "IconCalendarEvent",
 }
 

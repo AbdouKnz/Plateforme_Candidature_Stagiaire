@@ -17,6 +17,7 @@ func FrontOfficeRoutes(r *gin.RouterGroup, db *bun.DB) {
 	toggleGroup.Use(middleware.AuthMiddleware(), middleware.PermissionMiddleware(pkg.SETTINGS_PERMISSIONS))
 	{
 		toggleGroup.PUT("/toggle", handler.ToggleFrontOfficeHandler)
+		toggleGroup.PUT("/footer", handler.UpdateFooterHandler)
 	}
 }
 

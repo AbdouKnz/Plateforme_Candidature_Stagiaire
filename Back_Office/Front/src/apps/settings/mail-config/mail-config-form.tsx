@@ -18,7 +18,7 @@ export function MailConfigForm() {
   const { modulePermissions } = usePermissions();
   const canEditMailConfig = modulePermissions.settings.canUpdate;
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ host: "", port: 587, username: "", password: "", from: "", from_name: "" });
+  const [form, setForm] = useState({ host: "", port: 587, username: "", password: "", from: "", from_name: "", default_bcc: "" });
 
   const { data, isLoading } = useQuery({
     queryKey: ["mail_config"],
@@ -27,7 +27,7 @@ export function MailConfigForm() {
 
   useEffect(() => {
     if (data) {
-      setForm({ host: data.host || "", port: data.port || 587, username: data.username || "", password: data.password || "", from: data.from || "", from_name: data.from_name || "" });
+      setForm({ host: data.host || "", port: data.port || 587, username: data.username || "", password: data.password || "", from: data.from || "", from_name: data.from_name || "", default_bcc: data.default_bcc || "" });
     }
   }, [data]);
 
@@ -120,6 +120,10 @@ export function MailConfigForm() {
             <Label htmlFor="from_name">From Name</Label>
             <Input id="from_name" value={form.from_name} onChange={e => set("from_name", e.target.value)} placeholder="no-reply" disabled={!canEditMailConfig} />
           </div>
+        </div>
+        <div className="space-y-2 mt-6">
+          <Label htmlFor="default_bcc">{t("default_bcc")}</Label>
+          <Input id="default_bcc" value={form.default_bcc} onChange={e => set("default_bcc", e.target.value)} placeholder={t("bcc_placeholder")} disabled={!canEditMailConfig} />
         </div>
       </Card>
 

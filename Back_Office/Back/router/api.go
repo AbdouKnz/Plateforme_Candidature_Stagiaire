@@ -7,6 +7,7 @@ import (
 	"astro-backend/internal/degree"
 	"astro-backend/internal/duration"
 	"astro-backend/internal/email_log"
+	"astro-backend/internal/email_footer"
 	"astro-backend/internal/email_template"
 	"astro-backend/internal/front_office"
 	"astro-backend/internal/mail_config"
@@ -45,6 +46,7 @@ func InitBackofficeRouter(r *gin.Engine, database *bun.DB) {
 	candidature.CandidatureRoutes(protected, database)
 	email_template.EmailTemplateRoutes(protected, database)
 	email_log.EmailLogRoutes(protected, database)
+	email_footer.EmailFooterRoutes(protected, database)
 	front_office.FrontOfficeRoutes(protected, database)
 	mail_config.MailConfigRoutes(protected, database)
 	waitlist.AdminWaitlistRoutes(protected, database)

@@ -16,7 +16,11 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
-  module?: string 
+  module?: string
+  /** Only visible to users with the Super Admin role. */
+  superAdminOnly?: boolean
+  /** Extra URLs that mark this item active (group shortcuts). */
+  matchUrls?: string[]
 }
 
 type NavLink = BaseNavItem & {

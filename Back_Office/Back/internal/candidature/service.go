@@ -4,6 +4,7 @@ import (
 	"astro-backend/config"
 	"astro-backend/domain"
 	"astro-backend/internal/audit"
+	"astro-backend/internal/email_footer"
 	"astro-backend/internal/mail_config"
 	"astro-backend/middleware"
 	"astro-backend/pkg"
@@ -486,7 +487,9 @@ var scoreStepColumns = map[string]string{
 
 // scoreSortClause builds the ORDER BY clause for a step-based score sort using
 // a safe column whitelist. Returns "" when no sort is requested, so callers
-// fall back to the default ordering.
+// fall back to the default ordering. Unscored rows (0) always sort last in
+// both directions: the boolean partition orders scored (false) before
+// unscored (true), then the score orders within the scored partition.
 func scoreSortClause(step, direction string) string {
 	col := scoreStepColumns[step]
 	if col == "" {
@@ -496,7 +499,7 @@ func scoreSortClause(step, direction string) string {
 	if dir != "ASC" && dir != "DESC" {
 		dir = "ASC"
 	}
-	return fmt.Sprintf("cnd.%s %s NULLS LAST", col, dir)
+	return fmt.Sprintf("(cnd.%s <= 0), cnd.%s %s NULLS LAST", col, col, dir)
 }
 
 // currentStepScoreExpr resolves each row's own current-step score, mirroring
@@ -849,6 +852,16 @@ func dedupeRejectionRecipients(recipients []string, reqType string) []string {
 	return out
 }
 
+// resolveBcc picks the blind-copy list for a send: the per-request value
+// wins, otherwise the mail config default applies. Empty means no BCC.
+func resolveBcc(reqBcc, defaultBcc string) []string {
+	raw := strings.TrimSpace(reqBcc)
+	if raw == "" {
+		raw = strings.TrimSpace(defaultBcc)
+	}
+	return mailPkg.ParseBcc(raw)
+}
+
 func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmailRequest) error {
 	log.Info().Int("id", id).Str("type", req.Type).Msg("Sending email for candidature...")
 
@@ -959,18 +972,26 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 			return fmt.Errorf("failed to get SMTP config: %w", err)
 		}
 		mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
+		footerCfg := email_footer.GetEmailFooter(ctx, s.db)
+		footer := &mailPkg.EmailFooter{Phone: footerCfg.Phone, Email: footerCfg.Email, Linkedin: footerCfg.Linkedin, Website: footerCfg.Website, AddressURL: footerCfg.AddressURL}
+		// Stamp the actual BCC used onto the log rows (persisted with the
+		// status updates below).
+		bccJoined := strings.Join(resolveBcc(req.Bcc, cfg.DefaultBcc), ", ")
+		for _, l := range emailLogs {
+			l.Bcc = bccJoined
+		}
 
 		// Send one email per member (binôme): even when the two addresses are
 		// identical (e.g. a pair sharing a mailbox), each member gets their own
 		// email with their own edited body instead of a single message with a
 		// duplicated To list.
 		for i, r := range recipients {
-			email := mailPkg.Email{To: []string{r}, Subject: subject, Body: bodies[i]}
+			email := mailPkg.Email{To: []string{r}, Subject: subject, Body: bodies[i], Footer: footer, Bcc: resolveBcc(req.Bcc, cfg.DefaultBcc)}
 			if sendErr := mailer.Send(email); sendErr != nil {
 				log.Error().Err(sendErr).Int("id", id).Str("to", r).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
 				emailLogs[i].Status = "failed"
 				emailLogs[i].ErrorMessage = truncateError(sendErr.Error(), 2000)
-				if _, uErr := s.db.NewUpdate().Model(emailLogs[i]).Column("status", "error_message").Where("id = ?", emailLogs[i].ID).Exec(ctx); uErr != nil {
+				if _, uErr := s.db.NewUpdate().Model(emailLogs[i]).Column("status", "error_message", "bcc").Where("id = ?", emailLogs[i].ID).Exec(ctx); uErr != nil {
 					log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
 				}
 				return fmt.Errorf("failed to send email: %w", sendErr)
@@ -980,7 +1001,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		for _, l := range emailLogs {
 			l.Status = "sent"
 			l.ErrorMessage = ""
-			if _, err := s.db.NewUpdate().Model(l).Column("status", "error_message").Where("id = ?", l.ID).Exec(ctx); err != nil {
+			if _, err := s.db.NewUpdate().Model(l).Column("status", "error_message", "bcc").Where("id = ?", l.ID).Exec(ctx); err != nil {
 				log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
 			}
 		}
@@ -1097,6 +1118,14 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 		return fmt.Errorf("failed to get SMTP config: %w", err)
 	}
 	mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
+	footerCfg := email_footer.GetEmailFooter(ctx, s.db)
+	footer := &mailPkg.EmailFooter{Phone: footerCfg.Phone, Email: footerCfg.Email, Linkedin: footerCfg.Linkedin, Website: footerCfg.Website, AddressURL: footerCfg.AddressURL}
+	// Stamp the actual BCC used onto the log rows (persisted with the
+	// status updates below).
+	bccJoined := strings.Join(resolveBcc(req.Bcc, cfg.DefaultBcc), ", ")
+	for _, l := range emailLogs {
+		l.Bcc = bccJoined
+	}
 
 	// Send one email per member (binôme): even when the two addresses are
 	// identical (e.g. a pair sharing a mailbox), each member gets their own
@@ -1107,6 +1136,8 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 			To:      []string{r},
 			Subject: subject,
 			Body:    bodies[i],
+			Footer:  footer,
+			Bcc:     resolveBcc(req.Bcc, cfg.DefaultBcc),
 		}
 
 		sendErr := mailer.Send(email)
@@ -1114,7 +1145,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 			log.Error().Err(sendErr).Int("id", id).Str("to", r).Str("smtp_host", cfg.Host).Int("smtp_port", cfg.Port).Msg("Failed to send email")
 			emailLogs[i].Status = "failed"
 			emailLogs[i].ErrorMessage = truncateError(sendErr.Error(), 2000)
-			if _, uErr := s.db.NewUpdate().Model(emailLogs[i]).Column("status", "error_message").Where("id = ?", emailLogs[i].ID).Exec(ctx); uErr != nil {
+			if _, uErr := s.db.NewUpdate().Model(emailLogs[i]).Column("status", "error_message", "bcc").Where("id = ?", emailLogs[i].ID).Exec(ctx); uErr != nil {
 				log.Error().Err(uErr).Int("id", id).Msg("Failed to update email log status to failed")
 			}
 			return fmt.Errorf("failed to send email: %w", sendErr)
@@ -1124,7 +1155,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 	for _, l := range emailLogs {
 		l.Status = "sent"
 		l.ErrorMessage = ""
-		if _, err := s.db.NewUpdate().Model(l).Column("status", "error_message").Where("id = ?", l.ID).Exec(ctx); err != nil {
+		if _, err := s.db.NewUpdate().Model(l).Column("status", "error_message", "bcc").Where("id = ?", l.ID).Exec(ctx); err != nil {
 			log.Error().Err(err).Int("id", id).Msg("Failed to update email log status to sent")
 		}
 	}
@@ -1147,7 +1178,7 @@ func (s *CandidatureService) SendEmail(ctx context.Context, id int, req SendEmai
 // Mail is deduped by address across the whole selection: rows sharing an
 // inbox are all transitioned (status + audit each), but only one rejection
 // mail goes out per address, listing every rejected subject for it.
-func (s *CandidatureService) BulkReject(ctx context.Context, ids []int, rejectionReason string) (int, error) {
+func (s *CandidatureService) BulkReject(ctx context.Context, ids []int, rejectionReason string, bcc string) (int, error) {
 	if len(ids) == 0 {
 		return 0, fmt.Errorf("no candidatures selected")
 	}
@@ -1211,7 +1242,7 @@ func (s *CandidatureService) BulkReject(ctx context.Context, ids []int, rejectio
 		}
 		if len(fresh) > 0 {
 			rep := rows[g.rowIdx[0]]
-			if err := s.SendEmail(ctx, rep.ID, SendEmailRequest{Type: "disapproval", RejectionReason: rejectionReason, Recipients: fresh}); err != nil {
+			if err := s.SendEmail(ctx, rep.ID, SendEmailRequest{Type: "disapproval", RejectionReason: rejectionReason, Recipients: fresh, Bcc: bcc}); err != nil {
 				log.Error().Err(err).Str("address", g.address).Msg("Bulk reject failed for address group")
 				return sent, fmt.Errorf("failed to reject applications for %s: %w", g.address, err)
 			}
@@ -1282,6 +1313,7 @@ func (s *CandidatureService) BulkAccept(ctx context.Context, ids []int, req Bulk
 			InterviewTime:  req.InterviewTime,
 			StartDate:      req.StartDate,
 			Body:           req.Body,
+			Bcc:            req.Bcc,
 		}
 		if err := s.SendEmail(ctx, id, single); err != nil {
 			log.Error().Err(err).Int("id", id).Msg("Bulk accept failed for candidature")
@@ -1653,26 +1685,21 @@ func (s *CandidatureService) ResetConfirm(ctx context.Context, password string) 
 	}
 	defer tx.Rollback()
 
-	// 1. Delete all email logs associated with candidatures
-	if _, err := tx.NewDelete().Model((*domain.EmailLog)(nil)).Where("1 = 1").Exec(ctx); err != nil {
-		log.Error().Err(err).Msg("Failed to delete email logs in reset transaction")
-		return fmt.Errorf("could not delete email logs: %w", err)
-	}
-
-	// 2. Delete subject audit logs. Candidature ("applications") audit logs are
-	// deliberately kept across resets so the pipeline history survives.
+	// 1. Delete subject audit logs. Candidature ("applications") audit logs
+	// and email logs are deliberately kept across resets so the pipeline
+	// and mailing history survives.
 	if _, err := tx.NewDelete().Model((*domain.AuditLog)(nil)).Where("LOWER(module) = ?", "subject").Exec(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to delete subject audit logs in reset transaction")
 		return fmt.Errorf("could not delete audit logs: %w", err)
 	}
 
-	// 3. Delete all candidatures
+	// 2. Delete all candidatures
 	if _, err := tx.NewDelete().Model((*domain.Candidature)(nil)).Where("1 = 1").Exec(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to delete candidatures in reset transaction")
 		return fmt.Errorf("could not delete candidatures: %w", err)
 	}
 
-	// 4. Delete subject relations (technologies & profiles) and all subjects
+	// 3. Delete subject relations (technologies & profiles) and all subjects
 	if _, err := tx.NewDelete().Model((*domain.SubjectTechnology)(nil)).Where("1 = 1").Exec(ctx); err != nil {
 		log.Error().Err(err).Msg("Failed to delete subject technologies in reset transaction")
 		return fmt.Errorf("could not delete subject technologies: %w", err)
@@ -1693,11 +1720,11 @@ func (s *CandidatureService) ResetConfirm(ctx context.Context, password string) 
 
 	log.Info().Msg("Recruitment session and subjects successfully reset in database")
 
-	// 5. Record audit log of the session reset
+	// 4. Record audit log of the session reset
 	changeDetails := domain.ChangeDetail{
 		Type: pkg.RESET_ACTION,
 		Fields: map[string]domain.FieldChange{
-			"Session": {DeletedValues: "All candidatures, subjects, email logs, and recruitment pipeline data", Changed: true},
+			"Session": {DeletedValues: "All candidatures, subjects, and recruitment pipeline data (email logs and non-subject audit logs are kept)", Changed: true},
 		},
 	}
 	if _, err := audit.LogAction(ctx, s.db, pkg.SESSION_MODULE, pkg.RESET_ACTION, changeDetails); err != nil {
@@ -1740,10 +1767,12 @@ func (s *CandidatureService) sendSessionResetNotification(adminEmail, adminName 
 		return
 	}
 	mailer := mailPkg.NewMailer(cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.From, cfg.FromName)
+	footerCfg := email_footer.GetEmailFooter(bgCtx, s.db)
 	email := mailPkg.Email{
 		To:      []string{adminEmail},
 		Subject: sessionResetEmailSubject,
 		Body:    body,
+		Footer:  &mailPkg.EmailFooter{Phone: footerCfg.Phone, Email: footerCfg.Email, Linkedin: footerCfg.Linkedin, Website: footerCfg.Website, AddressURL: footerCfg.AddressURL},
 		Attachments: []mailPkg.Attachment{
 			{
 				Filename:    attachmentName,

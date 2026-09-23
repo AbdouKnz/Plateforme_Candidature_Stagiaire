@@ -22,9 +22,9 @@ function AppLayout() {
 
   return (
     <Routes>
-      <Route path="/" element={isClosed ? <ClosedPage reopeningDate={status.reopening_date} closedMessage={status.closed_message} /> : <HomePage />} />
+      <Route path="/" element={isClosed ? <ClosedPage reopeningDate={status.reopening_date} internshipTitle={status.internship_title} /> : <HomePage />} />
       <Route path="/home" element={<Navigate to="/" replace />} />
-      <Route path="/form" element={isClosed ? <ClosedPage reopeningDate={status.reopening_date} closedMessage={status.closed_message} /> : <FormPage />} />
+      <Route path="/form" element={isClosed ? <ClosedPage reopeningDate={status.reopening_date} internshipTitle={status.internship_title} /> : <FormPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/pfe-book" element={isClosed ? <Navigate to="/" replace /> : <PfeBookPage />} />
     </Routes>

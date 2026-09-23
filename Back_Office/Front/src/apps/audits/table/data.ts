@@ -21,6 +21,10 @@ export const auditActionTypes = {
 export const AUDIT_MODULE_LABELS: Record<string, string> = {
   EmailTemplate: 'Email Template',
   MailConfig: 'Email Config',
+  EmailFooter: 'Email Footer',
+  FrontOfficeStatus: 'Front Office Status',
+  FrontOfficeFooter: 'Front Office Footer',
+  InternshipTitle: 'Internship Title',
   Candidature: 'Applications',
   Type: 'Application type',
 }
@@ -33,6 +37,38 @@ export const formatAuditModule = (module: string) => {
     (key) => key.toLowerCase() === module.toLowerCase()
   )
   return found ? AUDIT_MODULE_LABELS[found] : module
+}
+
+// Translated changelog field labels for the footer / front-office modules.
+// Backend keeps storing raw snake_case keys; this allowlist maps them to
+// existing editor translation keys (no new i18n entries needed). Keys from
+// other modules are intentionally absent so their rendering stays untouched.
+export const AUDIT_FIELD_LABEL_KEYS: Record<string, string> = {
+  phone: 'footer_phone',
+  email: 'footer_email',
+  linkedin: 'footer_linkedin',
+  website: 'footer_website',
+  address_url: 'footer_address',
+  footer_phone: 'footer_phone',
+  footer_email: 'footer_email',
+  footer_linkedin: 'footer_linkedin',
+  footer_website: 'footer_website',
+  footer_privacy_url: 'footer_privacy_url',
+  footer_terms_url: 'footer_terms_url',
+  is_enabled: 'front_office_status',
+  reopening_date: 'reopening_date',
+  year: 'year',
+  internship_title: 'internship_title',
+  default_bcc: 'default_bcc',
+}
+
+export const formatAuditFieldLabel = (
+  t: (key: string, options?: Record<string, unknown>) => string,
+  field: string
+) => {
+  const translationKey = AUDIT_FIELD_LABEL_KEYS[field.toLowerCase()]
+  if (!translationKey) return field
+  return t(translationKey, { defaultValue: field })
 }
 
 export const useAuditToolbarProps = () => {

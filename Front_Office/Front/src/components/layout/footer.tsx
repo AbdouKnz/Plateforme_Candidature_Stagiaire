@@ -1,4 +1,5 @@
 import { useTranslation } from "@/context/language-context"
+import { useFrontOfficeStatus } from "@/hooks/use-front-office-status"
 
 interface ContactItemData {
   icon: string
@@ -69,21 +70,46 @@ function ContactSection({
 
 function LegalRow() {
   const t = useTranslation()
+  const { status } = useFrontOfficeStatus()
+  const privacyUrl = status?.footer_privacy_url?.trim() || ""
+  const termsUrl = status?.footer_terms_url?.trim() || ""
   return (
     <div className="mt-6 flex flex-col items-center justify-between gap-2 border-t border-border/40 pt-4 sm:flex-row">
       <p className="text-xs text-muted-foreground">
         &copy; {new Date().getFullYear()} Park &amp; Charge. {t("footer.rights")}
       </p>
       <nav aria-label="Legal" className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-        <span className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]">
-          {t("footer.privacy")}
-        </span>
+        {privacyUrl ? (
+          <a
+            href={privacyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]"
+          >
+            {t("footer.privacy")}
+          </a>
+        ) : (
+          <span className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]">
+            {t("footer.privacy")}
+          </span>
+        )}
         <span aria-hidden="true" className="text-xs text-muted-foreground/50">
           |
         </span>
-        <span className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]">
-          {t("footer.terms")}
-        </span>
+        {termsUrl ? (
+          <a
+            href={termsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]"
+          >
+            {t("footer.terms")}
+          </a>
+        ) : (
+          <span className="cursor-pointer text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#12B9DA]">
+            {t("footer.terms")}
+          </span>
+        )}
       </nav>
     </div>
   )
@@ -91,17 +117,27 @@ function LegalRow() {
 
 export function Footer() {
   const t = useTranslation()
+  const { status } = useFrontOfficeStatus()
+
+  // Editable via Back Office (Settings → Front Office → Footer).
+  // Empty values fall back to the defaults below.
+  const email = status?.footer_email?.trim() || t("footer.email")
+  const phone = status?.footer_phone?.trim() || t("footer.phone")
+  const linkedinUrl =
+    status?.footer_linkedin?.trim() || "https://www.linkedin.com/company/park-and-charge-tn/"
+  const websiteUrl = status?.footer_website?.trim() || "https://parkandcharge.io/"
+  const websiteLabel = websiteUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") || "Park&Charge.io"
 
   const infos: ContactItemData[] = [
     {
       icon: "/email.png",
-      text: t("footer.email"),
-      href: `mailto:${t("footer.email")}`,
+      text: email,
+      href: `mailto:${email}`,
     },
     {
       icon: "/phone.png",
-      text: t("footer.phone"),
-      href: "tel:+21626342040",
+      text: phone,
+      href: `tel:${phone.replace(/[\s-]/g, "")}`,
     },
   ]
 
@@ -109,12 +145,12 @@ export function Footer() {
     {
       icon: "/linkedin.png",
       text: t("footer.linkedin"),
-      href: "https://www.linkedin.com/company/park-and-charge-tn/",
+      href: linkedinUrl,
     },
     {
       icon: "/WhiteBlueCircle.png",
-      text: "Park&Charge.io",
-      href: "https://parkandcharge.io/",
+      text: websiteLabel,
+      href: websiteUrl,
     },
   ]
 

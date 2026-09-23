@@ -17,4 +17,5 @@ type EmailLog struct {
 	Status        string `bun:"status,notnull,default:'sent'" json:"status"`
 	SentAt        string `bun:"sent_at,notnull" json:"sent_at"`
 	ErrorMessage  string `bun:"error_message,notnull,default:''" json:"error_message"`
+	Bcc           string `bun:"bcc,notnull,default:''" json:"bcc"`
 }

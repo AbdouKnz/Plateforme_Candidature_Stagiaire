@@ -6,15 +6,14 @@ import {
   ShieldCheck,
   Command,
   ClipboardList,
-  GraduationCap,
-  Laptop,
-  IdCard,
-  Clock,
-  Tags,
   BookOpen,
   FileText,
   Send,
   Settings,
+  Layers,
+  Mail,
+  Building2,
+  RotateCcw,
 } from 'lucide-react'
 
 export const sidebarData: SidebarData = {
@@ -92,9 +91,43 @@ export const sidebarData: SidebarData = {
       items: [
         {
           title: 'settings',
-          url: '/settings',
           icon: Settings,
           module: ModuleEnum.Settings,
+          items: [
+            {
+              title: 'settings_group_application',
+              url: '/settings/degrees',
+              icon: Layers,
+              module: ModuleEnum.Settings,
+              matchUrls: [
+                '/settings/degrees',
+                '/settings/types',
+                '/settings/technologies',
+                '/settings/durations',
+                '/settings/profiles',
+              ],
+            },
+            {
+              title: 'settings_group_emails',
+              url: '/settings/email-templates',
+              icon: Mail,
+              module: ModuleEnum.Settings,
+              matchUrls: ['/settings/email-templates', '/settings/mail-config', '/settings/email-footer'],
+            },
+            {
+              title: 'settings_group_front_office',
+              url: '/settings/front-office',
+              icon: Building2,
+              module: ModuleEnum.Settings,
+            },
+            {
+              title: 'reset_session',
+              url: '/settings/session',
+              icon: RotateCcw,
+              module: ModuleEnum.Settings,
+              superAdminOnly: true,
+            },
+          ],
         },
       ],
     },

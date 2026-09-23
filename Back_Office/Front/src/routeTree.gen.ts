@@ -37,6 +37,7 @@ import { Route as AuthenticatedSettingsProfilesRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsMailConfigRouteImport } from './routes/_authenticated/settings/mail-config'
 import { Route as AuthenticatedSettingsFrontOfficeRouteImport } from './routes/_authenticated/settings/front-office'
 import { Route as AuthenticatedSettingsEmailTemplatesRouteImport } from './routes/_authenticated/settings/email-templates'
+import { Route as AuthenticatedSettingsEmailFooterRouteImport } from './routes/_authenticated/settings/email-footer'
 import { Route as AuthenticatedSettingsDurationsRouteImport } from './routes/_authenticated/settings/durations'
 import { Route as AuthenticatedSettingsDegreesRouteImport } from './routes/_authenticated/settings/degrees'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
@@ -197,6 +198,12 @@ const AuthenticatedSettingsEmailTemplatesRoute =
     path: '/email-templates',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsEmailFooterRoute =
+  AuthenticatedSettingsEmailFooterRouteImport.update({
+    id: '/email-footer',
+    path: '/email-footer',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsDurationsRoute =
   AuthenticatedSettingsDurationsRouteImport.update({
     id: '/durations',
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/degrees': typeof AuthenticatedSettingsDegreesRoute
   '/settings/durations': typeof AuthenticatedSettingsDurationsRoute
+  '/settings/email-footer': typeof AuthenticatedSettingsEmailFooterRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/front-office': typeof AuthenticatedSettingsFrontOfficeRoute
   '/settings/mail-config': typeof AuthenticatedSettingsMailConfigRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/settings/degrees': typeof AuthenticatedSettingsDegreesRoute
   '/settings/durations': typeof AuthenticatedSettingsDurationsRoute
+  '/settings/email-footer': typeof AuthenticatedSettingsEmailFooterRoute
   '/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/settings/front-office': typeof AuthenticatedSettingsFrontOfficeRoute
   '/settings/mail-config': typeof AuthenticatedSettingsMailConfigRoute
@@ -293,6 +302,7 @@ export interface FileRoutesById {
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/settings/degrees': typeof AuthenticatedSettingsDegreesRoute
   '/_authenticated/settings/durations': typeof AuthenticatedSettingsDurationsRoute
+  '/_authenticated/settings/email-footer': typeof AuthenticatedSettingsEmailFooterRoute
   '/_authenticated/settings/email-templates': typeof AuthenticatedSettingsEmailTemplatesRoute
   '/_authenticated/settings/front-office': typeof AuthenticatedSettingsFrontOfficeRoute
   '/_authenticated/settings/mail-config': typeof AuthenticatedSettingsMailConfigRoute
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/settings/degrees'
     | '/settings/durations'
+    | '/settings/email-footer'
     | '/settings/email-templates'
     | '/settings/front-office'
     | '/settings/mail-config'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/errors/$error'
     | '/settings/degrees'
     | '/settings/durations'
+    | '/settings/email-footer'
     | '/settings/email-templates'
     | '/settings/front-office'
     | '/settings/mail-config'
@@ -391,6 +403,7 @@ export interface FileRouteTypes {
     | '/_authenticated/errors/$error'
     | '/_authenticated/settings/degrees'
     | '/_authenticated/settings/durations'
+    | '/_authenticated/settings/email-footer'
     | '/_authenticated/settings/email-templates'
     | '/_authenticated/settings/front-office'
     | '/_authenticated/settings/mail-config'
@@ -620,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsEmailTemplatesRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/email-footer': {
+      id: '/_authenticated/settings/email-footer'
+      path: '/email-footer'
+      fullPath: '/settings/email-footer'
+      preLoaderRoute: typeof AuthenticatedSettingsEmailFooterRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/durations': {
       id: '/_authenticated/settings/durations'
       path: '/durations'
@@ -647,6 +667,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsDegreesRoute: typeof AuthenticatedSettingsDegreesRoute
   AuthenticatedSettingsDurationsRoute: typeof AuthenticatedSettingsDurationsRoute
+  AuthenticatedSettingsEmailFooterRoute: typeof AuthenticatedSettingsEmailFooterRoute
   AuthenticatedSettingsEmailTemplatesRoute: typeof AuthenticatedSettingsEmailTemplatesRoute
   AuthenticatedSettingsFrontOfficeRoute: typeof AuthenticatedSettingsFrontOfficeRoute
   AuthenticatedSettingsMailConfigRoute: typeof AuthenticatedSettingsMailConfigRoute
@@ -661,6 +682,8 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
   {
     AuthenticatedSettingsDegreesRoute: AuthenticatedSettingsDegreesRoute,
     AuthenticatedSettingsDurationsRoute: AuthenticatedSettingsDurationsRoute,
+    AuthenticatedSettingsEmailFooterRoute:
+      AuthenticatedSettingsEmailFooterRoute,
     AuthenticatedSettingsEmailTemplatesRoute:
       AuthenticatedSettingsEmailTemplatesRoute,
     AuthenticatedSettingsFrontOfficeRoute:

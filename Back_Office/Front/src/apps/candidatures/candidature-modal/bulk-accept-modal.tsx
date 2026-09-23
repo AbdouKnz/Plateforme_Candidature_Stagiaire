@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/date-picker";
-import { format } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { IconMail, IconSend, IconAlertCircle, IconCalendarEvent } from "@tabler/icons-react";
 import type { Candidature } from "@/models/candidature-model";
 import { getEmailPreview, bulkAcceptEmails } from "@/service/candidatures";
@@ -250,7 +250,7 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
                   <IconCalendarEvent className="size-4" />
                   {t("interview_date")}
                 </Label>
-                <DatePicker selected={interviewDate ? new Date(`${interviewDate}T00:00:00`) : undefined} onSelect={handleInterviewDateSelect} placeholder={t("select_interview_date")} disabled={sending} fromDate={new Date()} fromYear={currentYear} toYear={currentYear + 2} disableWeekends />
+                <DatePicker selected={interviewDate ? new Date(`${interviewDate}T00:00:00`) : undefined} onSelect={handleInterviewDateSelect} placeholder={t("select_interview_date")} disabled={sending} fromDate={startOfDay(new Date())} fromYear={currentYear} toYear={currentYear + 2} disableWeekends />
               </div>
             </div>
           )}
@@ -260,7 +260,7 @@ export function BulkAcceptModal({ open, onClose, onSent, candidatures, step }: B
                 <IconCalendarEvent className="size-4" />
                 {t("start_date")}
               </Label>
-              <DatePicker selected={startDate ? new Date(`${startDate}T00:00:00`) : undefined} onSelect={handleStartDateSelect} placeholder={t("select_start_date")} disabled={sending} fromDate={new Date()} fromYear={currentYear} toYear={currentYear + 5} disableWeekends />
+              <DatePicker selected={startDate ? new Date(`${startDate}T00:00:00`) : undefined} onSelect={handleStartDateSelect} placeholder={t("select_start_date")} disabled={sending} fromDate={startOfDay(addDays(new Date(), 1))} fromYear={currentYear} toYear={currentYear + 5} disableWeekends />
               {formattedStartDate && <p className="text-xs text-muted-foreground">{formattedStartDate}</p>}
             </div>
           )}

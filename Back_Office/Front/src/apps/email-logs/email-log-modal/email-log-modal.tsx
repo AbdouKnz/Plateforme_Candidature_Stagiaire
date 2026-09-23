@@ -61,6 +61,13 @@ export function EmailLogModal({
                 <span>{emailLog.recipient}</span>
               </div>
               <div className="flex items-center gap-2">
+                <IconMail className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  {t("bcc")}:
+                </span>
+                <span className="break-all">{emailLog.bcc || "—"}</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <IconBook className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
                   {t("email_subject")}:

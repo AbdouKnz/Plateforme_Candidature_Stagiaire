@@ -3,6 +3,7 @@ import { twMerge } from 'tailwind-merge'
 import { NavItem, SidebarData, NavGroup } from "@/models/sidebar-model";
 import { useEffect, useState } from "react";
 import { usePermissions } from '@/hooks/use-permissions'
+import { useAuthStore } from '@/stores/auth-store'
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -144,10 +145,16 @@ export function getPageNumbers(currentPage: number, totalPages: number) {
 
 export function useFilteredSidebarData(sidebarData: SidebarData): SidebarData {
   const { canAccess } = usePermissions()
+  const user = useAuthStore((s) => s.user)
+  const isSuperAdmin = user?.role_name === 'Super Admin'
 
   const filterNavItems = (items: NavItem[]): NavItem[] => {
     return items
       .filter((item) => {
+        // Super Admin-only items (e.g. Reset Session) are hidden otherwise
+        if (item.superAdminOnly && !isSuperAdmin) {
+          return false
+        }
         // If item has a module, check permission
         if (item.module) {
           return canAccess(item.module)

@@ -201,6 +201,7 @@ func (s *EmailLogService) Export(ctx context.Context, params EmailLogParams) (*e
 		row := []string{
 			el.SentAt,
 			el.Recipient,
+			el.Bcc,
 			el.Subject,
 			el.Status,
 		}
@@ -210,9 +211,9 @@ func (s *EmailLogService) Export(ctx context.Context, params EmailLogParams) (*e
 	return &export.ExportOptions{
 		TableOrientation: "L",
 		Data:             data,
-		Widths:           []float64{38, 110, 100, 30},
+		Widths:           []float64{38, 110, 100, 100, 30},
 		FileName:         "Email_Logs",
 		Title:            "Email Logs Report",
-		Headers:          []string{"Sent At", "Recipient", "Subject", "Status"},
+		Headers:          []string{"Sent At", "Recipient", "Bcc", "Subject", "Status"},
 	}, nil
 }

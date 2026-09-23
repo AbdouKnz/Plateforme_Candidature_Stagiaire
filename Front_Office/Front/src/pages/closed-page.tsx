@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/context/language-context";
 import { useTheme } from "@/context/theme-context";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -12,6 +11,7 @@ import { z } from "zod";
 interface ClosedPageProps {
   reopeningDate?: string;
   closedMessage?: string;
+  internshipTitle?: string;
 }
 
 const emailSchema = z.string().email();
@@ -98,8 +98,7 @@ function CountdownCircle({
   );
 }
 
-export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
-  const navigate = useNavigate();
+export function ClosedPage({ reopeningDate, internshipTitle }: ClosedPageProps) {
   const t = useTranslation();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -146,6 +145,12 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
     { value: timeLeft.minutes, label: t("closed.mins"), max: TOTAL.minutes },
     { value: timeLeft.seconds, label: t("closed.seconds"), max: TOTAL.seconds },
   ];
+
+  // Configurable in Back Office (Settings → Front Office → internship title).
+  // Empty value keeps the default closed UI untouched. When set, the title
+  // becomes the hero heading and the generic closed message is demoted.
+  const trimmedTitle = internshipTitle?.trim() ?? "";
+  const showTitle = trimmedTitle.length > 0;
 
   const handleSubscribe = async () => {
     const parsed = emailSchema.safeParse(email);
@@ -206,10 +211,27 @@ export function ClosedPage({ reopeningDate, closedMessage }: ClosedPageProps) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className={`text-center text-3xl font-bold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl ${isDark ? "text-white" : "text-foreground"}`}
+          className={`mx-auto max-w-3xl text-center text-4xl font-bold leading-[1.08] tracking-tight break-words sm:text-5xl lg:text-6xl ${showTitle ? "" : isDark ? "text-white" : "text-foreground"}`}
         >
-          {t("closed.title")}
+          {showTitle ? (
+            <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              {trimmedTitle}
+            </span>
+          ) : (
+            t("closed.title")
+          )}
         </motion.h1>
+
+        {showTitle && (
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className={`mt-4 text-center text-base sm:text-lg ${isDark ? "text-white/60" : "text-muted-foreground"}`}
+          >
+            {t("closed.title")}
+          </motion.p>
+        )}
 
         {hasReopeningDate && (
           <motion.div

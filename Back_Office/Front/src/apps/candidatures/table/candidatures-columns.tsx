@@ -212,6 +212,10 @@ export function useCandidatureColumns(
         const score = typeof value === "number" ? value : Number(value) || 0;
         return <Badge variant="secondary">{score > 0 ? `${score}/20` : "-"}</Badge>;
       },
+      // No header sorting: rows carry no "score" field (the cell computes the
+      // active step's score), so the generic sort would order undefineds.
+      // Sorting lives solely in the toolbar "Sort by score" dropdown.
+      enableSorting: false,
       meta: {
         label: t("Score"),
       },

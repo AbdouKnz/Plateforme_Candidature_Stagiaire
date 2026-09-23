@@ -128,6 +128,8 @@ var Messages = map[string]map[string]string{
 
 		// Front Office
 		"front_office_toggled_successfully": "Front office status updated successfully",
+		"front_office_footer_updated":       "Front office footer updated successfully",
+		"email_footer_updated":              "Email footer updated successfully",
 
 		// Email Logs
 		"email_logs_fetched_successfully": "Email logs fetched successfully",
@@ -256,6 +258,8 @@ var Messages = map[string]map[string]string{
 
 		// Front Office
 		"front_office_toggled_successfully": "Statut du front office mis à jour avec succès",
+		"front_office_footer_updated":       "Pied de page du front office mis à jour avec succès",
+		"email_footer_updated":              "Pied de page des emails mis à jour avec succès",
 
 		// Email Logs
 		"email_logs_fetched_successfully": "Journaux d'emails récupérés avec succès",
@@ -381,6 +385,8 @@ var Messages = map[string]map[string]string{
 
 		// Front Office
 		"front_office_toggled_successfully": "تم تحديث حالة المكتب الأمامي بنجاح",
+		"front_office_footer_updated":       "تم تحديث تذييل المكتب الأمامي بنجاح",
+		"email_footer_updated":              "تم تحديث تذييل البريد الإلكتروني بنجاح",
 
 		// Email Logs
 		"email_logs_fetched_successfully": "تم جلب سجلات البريد الإلكتروني بنجاح",

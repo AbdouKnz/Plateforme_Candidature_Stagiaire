@@ -196,6 +196,17 @@ function SidebarMenuCollapsedDropdown({
 }
 
 function checkIsActive(href: string, item: NavItem, mainNav = false) {
+  const path = href.split('?')[0]
+  if (
+    item.matchUrls?.some(
+      (url) => path === url || path.startsWith(url + '/')
+    )
+  ) {
+    return true
+  }
+  if (!item.url) {
+    return !!item?.items?.some((i) => checkIsActive(href, i as NavItem))
+  }
   return (
     href === item.url ||
     href.split('?')[0] === item.url ||

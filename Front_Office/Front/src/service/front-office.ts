@@ -80,11 +80,17 @@ export async function fetchFrontOfficeStatus(): Promise<{
   year?: string
   internship_title?: string
   reopening_date?: string
+  footer_phone?: string
+  footer_email?: string
+  footer_linkedin?: string
+  footer_website?: string
+  footer_privacy_url?: string
+  footer_terms_url?: string
 }> {
   const res = await fetch(`${API_BASE}/front-office/status`)
   if (!res.ok) throw new Error("Failed to fetch front office status")
   const body = await res.json()
-  return (body.data ?? body) as { is_enabled: boolean; year?: string; internship_title?: string; reopening_date?: string }
+  return (body.data ?? body) as { is_enabled: boolean; year?: string; internship_title?: string; reopening_date?: string; footer_phone?: string; footer_email?: string; footer_linkedin?: string; footer_website?: string; footer_privacy_url?: string; footer_terms_url?: string }
 }
 
 // Re-export types for convenience

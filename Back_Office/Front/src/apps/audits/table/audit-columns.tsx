@@ -34,6 +34,10 @@ export const AUDIT_MODULE_ICONS: Record<string, string> = {
   emailtemplate: "IconMail",
   emaillog: "IconSend",
   mailconfig: "IconMailCog",
+  emailfooter: "IconMailOpened",
+  frontofficestatus: "IconPower",
+  frontofficefooter: "IconLayoutBottombar",
+  internshiptitle: "IconIdBadge",
   waitlist: "IconCalendarEvent",
 };
 

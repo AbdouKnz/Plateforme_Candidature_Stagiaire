@@ -52,3 +52,18 @@ func (h *FrontOfficeHandler) GetFrontOfficeStatusHandler(c *gin.Context) {
 
 	pkg.OK(c, status, nil)
 }
+
+func (h *FrontOfficeHandler) UpdateFooterHandler(c *gin.Context) {
+	var request UpdateFrontOfficeFooterRequest
+	if err := pkg.BindJSON(c, &request); err != nil {
+		pkg.BadRequest(c, pkg.ErrInvalidInput+" "+err.Error())
+		return
+	}
+
+	if err := h.Service.UpdateFooter(c.Request.Context(), request); err != nil {
+		pkg.InternalError(c, err.Error())
+		return
+	}
+
+	pkg.SuccessL(c, "front_office_footer_updated", nil)
+}

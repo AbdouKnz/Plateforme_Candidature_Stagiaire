@@ -342,49 +342,58 @@ func (s *PublicService) ensureWasEnabledSetting(ctx context.Context, initialValu
 	}
 }
 
-func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string, string, string, error) {
+func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (*FrontOfficeStatusResponse, error) {
 	var settings []*domain.FrontOfficeStatus
 	err := s.db.NewSelect().Model(&settings).
 		Where("st.group = ?", "front_office").
-		Where("st.key IN (?)", bun.In([]string{"enabled", "reopening_date", "was_enabled", "year", "internship_title"})).
+		Where("st.key IN (?)", bun.In([]string{"enabled", "reopening_date", "was_enabled", "year", "internship_title", "footer_phone", "footer_email", "footer_linkedin", "footer_website", "footer_privacy_url", "footer_terms_url"})).
 		Scan(ctx)
 	if err != nil {
-		return true, "", "", "", err
+		return nil, err
 	}
 
-	var isEnabled = true
+	status := &FrontOfficeStatusResponse{IsEnabled: true}
 	var wasEnabled *bool
-	var reopeningDate string
-	var year string
-	var internshipTitle string
 	for _, setting := range settings {
 		switch setting.Key {
 		case "enabled":
-			isEnabled = setting.Value == "true"
+			status.IsEnabled = setting.Value == "true"
 		case "was_enabled":
 			v := setting.Value == "true"
 			wasEnabled = &v
 		case "reopening_date":
-			reopeningDate = setting.Value
+			status.ReopeningDate = setting.Value
 		case "year":
-			year = setting.Value
+			status.Year = setting.Value
 		case "internship_title":
-			internshipTitle = setting.Value
+			status.InternshipTitle = setting.Value
+		case "footer_phone":
+			status.FooterPhone = setting.Value
+		case "footer_email":
+			status.FooterEmail = setting.Value
+		case "footer_linkedin":
+			status.FooterLinkedin = setting.Value
+		case "footer_website":
+			status.FooterWebsite = setting.Value
+		case "footer_privacy_url":
+			status.FooterPrivacyURL = setting.Value
+		case "footer_terms_url":
+			status.FooterTermsURL = setting.Value
 		}
 	}
 
 	// If was_enabled doesn't exist yet, create it matching current state to avoid false triggers
 	if wasEnabled == nil {
 		initialValue := "false"
-		if isEnabled {
+		if status.IsEnabled {
 			initialValue = "true"
 		}
 		s.ensureWasEnabledSetting(ctx, initialValue)
-		wasEnabled = &isEnabled
+		wasEnabled = &status.IsEnabled
 	}
 
 	// Detect transition from closed → open and send waitlist notifications
-	if isEnabled && !*wasEnabled {
+	if status.IsEnabled && !*wasEnabled {
 		log.Info().Msg("Front office reactivated — waitlist subscribers already handled by Back_Office")
 		_, err = s.db.NewUpdate().
 			Model((*domain.FrontOfficeStatus)(nil)).
@@ -398,7 +407,7 @@ func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string,
 	}
 
 	// Track that it's now disabled for future transition detection
-	if !isEnabled && *wasEnabled {
+	if !status.IsEnabled && *wasEnabled {
 		_, err = s.db.NewUpdate().
 			Model((*domain.FrontOfficeStatus)(nil)).
 			Set("value = ?", "false").
@@ -413,11 +422,11 @@ func (s *PublicService) GetFrontOfficeStatus(ctx context.Context) (bool, string,
 	// Effective open: visitors see the open site as soon as the reopening
 	// moment passes, even before the Back_Office lazy flip persists (it owns
 	// persistence + waitlist notification). Read-only here by design.
-	if !isEnabled && reopeningDue(reopeningDate) {
-		isEnabled = true
+	if !status.IsEnabled && reopeningDue(status.ReopeningDate) {
+		status.IsEnabled = true
 	}
 
-	return isEnabled, reopeningDate, year, internshipTitle, nil
+	return status, nil
 }
 
 // reopeningDue reports whether a stored reopening value ("2006-01-02 15:04",

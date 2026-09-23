@@ -353,8 +353,8 @@ export function PfeBookPage() {
           </div>
 
           {/* Top bar: logo */}
-          <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2">
-            <BrandLogo className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-xl" />
+          <div className="relative z-10 flex shrink-0 items-center justify-between px-4 sm:px-6 lg:px-8 py-1 sm:py-1.5">
+            <BrandLogo className="h-7 w-auto object-contain sm:h-9 lg:h-10 sm:w-auto lg:w-auto drop-shadow-xl" />
           </div>
 
           {/* ── Main centered hero ── */}
@@ -988,9 +988,9 @@ export function PfeBookPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
-            <BrandLogo className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
-            <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-3 py-1.5 text-[12px] font-mono tracking-[0.2em] text-[#24243C]/70">
+          <div className="relative z-10 flex shrink-0 items-center justify-between px-4 sm:px-6 lg:px-8 py-1 sm:py-1.5 bg-transparent">
+            <BrandLogo className="h-7 w-auto object-contain sm:h-9 lg:h-10 sm:w-auto lg:w-auto drop-shadow-sm" />
+            <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-2.5 py-1 text-[11px] font-mono tracking-[0.18em] text-[#24243C]/70">
               {String(7 + subjects.length).padStart(2, "0")} / {String(displayTotal).padStart(2, "0")}
             </span>
           </div>
@@ -1280,9 +1280,9 @@ function AwardIcon(props: React.SVGProps<SVGSVGElement>) {
 
 function PageHeader({ number, total }: { number: number; total: number }) {
   return (
-    <div className="relative z-10 flex shrink-0 items-center justify-between px-6 sm:px-8 lg:px-12 py-2 bg-transparent">
-      <BrandLogo className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14 drop-shadow-sm" />
-      <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-3 py-1.5 text-[12px] font-mono tracking-[0.2em] text-[#24243C]/70">
+    <div className="relative z-10 flex shrink-0 items-center justify-between px-4 sm:px-6 lg:px-8 py-1 sm:py-1.5 bg-transparent">
+      <BrandLogo className="h-7 w-auto object-contain sm:h-9 lg:h-10 sm:w-auto lg:w-auto drop-shadow-sm" />
+      <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-2.5 py-1 text-[11px] font-mono tracking-[0.18em] text-[#24243C]/70">
           {String(number).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </span>
     </div>

@@ -221,7 +221,7 @@ func (h *CandidatureHandler) BulkRejectHandler(c *gin.Context) {
 		return
 	}
 
-	sent, err := h.Service.BulkReject(c.Request.Context(), req.Ids, req.RejectionReason)
+	sent, err := h.Service.BulkReject(c.Request.Context(), req.Ids, req.RejectionReason, req.Bcc)
 	if err != nil {
 		log.Error().Err(err).Ints("ids", req.Ids).Msg("BulkReject failed")
 		pkg.InternalError(c, err.Error())

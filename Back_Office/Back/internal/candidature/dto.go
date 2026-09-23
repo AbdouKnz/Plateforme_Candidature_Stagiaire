@@ -174,6 +174,9 @@ type SendEmailRequest struct {
 	// rejection dedupe across rows). When non-empty, SendEmail mails exactly
 	// these addresses instead of building them from the candidature.
 	Recipients []string `json:"-"`
+	// Bcc is an optional comma-separated blind-copy list for this send.
+	// When empty, the mail config default_bcc applies instead.
+	Bcc string `json:"bcc,omitempty"`
 }
 
 // BulkRejectRequest lets HR reject several candidatures at once with a single
@@ -182,6 +185,9 @@ type SendEmailRequest struct {
 type BulkRejectRequest struct {
 	Ids             []int  `json:"ids" binding:"required"`
 	RejectionReason string `json:"rejection_reason" binding:"required"`
+	// Bcc is an optional comma-separated blind-copy list applied to every
+	// rejection mail. When empty, the mail config default_bcc applies.
+	Bcc string `json:"bcc,omitempty"`
 }
 
 // BulkAcceptRequest invites several candidatures to their next pipeline
@@ -204,6 +210,9 @@ type BulkAcceptRequest struct {
 	InterviewTime  string `json:"interview_time,omitempty"`
 	StartDate      string `json:"start_date,omitempty"`
 	Body           string `json:"body,omitempty"`
+	// Bcc is an optional comma-separated blind-copy list applied to every
+	// invitation mail. When empty, the mail config default_bcc applies.
+	Bcc string `json:"bcc,omitempty"`
 }
 
 type EmailPreviewResponse struct {

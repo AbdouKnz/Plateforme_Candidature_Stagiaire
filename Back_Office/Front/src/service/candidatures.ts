@@ -78,7 +78,7 @@ export const deleteCandidature = async (id: number): Promise<CandidatureResponse
 
 export const sendEmail = async (
   id: number,
-  data: { type: string; step?: string; interview_date?: string; interview_time?: string; rejection_reason?: string; quiz_link?: string; quiz_link2?: string; meeting_link?: string; f2f_meeting_link?: string; start_date?: string; body?: string; body2?: string }
+  data: { type: string; step?: string; interview_date?: string; interview_time?: string; rejection_reason?: string; quiz_link?: string; quiz_link2?: string; meeting_link?: string; f2f_meeting_link?: string; start_date?: string; body?: string; body2?: string; bcc?: string }
 ): Promise<CandidatureResponse> => {
   const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/${id}/send-email`, data);
   return response?.data;
@@ -108,8 +108,8 @@ export const getRejectionReasons = async (): Promise<Record<string, RejectionRea
   return response?.data?.data;
 };
 
-export const bulkRejectEmails = async (ids: number[], rejectionReason: string): Promise<{ sent: number }> => {
-  const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/bulk-reject`, { ids, rejection_reason: rejectionReason });
+export const bulkRejectEmails = async (ids: number[], rejectionReason: string, bcc?: string): Promise<{ sent: number }> => {
+  const response = await axiosApi.post(`${CANDIDATURE_ENDPOINT}/bulk-reject`, { ids, rejection_reason: rejectionReason, bcc });
   return response?.data?.data;
 };
 
@@ -125,6 +125,7 @@ export interface BulkAcceptPayload {
   interview_time?: string;
   start_date?: string;
   body?: string;
+  bcc?: string;
 }
 
 export const bulkAcceptEmails = async (payload: BulkAcceptPayload): Promise<{ sent: number }> => {

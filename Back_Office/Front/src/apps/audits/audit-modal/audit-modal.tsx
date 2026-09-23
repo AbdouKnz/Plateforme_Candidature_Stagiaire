@@ -36,7 +36,7 @@ import { LongText } from "@/components/long-text";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { formatAuditDate } from "../format-audit-date";
-import { formatAuditModule } from "../table/data";
+import { formatAuditModule, formatAuditFieldLabel } from "../table/data";
 import { STEP_VARIANTS } from "../../candidatures/pipeline";
 import {
   templateTypeBadgeVariant,
@@ -129,7 +129,9 @@ export function AuditModal({
   const isEmailTemplate = isEmailTemplateModule(audit?.module);
   const isTemplateTypeKey = (key: string) => isEmailTemplate && key === "Type";
   const fieldLabel = (key: string) =>
-    isEmailTemplate && key === "Subject" ? t("email_subject") : key;
+    isEmailTemplate && key === "Subject"
+      ? t("email_subject")
+      : formatAuditFieldLabel(t, key);
 
   const orderedEntries = (Object.entries(fields) as [string, any][]).sort(
     ([a], [b]) => {

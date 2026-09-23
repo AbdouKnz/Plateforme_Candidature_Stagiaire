@@ -5,6 +5,7 @@ export interface MailConfig {
   password: string;
   from: string;
   from_name: string;
+  default_bcc: string;
 }
 
 export type MailConfigResponse = {

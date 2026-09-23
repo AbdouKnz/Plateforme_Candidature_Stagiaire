@@ -6,6 +6,12 @@ interface FrontOfficeStatus {
   reopening_date?: string
   year?: string
   internship_title?: string
+  footer_phone?: string
+  footer_email?: string
+  footer_linkedin?: string
+  footer_website?: string
+  footer_privacy_url?: string
+  footer_terms_url?: string
 }
 
 export function useFrontOfficeStatus() {

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { format } from 'date-fns'
+import { format, isBefore, startOfDay } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -38,7 +38,7 @@ export function DatePicker({
   const { i18n } = useTranslation()
   const locale = i18n.language === 'fr' ? fr : undefined
 
-  const today = new Date(new Date().toDateString())
+  const today = startOfDay(new Date())
 
   if (disabled) {
     return (
@@ -76,11 +76,14 @@ export function DatePicker({
           fromYear={fromYear}
           toYear={toYear}
           disabled={(date: Date) => {
+            // Calendar-day precision on both sides: neither the cell date
+            // nor fromDate may carry a time component into the comparison,
+            // so "today" can never compare as before itself.
+            const day = startOfDay(date)
             if (fromDate) {
-              const from = new Date(fromDate.toDateString())
-              if (date < from) return true
+              if (isBefore(day, startOfDay(fromDate))) return true
             }
-            if (disablePast && date < today) return true
+            if (disablePast && isBefore(day, today)) return true
             if (disableWeekends) {
               const day = date.getDay()
               if (day === 0 || day === 6) return true

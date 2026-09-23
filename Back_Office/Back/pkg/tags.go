@@ -64,7 +64,11 @@ const (
 	EMAIL_TEMPLATE_MODULE = "EmailTemplate"
 	EMAIL_LOG_MODULE      = "EmailLog"
 	MAIL_CONFIG_MODULE    = "MailConfig"
+	EMAIL_FOOTER_MODULE   = "EmailFooter"
 	WAITLIST_MODULE       = "Waitlist"
+	FRONT_OFFICE_STATUS_MODULE = "FrontOfficeStatus"
+	FRONT_OFFICE_FOOTER_MODULE = "FrontOfficeFooter"
+	INTERNSHIP_TITLE_MODULE    = "InternshipTitle"
 )
 
 // Permissions
@@ -131,6 +135,10 @@ var AllModules = []string{
 	CANDIDATURE_MODULE,
 	EMAIL_TEMPLATE_MODULE,
 	MAIL_CONFIG_MODULE,
+	EMAIL_FOOTER_MODULE,
+	FRONT_OFFICE_STATUS_MODULE,
+	FRONT_OFFICE_FOOTER_MODULE,
+	INTERNSHIP_TITLE_MODULE,
 }
 
 // AllActions contains all available audit actions

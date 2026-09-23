@@ -22,12 +22,12 @@ func NewPublicHandler(service *PublicService) *PublicHandler {
 }
 
 func (h *PublicHandler) GetFrontOfficeStatusHandler(c *gin.Context) {
-	isEnabled, reopeningDate, year, internshipTitle, err := h.Service.GetFrontOfficeStatus(c.Request.Context())
+	status, err := h.Service.GetFrontOfficeStatus(c.Request.Context())
 	if err != nil {
 		pkg.InternalError(c, err.Error())
 		return
 	}
-	pkg.OK(c, FrontOfficeStatusResponse{IsEnabled: isEnabled, ReopeningDate: reopeningDate, Year: year, InternshipTitle: internshipTitle}, nil)
+	pkg.OK(c, status, nil)
 }
 
 func (h *PublicHandler) GetActiveDegreesHandler(c *gin.Context) {
