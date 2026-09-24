@@ -61,6 +61,21 @@ const MINDSET_STEPS = [
   { n: "03", title: "Even if you fail, you will succeed", desc: "The road to success is paved by stepstones of failures.", img: "/Success.png", pos: "object-center" },
 ]
 
+// Intern testimonials for the "Hear from our heroes" slide.
+// Photos live in Front_Office/Front/public/ — drop the files in and the
+// circles swap from initials to photos automatically (with onError fallback).
+const HEROES = [
+  { name: "Amin", img: "/Hero1.png", quote: "I had such a great time during my internship and learned so much! Grateful for all the support and experiences that made it so special." },
+  { name: "Lamys", img: "/Hero2.png", quote: "During my internship, I worked on a product delivered to a client, seeing my work live was amazing. Asteroidea helped me grow technically and personally, improving my web development skills while highlighting the value of teamwork and communication in a supportive environment." },
+  { name: "Ayoub", img: "/Hero3.png", quote: "My internship at Asteroidea was more than just an internship it was joining a true professional family. I appreciated the welcoming, collaborative atmosphere and the supportive environment that inspired creativity and showed me that with determination and hard work, any idea can come to life." },
+]
+
+function heroInitials(name: string) {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length <= 1) return (parts[0]?.slice(0, 2) ?? "?").toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
 const STORAGE_KEY = "pfe-book-shortlist"
 
 function useShortlist() {
@@ -148,7 +163,7 @@ export function PfeBookPage() {
   const containerRef = React.useRef<HTMLDivElement>(null)
   const [activePage, setActivePage] = React.useState(0)
 
-  const totalPages = React.useMemo(() => 9 + subjects.length, [subjects.length])
+  const totalPages = React.useMemo(() => 10 + subjects.length, [subjects.length])
   // Displayed book numbers exclude the unnumbered cover (Who Are We = 01).
   const displayTotal = totalPages - 1
 
@@ -820,7 +835,7 @@ export function PfeBookPage() {
           )
         })}
 
-        {/* ── WE WILL CHALLENGE YOU - PDF 13 ── GLASS */}
+        {/* ── HEAR FROM OUR HEROES - right after the last subject page ── */}
         <section
           data-page={5 + subjects.length}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
@@ -828,6 +843,87 @@ export function PfeBookPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
           <PageHeader number={5 + subjects.length} total={displayTotal} />
+          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-3 sm:px-4 lg:px-8 xl:px-10 py-2 sm:py-3 overflow-hidden">
+            <div className="text-center shrink-0">
+              <span className="inline-flex items-center rounded-full bg-[#1D7CC7] px-3.5 py-1 text-[12px] font-bold tracking-widest text-[#FFFFFF] uppercase shadow">Testimonials</span>
+              <h2 className="mt-3 text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight leading-none"><span className="text-[#24243C]">Hear from our </span><span className="text-[#12B9DA]">heroes</span></h2>
+              <div className="mx-auto mt-3 h-px w-12 bg-[#F1F4F8]" />
+            </div>
+
+            <div className="mt-16 sm:mt-20 flex-1 min-h-0 flex flex-col overflow-y-auto scrollbar-thin py-2">
+              {/* desktop — wide panel, photos overlapping its top edge */}
+              <div className="relative hidden sm:block w-full max-w-[1200px] mx-auto my-auto">
+                <div className="rounded-3xl bg-[#F1F4F8] px-6 lg:px-10 pb-8 lg:pb-10 shadow-sm">
+                  <div className="grid grid-cols-3 gap-6 lg:gap-10">
+                    {HEROES.map((h) => (
+                      <div key={h.name} className="flex justify-center">
+                        <div className="relative -mt-16 lg:-mt-[72px] size-32 lg:size-36 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] shadow-xl ring-4 ring-white">
+                          <span className="absolute inset-0 flex items-center justify-center text-3xl lg:text-4xl font-black text-[#FFFFFF]">
+                            {heroInitials(h.name)}
+                          </span>
+                          {h.img ? (
+                            <img
+                              src={h.img}
+                              alt={h.name}
+                              className="absolute inset-0 size-full object-cover"
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none"
+                              }}
+                            />
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-6 grid grid-cols-3 gap-6 lg:gap-10">
+                    {HEROES.map((h, i) => (
+                      <div key={h.name} className={i > 0 ? "border-l-2 border-[#1D7CC7] pl-6 lg:pl-10" : ""}>
+                        <h3 className="text-center text-lg lg:text-xl font-bold tracking-tight text-[#1D7CC7]">{h.name}</h3>
+                        <p className="mt-3 text-left text-sm lg:text-[15px] leading-[1.7] text-[#24243C]/80">{h.quote}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* mobile — stacked photo above each testimonial */}
+              <div className="sm:hidden w-full max-w-md mx-auto my-auto flex flex-col gap-10 py-4">
+                {HEROES.map((h) => (
+                  <div key={h.name} className="flex flex-col items-center text-center">
+                    <div className="relative size-28 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] shadow-xl ring-4 ring-white">
+                      <span className="absolute inset-0 flex items-center justify-center text-2xl font-black text-[#FFFFFF]">
+                        {heroInitials(h.name)}
+                      </span>
+                      {h.img ? (
+                        <img
+                          src={h.img}
+                          alt={h.name}
+                          className="absolute inset-0 size-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.style.display = "none"
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                    <h3 className="mt-3 text-lg font-bold tracking-tight text-[#1D7CC7]">{h.name}</h3>
+                    <p className="mt-2 text-sm leading-[1.7] text-[#24243C]/80">{h.quote}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── WE WILL CHALLENGE YOU - PDF 13 ── GLASS */}
+        <section
+          data-page={6 + subjects.length}
+          className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
+          <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
+          <PageHeader number={6 + subjects.length} total={displayTotal} />
           {/* stepped cards — same content/colors, layout like Why Intern With Us */}
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
             <div className="flex flex-1 flex-col justify-center w-full">
@@ -843,7 +939,7 @@ export function PfeBookPage() {
                 <div className="relative hidden md:grid grid-cols-3 gap-x-8 lg:gap-x-10 xl:gap-x-14">
                   {MINDSET_STEPS.map((c) => (
                     <div key={c.n} className="relative flex flex-col items-center text-center">
-                      <div className="relative z-10 flex size-28 xl:size-36 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(29,124,199,0.4)]">
+                      <div className="relative z-10 flex size-44 xl:size-52 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_45px_rgba(29,124,199,0.4)]">
                         <img src={c.img} alt={c.title} className={`size-full object-cover rounded-full ${c.pos}`} loading="lazy" />
                       </div>
                       <span className="relative mt-4 xl:mt-5 text-xs xl:text-sm font-bold text-[#12B9DA]">{c.n}</span>
@@ -859,7 +955,7 @@ export function PfeBookPage() {
                   <div className="flex flex-col gap-14">
                     {MINDSET_STEPS.map((c) => (
                       <div key={c.n} className="relative flex flex-col items-center text-center">
-                        <div className="relative z-10 flex size-32 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(29,124,199,0.4)]">
+                        <div className="relative z-10 flex size-52 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] border border-[#1D7CC7]/40 shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_30px_rgba(29,124,199,0.4)]">
                           <img src={c.img} alt={c.title} className={`size-full object-cover rounded-full ${c.pos}`} loading="lazy" />
                         </div>
                         <span className="relative mt-4 text-xs font-bold text-[#12B9DA]">{c.n}</span>
@@ -877,12 +973,12 @@ export function PfeBookPage() {
 
         {/* ── RECRUITMENT PROCESS - PDF 15 ── GLASS */}
         <section
-          data-page={6 + subjects.length}
+          data-page={7 + subjects.length}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={6 + subjects.length} total={displayTotal} />
+          <PageHeader number={7 + subjects.length} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-3 overflow-hidden">
             <div className="flex flex-1 flex-col justify-center w-full">
               <div className="text-center max-w-3xl mx-auto shrink-0">
@@ -983,7 +1079,7 @@ export function PfeBookPage() {
 
         {/* ── CLOSING - PDF 16 ── GLASS */}
         <section
-          data-page={7 + subjects.length}
+          data-page={8 + subjects.length}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
@@ -991,35 +1087,33 @@ export function PfeBookPage() {
           <div className="relative z-10 flex shrink-0 items-center justify-between px-4 sm:px-6 lg:px-8 py-1 sm:py-1.5 bg-transparent">
             <BrandLogo className="h-7 w-auto object-contain sm:h-9 lg:h-10 sm:w-auto lg:w-auto drop-shadow-sm" />
             <span className="inline-flex items-center gap-2 rounded-full bg-[#F1F4F8] backdrop-blur border border-[#1D7CC7]/40 px-2.5 py-1 text-[11px] font-mono tracking-[0.18em] text-[#24243C]/70">
-              {String(7 + subjects.length).padStart(2, "0")} / {String(displayTotal).padStart(2, "0")}
+              {String(8 + subjects.length).padStart(2, "0")} / {String(displayTotal).padStart(2, "0")}
             </span>
           </div>
-          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-6 overflow-hidden">
-            <div className="flex-1 min-h-0 flex flex-col justify-center w-full max-w-[1000px] mx-auto overflow-y-auto scrollbar-thin">
-              {/* Editorial quote card — same colors + text, new layout */}
-              <div className="relative rounded-2xl border border-[#1D7CC7]/40 bg-[#F1F4F8] backdrop-blur px-6 py-10 sm:p-12 lg:p-14 flex flex-col text-left sm:text-center shadow-[0_0_40px_rgba(29,124,199,0.15)] overflow-hidden">
-                <span aria-hidden="true" className="pointer-events-none absolute -top-8 left-4 sm:left-8 select-none text-[120px] sm:text-[180px] leading-none font-black text-[#1D7CC7]/10">
-                  &ldquo;
+          <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-10 py-6 overflow-hidden">
+            <div className="relative flex-1 min-h-0 flex flex-col items-center justify-center w-full max-w-5xl mx-auto px-2 py-8 sm:px-8">
+              {/* floating quote-mark accent */}
+              <div aria-hidden="true" className="absolute right-1 sm:right-8 top-6 sm:top-10 flex size-10 sm:size-12 items-center justify-center rounded-full bg-[#1D7CC7] text-[#FFFFFF] shadow-lg shadow-[#1D7CC7]/25">
+                <QuoteIcon className="size-5 sm:size-6" strokeWidth={2.2} />
+              </div>
+
+              {/* secondary contextual label */}
+              <div className="relative w-full flex justify-center sm:justify-start sm:pl-6 lg:pl-16">
+                <span className="inline-flex items-center rounded-full border border-[#1D7CC7]/30 bg-white px-4 py-1.5 text-[11px] font-bold tracking-[0.22em] text-[#1D7CC7] uppercase">
+                  Quote to remember
                 </span>
-                <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 right-6 select-none text-[11px] font-bold tracking-[0.3em] text-[#1D7CC7]/10 uppercase">
-                  Rocket ship
-                </span>
-                <div className="relative flex items-center justify-between gap-4">
-                  <span className="inline-flex items-center rounded-full border border-[#1D7CC7]/40 bg-white px-3 py-1 text-[11px] font-bold tracking-[0.2em] text-[#1D7CC7] uppercase">
-                    Quote to remember
-                  </span>
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-[#1D7CC7] text-[#FFFFFF] shadow shrink-0">
-                    <QuoteIcon className="size-6" strokeWidth={2.2} />
-                  </div>
-                </div>
-                <blockquote className="relative mt-8 text-2xl sm:text-3xl lg:text-[34px] font-medium leading-[1.4] text-[#24243C] text-balance">
-                  <span className="block">&ldquo;If you&apos;re offered a seat on a rocket ship,</span>
-                  <span className="block sm:ml-8">don&rsquo;t ask what seat. Just get on.&rdquo;</span>
-                </blockquote>
-                <div className="relative mt-8 flex items-center gap-4 justify-start sm:justify-center">
-                  <span className="h-[3px] w-10 rounded-full bg-gradient-to-r from-[#1D7CC7] to-[#12B9DA] shrink-0" />
-                  <p className="text-xs font-bold tracking-widest text-[#12B9DA] uppercase">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
-                </div>
+              </div>
+
+              {/* focal quote */}
+              <blockquote className="relative mt-8 sm:mt-10 text-center text-3xl sm:text-4xl lg:text-[52px] font-medium leading-[1.25] sm:leading-[1.2] text-[#24243C] text-balance max-w-4xl">
+                <span className="block">&ldquo;If you&apos;re offered a seat on a rocket ship,</span>
+                <span className="block">don&rsquo;t ask what seat. Just get on.&rdquo;</span>
+              </blockquote>
+
+              {/* author attribution */}
+              <div className="relative mt-8 sm:mt-10 flex items-center justify-center gap-3 px-2">
+                <span className="h-[2px] w-12 rounded-full bg-[#1D7CC7] shrink-0" />
+                <p className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#12B9DA] uppercase text-center">— SHERYL SANDBERG, FORMER COO OF FACEBOOK</p>
               </div>
             </div>
           </div>
@@ -1027,12 +1121,12 @@ export function PfeBookPage() {
 
         {/* ── SHORTLIST ── GLASS */}
         <section
-          data-page={8 + subjects.length}
+          data-page={9 + subjects.length}
           className="relative flex h-full w-screen shrink-0 snap-start flex-col isolate bg-[#FFFFFF] text-[#24243C] overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-[#1D7CC7]/10 via-[#FFFFFF] to-[#1D7CC7]/10" />
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: `radial-gradient(circle at 1px 1px, #1D7CC7 1px, transparent 0)`, backgroundSize: "24px 24px" }} />
-          <PageHeader number={8 + subjects.length} total={displayTotal} />
+          <PageHeader number={9 + subjects.length} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col px-4 sm:px-6 lg:px-8 xl:px-10 py-2 sm:py-4 overflow-y-auto scrollbar-thin">
             <div className="mx-auto flex w-full max-w-5xl shrink-0 flex-col justify-start gap-4 sm:gap-6 py-2">
               <div className="text-center max-w-2xl mx-auto shrink-0">
