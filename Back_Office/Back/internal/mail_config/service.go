@@ -99,8 +99,9 @@ func (s *MailConfigService) Update(ctx context.Context, req UpdateMailConfigRequ
 			return nil, fmt.Errorf("failed to set %s: %w", key, err)
 		}
 	}
-	audit.LogAction(ctx, s.db, pkg.MAIL_CONFIG_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
-		Type: pkg.UPDATE,
+	audit.LogAction(ctx, s.db, pkg.EMAILS_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
+		Type:      pkg.UPDATE,
+		SubModule: pkg.MAIL_CONFIG_MODULE,
 		Fields: map[string]domain.FieldChange{
 			"host":        {OldValues: oldHost, NewValues: req.Host, Changed: oldHost != req.Host},
 			"port":        {OldValues: oldPort, NewValues: req.Port, Changed: oldPort != req.Port},

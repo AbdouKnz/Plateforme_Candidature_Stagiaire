@@ -68,6 +68,16 @@ function ContactSection({
   )
 }
 
+function formatTunisianPhone(raw: string): { text: string; href: string } | null {
+  let digits = raw.replace(/\D/g, "")
+  if (digits.length === 11 && digits.startsWith("216")) digits = digits.slice(3)
+  if (!/^\d{8}$/.test(digits)) return null
+  return {
+    text: `+216 ${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 8)}`,
+    href: `tel:+216${digits}`,
+  }
+}
+
 function LegalRow() {
   const t = useTranslation()
   const { status } = useFrontOfficeStatus()
@@ -122,7 +132,14 @@ export function Footer() {
   // Editable via Back Office (Settings → Front Office → Footer).
   // Empty values fall back to the defaults below.
   const email = status?.footer_email?.trim() || t("footer.email")
-  const phone = status?.footer_phone?.trim() || t("footer.phone")
+  const phoneInput = status?.footer_phone?.trim() || t("footer.phone")
+  // Back Office stores a bare 8-digit number; always display it grouped as
+  // +216 XX XXX XXX. Legacy values already containing +216 normalize to the
+  // same rendering (so the default "+216 26 342 040" is unchanged), while
+  // anything unexpected falls back to the raw value.
+  const formattedPhone = formatTunisianPhone(phoneInput)
+  const phoneText = formattedPhone?.text ?? phoneInput
+  const phoneHref = formattedPhone?.href ?? `tel:${phoneInput.replace(/[\s-]/g, "")}`
   const linkedinUrl =
     status?.footer_linkedin?.trim() || "https://www.linkedin.com/company/park-and-charge-tn/"
   const websiteUrl = status?.footer_website?.trim() || "https://parkandcharge.io/"
@@ -136,8 +153,8 @@ export function Footer() {
     },
     {
       icon: "/phone.png",
-      text: phone,
-      href: `tel:${phone.replace(/[\s-]/g, "")}`,
+      text: phoneText,
+      href: phoneHref,
     },
   ]
 
@@ -148,7 +165,7 @@ export function Footer() {
       href: linkedinUrl,
     },
     {
-      icon: "/WhiteBlueCircle.png",
+      icon: "/SiteWeb.png",
       text: websiteLabel,
       href: websiteUrl,
     },

@@ -83,6 +83,7 @@ func (s *DegreeService) CreateDegree(ctx context.Context, degree *domain.Degree)
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.DEGREE_MODULE,
 		Type: pkg.CREATE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {
@@ -92,7 +93,7 @@ func (s *DegreeService) CreateDegree(ctx context.Context, degree *domain.Degree)
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.DEGREE_MODULE, pkg.CREATE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.CREATE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for CreateDegree")
 	}
@@ -137,6 +138,7 @@ func (s *DegreeService) UpdateDegree(ctx context.Context, id int, request Update
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.DEGREE_MODULE,
 		Type: pkg.UPDATE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {
@@ -152,7 +154,7 @@ func (s *DegreeService) UpdateDegree(ctx context.Context, id int, request Update
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.DEGREE_MODULE, pkg.UPDATE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.UPDATE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for UpdateDegree")
 	}
@@ -182,13 +184,14 @@ func (s *DegreeService) DeleteDegree(ctx context.Context, id int) error {
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.DEGREE_MODULE,
 		Type: pkg.DELETE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {DeletedValues: degree.Name, Changed: true},
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.DEGREE_MODULE, pkg.DELETE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.DELETE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for DeleteDegree")
 	}

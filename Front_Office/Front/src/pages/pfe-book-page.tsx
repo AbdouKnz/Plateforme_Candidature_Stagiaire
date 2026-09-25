@@ -618,7 +618,63 @@ export function PfeBookPage() {
               </div>
 
               <div className="mt-5 flex flex-1 min-h-0 flex-col overflow-hidden px-4 sm:px-6 lg:px-10">
-                <div className="flex-1 min-h-0 overflow-auto scrollbar-thin">
+                {/* mobile — stacked subject cards (table takes over at sm+) */}
+                <div className="block sm:hidden flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+                  {subjects.length === 0 ? (
+                    <p className="px-4 py-16 text-center text-base text-[#24243C]/60">No subjects available yet.</p>
+                  ) : (
+                    <div className="flex flex-col gap-3 pb-4">
+                      {subjects.map((s, idx) => {
+                        const pageNum = 5 + idx
+                        const profile = s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"
+                        return (
+                          <article
+                            key={s.id}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`${s.code} — ${s.name}`}
+                            onClick={() => scrollToSubject(s.code)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault()
+                                scrollToSubject(s.code)
+                              }
+                            }}
+                            className="cursor-pointer rounded-2xl border border-[#DCE3EA] bg-[#FFFFFF] p-4 shadow-sm transition-colors fine-hover:border-[#1D7CC7]/40 fine-hover:bg-[#1D7CC7]/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D7CC7]"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#12B9DA]/30 bg-[#12B9DA]/10 px-3 py-1 text-[12px] font-bold tracking-wide text-[#12B9DA]">
+                                <span className="size-1.5 rounded-full bg-[#12B9DA]" />
+                                <span className="break-words [overflow-wrap:anywhere]">{s.code}</span>
+                              </span>
+                              <span className="shrink-0 text-sm font-bold tabular-nums text-[#24243C]/60">{String(pageNum).padStart(2, "0")}</span>
+                            </div>
+                            <h3 className="mt-2.5 text-base font-bold leading-snug text-[#24243C] break-words [overflow-wrap:anywhere]">{s.name}</h3>
+                            <p className="mt-1 text-sm font-semibold text-[#24243C]/70 break-words [overflow-wrap:anywhere]">{profile}</p>
+                            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                              {s.technologies?.length ? (
+                                <>
+                                  {s.technologies.slice(0, 5).map((t) => (
+                                    <span key={t.id} className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/30 px-3 py-1 text-[12px] font-semibold text-[#24243C] break-words [overflow-wrap:anywhere]">
+                                      {t.name}
+                                    </span>
+                                  ))}
+                                  {(s.technologies.length > 5) && (
+                                    <span className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-2.5 py-1 text-[11px] font-bold text-[#24243C]/60">
+                                      +{s.technologies.length - 5}
+                                    </span>
+                                  )}
+                                </>
+                              ) : <span className="text-[#24243C]/40 text-sm">—</span>}
+                            </div>
+                          </article>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+                {/* tablet/desktop — full table */}
+                <div className="hidden sm:block flex-1 min-h-0 overflow-auto scrollbar-thin">
                   <table className="w-full min-w-[900px] text-left text-sm xl:text-[15px] border-collapse">
                     <thead className="sticky top-0 z-10">
                       <tr className="border-b border-[#DCE3EA] bg-[#F1F4F8] backdrop-blur-xl">
@@ -707,7 +763,7 @@ export function PfeBookPage() {
                         <span className="size-2 rounded-full bg-[#12B9DA] shadow-[0_0_6px_rgba(18,185,218,0.6)]" />
                         {s.code}
                       </span>
-                      <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-[2rem] font-black leading-tight tracking-tight text-[#24243C]">
+                      <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-[2rem] font-black leading-tight tracking-tight text-[#24243C] break-words [overflow-wrap:anywhere]">
                         {s.name}
                       </h2>
                     </div>
@@ -749,7 +805,7 @@ export function PfeBookPage() {
                         <p className="text-[13px] font-bold tracking-widest text-[#12B9DA] uppercase">Description</p>
                       </div>
                       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin pr-1">
-                        <div className="space-y-4 text-[17px] sm:text-[18px] lg:text-[19px] xl:text-[20px] leading-[1.8] text-[#24243C]/90 whitespace-pre-wrap">
+                        <div className="space-y-4 text-[17px] sm:text-[18px] lg:text-[19px] xl:text-[20px] leading-[1.8] text-[#24243C]/90 whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                           {s.description ? (
                             s.description.split("\n\n").map((para, i) => (
                               <p key={i}>{para}</p>
@@ -770,7 +826,7 @@ export function PfeBookPage() {
                       <div className="flex flex-wrap gap-2.5">
                         {s.technologies && s.technologies.length > 0 ? (
                           s.technologies.map((t) => (
-                            <span key={t.id} className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/40 text-[#24243C] px-4 py-2 text-sm font-semibold shadow-sm shrink-0">
+                            <span key={t.id} className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/40 text-[#24243C] px-4 py-2 text-sm font-semibold shadow-sm shrink-0 break-words [overflow-wrap:anywhere] max-w-full">
                               {t.name}
                             </span>
                           ))
@@ -795,7 +851,7 @@ export function PfeBookPage() {
                         <span className="w-0.5 h-4 rounded-full bg-[#12B9DA]" />
                         <p className="text-[13px] font-bold tracking-widest text-[#12B9DA] uppercase">Profile</p>
                       </div>
-                      <p className="mt-1 text-base font-bold text-[#24243C]">
+                      <p className="mt-1 text-base font-bold text-[#24243C] break-words">
                         {s.profiles && s.profiles.length > 0 ? s.profiles.map((p) => p.name).join(" / ") : "—"}
                       </p>
                     </div>
@@ -811,7 +867,7 @@ export function PfeBookPage() {
                         <span className="w-0.5 h-4 rounded-full bg-[#12B9DA]" />
                         <p className="text-[13px] font-bold tracking-widest text-[#12B9DA] uppercase">Period</p>
                       </div>
-                      <p className="mt-1 text-base font-bold text-[#24243C]">{s.period || s.duration?.name || "6 Months"}</p>
+                      <p className="mt-1 text-base font-bold text-[#24243C] break-words">{s.period || s.duration?.name || "6 Months"}</p>
                     </div>
                   </div>
 
@@ -853,30 +909,33 @@ export function PfeBookPage() {
             <div className="mt-16 sm:mt-20 flex-1 min-h-0 flex flex-col overflow-y-auto scrollbar-thin py-2">
               {/* desktop — wide panel, photos overlapping its top edge */}
               <div className="relative hidden sm:block w-full max-w-[1200px] mx-auto my-auto">
-                <div className="rounded-3xl bg-[#F1F4F8] px-6 lg:px-10 pb-8 lg:pb-10 shadow-sm">
-                  <div className="grid grid-cols-3 gap-6 lg:gap-10">
-                    {HEROES.map((h) => (
-                      <div key={h.name} className="flex justify-center">
-                        <div className="relative -mt-16 lg:-mt-[72px] size-32 lg:size-36 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] shadow-xl ring-4 ring-white">
-                          <span className="absolute inset-0 flex items-center justify-center text-3xl lg:text-4xl font-black text-[#FFFFFF]">
-                            {heroInitials(h.name)}
-                          </span>
-                          {h.img ? (
-                            <img
-                              src={h.img}
-                              alt={h.name}
-                              className="absolute inset-0 size-full object-cover"
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none"
-                              }}
-                            />
-                          ) : null}
-                        </div>
+                {/* photo row in normal flow (fully inside the scroll range) */}
+                <div className="relative z-10 grid grid-cols-3 gap-6 lg:gap-10 px-6 lg:px-10">
+                  {HEROES.map((h) => (
+                    <div key={h.name} className="flex justify-center">
+                      <div className="relative size-32 lg:size-36 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] shadow-xl ring-4 ring-white">
+                        <span className="absolute inset-0 flex items-center justify-center text-3xl lg:text-4xl font-black text-[#FFFFFF]">
+                          {heroInitials(h.name)}
+                        </span>
+                        {h.img ? (
+                          <img
+                            src={h.img}
+                            alt={h.name}
+                            className="absolute inset-0 size-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none"
+                            }}
+                          />
+                        ) : null}
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-6 grid grid-cols-3 gap-6 lg:gap-10">
+                    </div>
+                  ))}
+                </div>
+                {/* panel pulled up over the photos' bottom halves — the overlap
+                    zone stays inside the scrollable area, so nothing clips */}
+                <div className="rounded-3xl bg-[#F1F4F8] px-6 lg:px-10 pb-8 lg:pb-10 pt-24 lg:pt-28 -mt-16 lg:-mt-[72px] shadow-sm">
+                  <div className="grid grid-cols-3 gap-6 lg:gap-10">
                     {HEROES.map((h, i) => (
                       <div key={h.name} className={i > 0 ? "border-l-2 border-[#1D7CC7] pl-6 lg:pl-10" : ""}>
                         <h3 className="text-center text-lg lg:text-xl font-bold tracking-tight text-[#1D7CC7]">{h.name}</h3>

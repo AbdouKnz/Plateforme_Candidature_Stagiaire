@@ -35,6 +35,7 @@ export type FieldChange = {
 
 export type ChangeDetail = {
   type: string; 
+  sub_module?: string;
   fields: Record<string, FieldChange>;
   description?: string; 
 };

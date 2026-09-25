@@ -19,6 +19,9 @@ export const auditActionTypes = {
 }
 
 export const AUDIT_MODULE_LABELS: Record<string, string> = {
+  DataSetup: 'Data Setup',
+  Emails: 'Emails',
+  FrontOffice: 'Front Office',
   EmailTemplate: 'Email Template',
   MailConfig: 'Email Config',
   EmailFooter: 'Email Footer',

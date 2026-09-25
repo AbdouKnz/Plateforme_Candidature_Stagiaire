@@ -71,6 +71,14 @@ const (
 	INTERNSHIP_TITLE_MODULE    = "InternshipTitle"
 )
 
+// Audit group modules: settings sub-settings are logged under one group
+// module each; the fine-grained origin travels in ChangeDetail.SubModule.
+const (
+	DATA_SETUP_MODULE  = "DataSetup"
+	EMAILS_MODULE      = "Emails"
+	FRONT_OFFICE_MODULE = "FrontOffice"
+)
+
 // Permissions
 
 const (
@@ -126,19 +134,11 @@ var AllModules = []string{
 	ROLE_MODULE,
 	AUTH_MODULE,
 	SESSION_MODULE,
-	DEGREE_MODULE,
-	TECHNOLOGY_MODULE,
-	PROFILE_MODULE,
-	DURATION_MODULE,
-	TYPE_MODULE,
+	DATA_SETUP_MODULE,
 	SUBJECT_MODULE,
 	CANDIDATURE_MODULE,
-	EMAIL_TEMPLATE_MODULE,
-	MAIL_CONFIG_MODULE,
-	EMAIL_FOOTER_MODULE,
-	FRONT_OFFICE_STATUS_MODULE,
-	FRONT_OFFICE_FOOTER_MODULE,
-	INTERNSHIP_TITLE_MODULE,
+	EMAILS_MODULE,
+	FRONT_OFFICE_MODULE,
 }
 
 // AllActions contains all available audit actions

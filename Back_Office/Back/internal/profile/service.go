@@ -77,6 +77,7 @@ func (s *ProfileService) CreateProfile(ctx context.Context, profile *domain.Prof
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.PROFILE_MODULE,
 		Type: pkg.CREATE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {
@@ -86,7 +87,7 @@ func (s *ProfileService) CreateProfile(ctx context.Context, profile *domain.Prof
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.PROFILE_MODULE, pkg.CREATE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.CREATE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for CreateProfile")
 	}
@@ -121,6 +122,7 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, id int, request Upda
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.PROFILE_MODULE,
 		Type: pkg.UPDATE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {
@@ -136,7 +138,7 @@ func (s *ProfileService) UpdateProfile(ctx context.Context, id int, request Upda
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.PROFILE_MODULE, pkg.UPDATE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.UPDATE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for UpdateProfile")
 	}
@@ -166,13 +168,14 @@ func (s *ProfileService) DeleteProfile(ctx context.Context, id int) error {
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.PROFILE_MODULE,
 		Type: pkg.DELETE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {DeletedValues: profile.Name, Changed: true},
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.PROFILE_MODULE, pkg.DELETE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.DELETE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for DeleteProfile")
 	}

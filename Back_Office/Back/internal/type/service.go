@@ -77,6 +77,7 @@ func (s *TypeService) CreateType(ctx context.Context, typ *domain.Type) (*domain
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.TYPE_MODULE,
 		Type: pkg.CREATE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {
@@ -86,7 +87,7 @@ func (s *TypeService) CreateType(ctx context.Context, typ *domain.Type) (*domain
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.TYPE_MODULE, pkg.CREATE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.CREATE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for CreateType")
 	}
@@ -131,6 +132,7 @@ func (s *TypeService) UpdateType(ctx context.Context, id int, request UpdateType
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.TYPE_MODULE,
 		Type: pkg.UPDATE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {
@@ -146,7 +148,7 @@ func (s *TypeService) UpdateType(ctx context.Context, id int, request UpdateType
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.TYPE_MODULE, pkg.UPDATE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.UPDATE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for UpdateType")
 	}
@@ -176,13 +178,14 @@ func (s *TypeService) DeleteType(ctx context.Context, id int) error {
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.TYPE_MODULE,
 		Type: pkg.DELETE,
 		Fields: map[string]domain.FieldChange{
 			"Name": {DeletedValues: typ.Name, Changed: true},
 		},
 	}
 
-	_, err = audit.LogAction(ctx, s.db, pkg.TYPE_MODULE, pkg.DELETE_ACTION, changeDetails)
+	_, err = audit.LogAction(ctx, s.db, pkg.DATA_SETUP_MODULE, pkg.DELETE_ACTION, changeDetails)
 	if err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for DeleteType")
 	}

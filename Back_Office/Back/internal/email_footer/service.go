@@ -94,8 +94,9 @@ func (s *EmailFooterService) Update(ctx context.Context, req UpdateEmailFooterRe
 			return nil, fmt.Errorf("failed to set %s: %w", key, err)
 		}
 	}
-	audit.LogAction(ctx, s.db, pkg.EMAIL_FOOTER_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
-		Type:   pkg.UPDATE,
+	audit.LogAction(ctx, s.db, pkg.EMAILS_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
+		Type:      pkg.UPDATE,
+		SubModule: pkg.EMAIL_FOOTER_MODULE,
 		Fields: fieldChanges,
 	})
 	return s.Get(ctx)

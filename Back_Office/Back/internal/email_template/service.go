@@ -86,6 +86,7 @@ func (s *EmailTemplateService) Create(ctx context.Context, emailTemplate *domain
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.EMAIL_TEMPLATE_MODULE,
 		Type: pkg.CREATE,
 		Fields: map[string]domain.FieldChange{
 			"Type":    {CreatedValues: emailTemplate.Type, Changed: true},
@@ -95,7 +96,7 @@ func (s *EmailTemplateService) Create(ctx context.Context, emailTemplate *domain
 		},
 	}
 
-	if _, err := audit.LogAction(ctx, s.db, pkg.EMAIL_TEMPLATE_MODULE, pkg.CREATE_ACTION, changeDetails); err != nil {
+	if _, err := audit.LogAction(ctx, s.db, pkg.EMAILS_MODULE, pkg.CREATE_ACTION, changeDetails); err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for CreateEmailTemplate")
 	}
 
@@ -146,6 +147,7 @@ func (s *EmailTemplateService) Update(ctx context.Context, id int, request Updat
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.EMAIL_TEMPLATE_MODULE,
 		Type: pkg.UPDATE,
 		Fields: map[string]domain.FieldChange{
 			"Type":    {OldValues: oldType, NewValues: emailTemplate.Type, Changed: oldType != emailTemplate.Type},
@@ -155,7 +157,7 @@ func (s *EmailTemplateService) Update(ctx context.Context, id int, request Updat
 		},
 	}
 
-	if _, err := audit.LogAction(ctx, s.db, pkg.EMAIL_TEMPLATE_MODULE, pkg.UPDATE_ACTION, changeDetails); err != nil {
+	if _, err := audit.LogAction(ctx, s.db, pkg.EMAILS_MODULE, pkg.UPDATE_ACTION, changeDetails); err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for UpdateEmailTemplate")
 	}
 
@@ -185,6 +187,7 @@ func (s *EmailTemplateService) Delete(ctx context.Context, id int) error {
 	}
 
 	changeDetails := domain.ChangeDetail{
+		SubModule: pkg.EMAIL_TEMPLATE_MODULE,
 		Type: pkg.DELETE,
 		Fields: map[string]domain.FieldChange{
 			"Type":    {DeletedValues: emailTemplate.Type, Changed: true},
@@ -192,7 +195,7 @@ func (s *EmailTemplateService) Delete(ctx context.Context, id int) error {
 		},
 	}
 
-	if _, err := audit.LogAction(ctx, s.db, pkg.EMAIL_TEMPLATE_MODULE, pkg.DELETE_ACTION, changeDetails); err != nil {
+	if _, err := audit.LogAction(ctx, s.db, pkg.EMAILS_MODULE, pkg.DELETE_ACTION, changeDetails); err != nil {
 		log.Error().Err(err).Msg("Failed to log audit action for DeleteEmailTemplate")
 	}
 

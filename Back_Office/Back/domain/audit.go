@@ -19,8 +19,9 @@ type AuditLog struct {
 }
 
 type ChangeDetail struct {
-	Type   string                 `json:"type"`
-	Fields map[string]FieldChange `json:"fields"`
+	Type      string                 `json:"type"`
+	SubModule string                 `json:"sub_module,omitempty"`
+	Fields    map[string]FieldChange `json:"fields"`
 }
 
 type FieldChange struct {

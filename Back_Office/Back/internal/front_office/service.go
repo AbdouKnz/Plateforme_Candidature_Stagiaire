@@ -113,9 +113,10 @@ func (s *FrontOfficeService) ToggleFrontOffice(ctx context.Context, request Togg
 			statusFields["reopening_date"] = domain.FieldChange{OldValues: oldToggle["reopening_date"], NewValues: reopeningDate, Changed: true}
 		}
 		if len(statusFields) > 0 {
-			audit.LogAction(ctx, s.db, pkg.FRONT_OFFICE_STATUS_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
-				Type:   pkg.UPDATE,
-				Fields: statusFields,
+			audit.LogAction(ctx, s.db, pkg.FRONT_OFFICE_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
+				Type:      pkg.UPDATE,
+				SubModule: pkg.FRONT_OFFICE_STATUS_MODULE,
+				Fields:    statusFields,
 			})
 		}
 		infoFields := map[string]domain.FieldChange{}
@@ -126,9 +127,10 @@ func (s *FrontOfficeService) ToggleFrontOffice(ctx context.Context, request Togg
 			infoFields["internship_title"] = domain.FieldChange{OldValues: oldToggle["internship_title"], NewValues: request.InternshipTitle, Changed: true}
 		}
 		if len(infoFields) > 0 {
-			audit.LogAction(ctx, s.db, pkg.INTERNSHIP_TITLE_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
-				Type:   pkg.UPDATE,
-				Fields: infoFields,
+			audit.LogAction(ctx, s.db, pkg.FRONT_OFFICE_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
+				Type:      pkg.UPDATE,
+				SubModule: pkg.INTERNSHIP_TITLE_MODULE,
+				Fields:    infoFields,
 			})
 		}
 	}
@@ -244,8 +246,9 @@ func (s *FrontOfficeService) UpdateFooter(ctx context.Context, request UpdateFro
 		}
 	}
 	if len(fieldChanges) > 0 {
-		audit.LogAction(ctx, s.db, pkg.FRONT_OFFICE_FOOTER_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
-			Type:   pkg.UPDATE,
+		audit.LogAction(ctx, s.db, pkg.FRONT_OFFICE_MODULE, pkg.UPDATE_ACTION, domain.ChangeDetail{
+			Type:      pkg.UPDATE,
+			SubModule: pkg.FRONT_OFFICE_FOOTER_MODULE,
 			Fields: fieldChanges,
 		})
 	}

@@ -400,7 +400,7 @@ func buildHTML(body string, footer *EmailFooter) string {
 <!-- Website -->
 <td style="padding:0 10px;">
 <a href="%s" target="_blank" style="text-decoration:none;">
-<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/WhiteBlueCircle.png" width="24" height="24" alt="Website" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
+<img src="https://raw.githubusercontent.com/AbdouKnz/Images/main/SiteWeb.png" width="24" height="24" alt="Website" style="display:block;border:0;outline:none;text-decoration:none;vertical-align:middle;">
 </a>
 </td>
 

@@ -49,8 +49,8 @@ import {
 // reordered explicitly. Other modules keep the generic rendering below.
 const EMAIL_TEMPLATE_FIELD_ORDER = ["Type", "Subject", "Body", "Status"];
 
-const isEmailTemplateModule = (module?: string) =>
-  (module ?? "").toLowerCase() === "emailtemplate";
+const isEmailTemplateModule = (module?: string, subModule?: string) =>
+  (subModule ?? module ?? "").toLowerCase() === "emailtemplate";
 
 const statusVariants: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
@@ -126,7 +126,23 @@ export function AuditModal({
     return t(`candidature_status_${val}`, { defaultValue: val });
   };
 
-  const isEmailTemplate = isEmailTemplateModule(audit?.module);
+  const isEmailTemplate = isEmailTemplateModule(audit?.module, audit?.change?.sub_module);
+
+  // Front-office status rows (group "FrontOffice", sub "FrontOfficeStatus" —
+  // plus pre-migration rows still stored under "FrontOfficeStatus") get
+  // human-readable labels/values below instead of raw true/false + datetime.
+  const isFrontOfficeStatusRow =
+    (audit?.change?.sub_module ?? audit?.module ?? "").toLowerCase() === "frontofficestatus";
+  const isStatusKey = (key: string) => isFrontOfficeStatusRow && key === "is_enabled";
+  const isReopeningKey = (key: string) => isFrontOfficeStatusRow && key === "reopening_date";
+  // Generic boolean display for every module: JSON booleans (degree, type,
+  // subject… Status) and "true"/"false" strings (front-office is_enabled)
+  // render as Active/Inactive; anything else passes through untouched.
+  const formatActiveInactiveValue = (val: any) => {
+    if (val === true || (typeof val === "string" && val.toLowerCase() === "true")) return t("active");
+    if (val === false || (typeof val === "string" && val.toLowerCase() === "false")) return t("inactive");
+    return formatFieldValue(val);
+  };
   const isTemplateTypeKey = (key: string) => isEmailTemplate && key === "Type";
   const fieldLabel = (key: string) =>
     isEmailTemplate && key === "Subject"
@@ -291,26 +307,30 @@ export function AuditModal({
       if (changeType === ChangeType.UPDATE) {
         const before = isTemplateTypeKey(key) ? (
           renderTemplateTypeBadge(value.old_values, changed)
+        ) : isReopeningKey(key) ? (
+          <LongText className="max-w-sm">{formatAuditDate(value.old_values)}</LongText>
         ) : changed ? (
           <Badge className="capitalize flex items-center bg-destructive/10 text-destructive rounded-full line-through">
             <LongText className="max-w-sm">
-              {formatFieldValue(value.old_values)}
+              {formatActiveInactiveValue(value.old_values)}
             </LongText>
           </Badge>
         ) : (
-          <LongText className="max-w-sm">{formatFieldValue(value.old_values)}</LongText>
+          <LongText className="max-w-sm">{formatActiveInactiveValue(value.old_values)}</LongText>
         );
         const after = isTemplateTypeKey(key) ? (
           renderTemplateTypeBadge(value.new_values)
+        ) : isReopeningKey(key) ? (
+          <LongText className="max-w-sm">{formatAuditDate(value.new_values)}</LongText>
         ) : changed ? (
           <Badge className="capitalize flex items-center rounded-full border-none bg-green-600/10 text-green-600">
             <LongText className="max-w-sm">
-              {formatFieldValue(value.new_values)}
+              {formatActiveInactiveValue(value.new_values)}
             </LongText>
           </Badge>
         ) : (
           <LongText className="max-w-sm">
-            {formatFieldValue(value.new_values)}
+            {formatActiveInactiveValue(value.new_values)}
           </LongText>
         );
         return (
@@ -320,7 +340,7 @@ export function AuditModal({
                 variant="secondary"
                 className="capitalize font-medium text-md"
               >
-                {fieldLabel(key)}
+                {isStatusKey(key) ? t("status") : fieldLabel(key)}
               </Badge>
             </TableCell>
 
@@ -404,6 +424,16 @@ export function AuditModal({
                 </span>
                 <span>{audit?.module ? formatAuditModule(audit.module) : "Unknown"}</span>
               </div>
+
+              {audit?.change?.sub_module ? (
+                <div className="flex items-center gap-2">
+                  <IconFolder className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    Sub-setting:
+                  </span>
+                  <span>{formatAuditModule(audit.change.sub_module)}</span>
+                </div>
+              ) : null}
 
               {audit?.applicant_name ? (
                 <div className="flex items-center gap-2">
