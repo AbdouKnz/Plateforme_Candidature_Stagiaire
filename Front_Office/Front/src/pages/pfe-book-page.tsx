@@ -16,20 +16,19 @@ import {
   BookmarkCheckIcon,
   BookOpenIcon,
   GraduationCapIcon,
-  UsersIcon,
+  UsersRoundIcon,
   LightbulbIcon,
+  ScaleIcon,
+  NetworkIcon,
   HeartHandshakeIcon,
   BuildingIcon,
   MailIcon,
   QuoteIcon,
   CheckIcon,
-  SparklesIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   RocketIcon,
-  ScaleIcon,
   ClockIcon,
-  HandshakeIcon,
   UserIcon,
   CalendarIcon,
   GlobeIcon,
@@ -65,9 +64,9 @@ const MINDSET_STEPS = [
 // Photos live in Front_Office/Front/public/ — drop the files in and the
 // circles swap from initials to photos automatically (with onError fallback).
 const HEROES = [
-  { name: "Amin", img: "/Hero1.png", quote: "I had such a great time during my internship and learned so much! Grateful for all the support and experiences that made it so special." },
-  { name: "Lamys", img: "/Hero2.png", quote: "During my internship, I worked on a product delivered to a client, seeing my work live was amazing. Asteroidea helped me grow technically and personally, improving my web development skills while highlighting the value of teamwork and communication in a supportive environment." },
-  { name: "Ayoub", img: "/Hero3.png", quote: "My internship at Asteroidea was more than just an internship it was joining a true professional family. I appreciated the welcoming, collaborative atmosphere and the supportive environment that inspired creativity and showed me that with determination and hard work, any idea can come to life." },
+  { name: "Amina", img: undefined, quote: "Amina's testimonial" },
+  { name: "Hachem", img: undefined, quote: "Hachem's testimonial" },
+  { name: "Aymen", img: undefined, quote: "Aymen's testimonial" },
 ]
 
 function heroInitials(name: string) {
@@ -520,16 +519,11 @@ export function PfeBookPage() {
                     {/* icon - CLEAN LUCIDE icons, larger & better readable */}
                     <div className="flex h-[110px] sm:h-[118px] items-center justify-center shrink-0 py-2">
                       <div className="flex size-[90px] sm:size-[94px] lg:size-[98px] items-center justify-center rounded-2xl bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-lg shadow-[#1D7CC7]/20">
-                        {c.customIcon === "company" && <BuildingIcon className="size-[46px]" strokeWidth={1.7} />}
-                        {c.customIcon === "inclusivity" && <UsersIcon className="size-[46px]" strokeWidth={1.7} />}
-                        {c.customIcon === "innovation" && (
-                          <div className="relative flex items-center justify-center">
-                            <LightbulbIcon className="size-[46px]" strokeWidth={1.7} />
-                            <SparklesIcon className="absolute -top-1 -right-1 size-4 text-[#24243C]/90" strokeWidth={2} />
-                          </div>
-                        )}
-                        {c.customIcon === "worklife" && <ScaleIcon className="size-[46px]" strokeWidth={1.7} />}
-                        {c.customIcon === "collab" && <HandshakeIcon className="size-[46px]" strokeWidth={1.7} />}
+                        {c.customIcon === "company" && <HeartHandshakeIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Supportive company culture" />}
+                        {c.customIcon === "inclusivity" && <UsersRoundIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Inclusivity and diversity" />}
+                        {c.customIcon === "innovation" && <LightbulbIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Innovation and creativity" />}
+                        {c.customIcon === "worklife" && <ScaleIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Work-life balance" />}
+                        {c.customIcon === "collab" && <NetworkIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Collaboration and teamwork" />}
                       </div>
                     </div>
 
@@ -613,7 +607,7 @@ export function PfeBookPage() {
             <div className="flex w-full flex-1 min-h-0 flex-col">
               <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-bold text-[#24243C] tracking-tight">Internship Opportunities</h2>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-[#24243C] tracking-tight">Internship Subjects</h2>
                 </div>
               </div>
 

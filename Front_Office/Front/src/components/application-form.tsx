@@ -550,7 +550,8 @@ export function ApplicationForm() {
                             </div>
                           )}
 
-                          <div className={cn("grid grid-cols-1 gap-x-8 gap-y-5", isPair && "lg:grid-cols-2")}>
+                          <div className={cn("grid grid-cols-1 gap-x-8 gap-y-5", isPair && "lg:grid-cols-2", "lg:[&_[data-slot=field-label]]:min-h-10")}>
+                            <div className="flex min-w-0 flex-col gap-y-5">
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.firstName}>
                                 <FieldLabel htmlFor="firstName">{t("label.firstName")}<RequiredStar /></FieldLabel>
@@ -580,7 +581,19 @@ export function ApplicationForm() {
                                 </Field>
                               )} />
                             </Field>
+                            <Field data-invalid={!!errors.email}>
+                              <FieldLabel htmlFor="email">{t("label.email")}<RequiredStar /></FieldLabel>
+                              <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email} {...register("email", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
+                              <FieldError errors={[errors.email]} />
+                            </Field>
+                            <Field data-invalid={!!errors.phone}>
+                              <FieldLabel htmlFor="phone">{t("label.phone")}<RequiredStar /></FieldLabel>
+                              <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone} {...register("phone")} />
+                              <FieldError errors={[errors.phone]} />
+                            </Field>
+                            </div>
                             {isPair && (
+                            <div className="flex min-w-0 flex-col gap-y-5">
                             <Field orientation="responsive" className="@md/field-group:items-start">
                               <Field data-invalid={!!errors.firstName2}>
                                 <FieldLabel htmlFor="firstName2">{t("label.firstName2")}<RequiredStar /></FieldLabel>
@@ -610,33 +623,17 @@ export function ApplicationForm() {
                                 </Field>
                               )} />
                             </Field>
-                            )}
-
-                            <Field orientation="responsive" className="@md/field-group:items-start">
-                              <Field data-invalid={!!errors.email}>
-                                <FieldLabel htmlFor="email">{t("label.email")}<RequiredStar /></FieldLabel>
-                                <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email} {...register("email", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
-                                <FieldError errors={[errors.email]} />
-                              </Field>
-                              <Field data-invalid={!!errors.phone}>
-                                <FieldLabel htmlFor="phone">{t("label.phone")}<RequiredStar /></FieldLabel>
-                                <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone} {...register("phone")} />
-                                <FieldError errors={[errors.phone]} />
-                              </Field>
+                            <Field data-invalid={!!errors.email2}>
+                              <FieldLabel htmlFor="email2">{t("label.email2")}<RequiredStar /></FieldLabel>
+                              <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email2} {...register("email2", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
+                              <FieldError errors={[errors.email2]} />
                             </Field>
-                            {isPair && (
-                            <Field orientation="responsive" className="@md/field-group:items-start">
-                              <Field data-invalid={!!errors.email2}>
-                                <FieldLabel htmlFor="email2">{t("label.email2")}<RequiredStar /></FieldLabel>
-                                <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email2} {...register("email2", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
-                                <FieldError errors={[errors.email2]} />
-                              </Field>
-                              <Field data-invalid={!!errors.phone2}>
-                                <FieldLabel htmlFor="phone2">{t("label.phone2")}<RequiredStar /></FieldLabel>
-                                <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone2} {...register("phone2")} />
-                                <FieldError errors={[errors.phone2]} />
-                              </Field>
+                            <Field data-invalid={!!errors.phone2}>
+                              <FieldLabel htmlFor="phone2">{t("label.phone2")}<RequiredStar /></FieldLabel>
+                              <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone2} {...register("phone2")} />
+                              <FieldError errors={[errors.phone2]} />
                             </Field>
+                            </div>
                             )}
 
                             <Controller control={control} name="university" render={({ field }) => (
