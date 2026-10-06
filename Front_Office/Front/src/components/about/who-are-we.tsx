@@ -10,49 +10,83 @@ import {
 const VALUES = [
   {
     title: "Innovation",
-    desc: "We constantly explore new technologies and ideas to create smarter, more efficient solutions for the future of urban mobility.",
+    desc: (
+      <>
+        We constantly explore{" "}
+        <strong className="font-semibold text-[#10204A]">
+          new technologies and ideas
+        </strong>{" "}
+        to create{" "}
+        <strong className="font-semibold text-[#10204A]">
+          smarter, more efficient solutions
+        </strong>{" "}
+        for the future of urban mobility.
+      </>
+    ),
     icon: LightbulbIcon,
   },
   {
     title: "Integrity",
-    desc: "We build trust through transparency, responsibility, and commitment to delivering high-quality solutions to our clients and partners.",
+    desc: (
+      <>
+        We build trust through{" "}
+        <strong className="font-semibold text-[#10204A]">
+          transparency, responsibility, and commitment
+        </strong>{" "}
+        to delivering{" "}
+        <strong className="font-semibold text-[#10204A]">
+          high-quality solutions
+        </strong>{" "}
+        to our clients and partners.
+      </>
+    ),
     icon: ShieldCheckIcon,
   },
   {
     title: "Teamwork",
-    desc: "We believe great solutions are built together. We foster collaboration, knowledge sharing, and mutual support to achieve ambitious goals.",
+    desc: (
+      <>
+        We believe great solutions are{" "}
+        <strong className="font-semibold text-[#10204A]">built together</strong>.
+        We foster{" "}
+        <strong className="font-semibold text-[#10204A]">
+          collaboration, knowledge sharing, and mutual support
+        </strong>{" "}
+        to achieve ambitious goals.
+      </>
+    ),
     icon: UsersIcon,
   },
 ]
 
 const PARTNERS = [
-  { name: "Tesla", icon: "/Tesla.png", imgClass: "h-12 w-auto max-w-[100px] lg:h-[56px]" },
-  { name: "EPA", icon: "/EPA.png", imgClass: "h-10 w-auto max-w-[150px] lg:h-[46px]" },
-  { name: "ADR", icon: "/ADR.png", imgClass: "h-9 w-auto max-w-[150px] lg:h-[42px]" },
+  { name: "Tesla", icon: "/Tesla.png", imgClass: "h-10 w-auto max-w-[100px] lg:h-[46px]" },
+  { name: "EPA", icon: "/EPA.png", imgClass: "h-8 w-auto max-w-[150px] lg:h-[40px]" },
+  { name: "ADR", icon: "/ADR.png", imgClass: "h-8 w-auto max-w-[150px] lg:h-[36px]" },
   {
     name: "StartupAct",
     icon: "/StartupAct.png",
-    imgClass: "h-7 w-auto max-w-[150px] lg:h-[34px]",
+    imgClass: "h-6 w-auto max-w-[150px] lg:h-[30px]",
   },
   {
     name: "Nvidia",
     icon: "/Nvidia.png",
-    imgClass: "h-10 w-auto max-w-[140px] lg:h-[44px]",
+    imgClass: "h-8 w-auto max-w-[140px] lg:h-[38px]",
   },
   {
     name: "BPA",
     icon: "/BPA.png",
-    imgClass: "h-12 w-auto max-w-[160px] lg:h-[60px]",
+    imgClass: "h-10 w-auto max-w-[160px] lg:h-[50px]",
   },
   {
     name: "Terna",
     icon: "/Terna.png",
-    imgClass: "h-9 w-auto max-w-[150px] lg:h-[42px]",
+    imgClass: "h-8 w-auto max-w-[150px] lg:h-[36px]",
   },
   {
     name: "EIT",
     icon: "/EIT.png",
-    imgClass: "h-12 w-auto max-w-[150px] lg:h-[58px]",
+    imgClass: "h-10 w-auto max-w-[150px] lg:h-[48px]",
   },
 ]
 
@@ -85,8 +119,8 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
     <div
       className={
         compact
-          ? "flex min-h-full w-full flex-col px-4 py-4 sm:px-8 lg:my-auto lg:px-12"
-          : "flex w-full flex-col px-6 py-4 sm:px-10 lg:my-auto lg:px-12"
+          ? "flex min-h-full w-full flex-col px-4 pt-4 pb-2 sm:px-8 lg:h-full lg:px-12"
+          : "flex w-full flex-col px-6 pt-4 pb-2 sm:px-10 lg:h-full lg:px-12"
       }
     >
       {/* ── HERO (40/60) ── */}
@@ -107,7 +141,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             className={
               compact
                 ? "mt-3 text-3xl font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-5xl lg:text-[68px]"
-                : "mt-4 text-[42px] font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-[56px] lg:text-[76px]"
+                : "mt-4 text-[34px] font-bold leading-[1.0] tracking-tight text-[#10204A] min-[420px]:text-[42px] sm:text-[56px] lg:text-[76px]"
             }
           >
             Who <span className="text-[#10A9E8]">are</span> we?
@@ -119,11 +153,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
                 : "mt-3 max-w-lg text-[15px] leading-[1.4] text-[#64748B] lg:text-[18px]"
             }
           >
-            We connect parking and charging, creating a seamless experience for
-            drivers, operators and cities. A passionate team of technology and
-            mobility experts building innovative digital solutions for a smarter,
-            more connected urban future, with 50+ projects delivered across 19
-            countries.
+            A passionate team of technology and mobility experts building innovative digital solutions for a smarter, more connected urban future, with 50+ projects delivered across 19 countries.
           </p>
         </div>
         <div className="min-w-0">
@@ -145,8 +175,8 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         aria-label="About Park and Charge"
         className={
         compact
-          ? "mt-3 grid flex-none grid-cols-1 gap-2.5 sm:mt-4 sm:gap-3 lg:grid-cols-[38%_1fr] lg:gap-5"
-          : "mt-4 grid flex-none grid-cols-1 gap-4 lg:mt-4 lg:grid-cols-[38%_1fr] lg:gap-4"
+          ? "mt-3 grid flex-none grid-cols-1 gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-[38%_1fr] lg:gap-5"
+          : "mt-4 grid flex-none grid-cols-1 gap-5 lg:mt-3 lg:grid-cols-[38%_1fr] lg:gap-4"
         }
       >
         {/* Company overview */}
@@ -154,7 +184,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           className={
             compact
               ? `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 sm:p-5 ${CARD_SHADOW}`
-              : `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 lg:p-[18px] ${CARD_SHADOW}`
+              : `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 lg:p-4 ${CARD_SHADOW}`
           }
         >
           <div className="flex items-center gap-3">
@@ -191,9 +221,9 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
                 cities, governments, parking operators, and private companies
               </strong>{" "}
               make urban mobility{" "}
-              <strong className="font-semibold text-[#10204A]">
-                smoother, more efficient, connected, and future-ready
-              </strong>
+                <strong className="font-semibold text-[#10204A]">
+                  smoother, more efficient, connected, and future-ready
+                </strong>
               .
             </p>
             <p>
@@ -213,7 +243,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         </article>
 
         {/* Right column */}
-        <div className="flex min-w-0 min-h-0 flex-col gap-3">
+        <div className="flex min-w-0 min-h-0 flex-col gap-4">
           {/* Our Mission */}
           <article
             className={
@@ -232,8 +262,15 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
                 </h2>
                 <Underline className="mt-1.5 w-12" />
                 <p className="mt-1.5 text-[15.5px] leading-snug text-[#64748B] lg:text-base">
-                  To build intelligent digital solutions that make urban mobility smarter,
-                  more connected, efficient, and sustainable.
+                  To{" "}
+                  <strong className="font-semibold text-[#10204A]">
+                    build intelligent digital solutions
+                  </strong>{" "}
+                  that make urban mobility{" "}
+                  <strong className="font-semibold text-[#10204A]">
+                    smarter, more connected, efficient, and sustainable
+                  </strong>
+                  .
                 </p>
               </div>
             </div>
@@ -256,7 +293,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
               </h2>
             </div>
             <Underline />
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
               {VALUES.map((v) => (
                 <div
                   key={v.title}
@@ -285,10 +322,10 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
       {/* ── TRUST STRIP ── */}
       <section
         aria-label="Trusted partners"
-        className={compact ? "mt-4 flex-none" : "mt-3 flex-none"}
+        className={compact ? "mt-8 flex-none lg:mt-auto lg:pt-4" : "mt-7 flex-none lg:mt-auto lg:pt-4"}
       >
         <div
-          className={`flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-4 py-3 sm:px-5 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-8 lg:px-6`}
+          className={`flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-4 py-2 sm:px-5 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-8 lg:px-6`}
         >
           <div className="min-w-0 shrink-0">
             <h2 className="whitespace-nowrap text-xl font-bold tracking-tight text-[#0B1B45] lg:text-2xl">
@@ -296,11 +333,11 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             </h2>
             <Underline className="mt-1.5 w-10" />
           </div>
-          <ul className="flex min-w-0 flex-1 list-none flex-nowrap items-center gap-1 overflow-x-auto p-0 sm:gap-2 lg:gap-2">
+          <ul className="flex min-w-0 flex-1 list-none flex-nowrap snap-x items-center gap-1 overflow-x-auto scrollbar-thin p-0 pb-1 sm:gap-2 lg:gap-2">
             {PARTNERS.map((p) => (
               <li
                 key={p.name}
-                className="flex h-12 min-w-0 flex-1 basis-0 items-center justify-center px-1 sm:h-14 lg:h-[72px]"
+                className="flex h-10 min-w-[128px] flex-1 basis-0 snap-start items-center justify-center px-1 sm:h-11 lg:h-[58px] lg:min-w-0"
               >
                 <img
                   src={p.icon}
