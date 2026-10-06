@@ -16,10 +16,11 @@ import {
   BookmarkCheckIcon,
   BookOpenIcon,
   GraduationCapIcon,
-  UsersRoundIcon,
-  LightbulbIcon,
+  Building2Icon,
+  UsersIcon,
   ScaleIcon,
-  NetworkIcon,
+  WandSparklesIcon,
+  HandshakeIcon,
   HeartHandshakeIcon,
   BuildingIcon,
   MailIcon,
@@ -499,7 +500,7 @@ export function PfeBookPage() {
                     customIcon: "innovation",
                   },
                   {
-                    title: "Work-Life Balance",
+                    title: "Work Life Balance",
                     desc: "We emphasize work-life balance, promoting a healthy separation between professional and personal life.",
                     customIcon: "worklife",
                   },
@@ -519,11 +520,11 @@ export function PfeBookPage() {
                     {/* icon - CLEAN LUCIDE icons, larger & better readable */}
                     <div className="flex h-[110px] sm:h-[118px] items-center justify-center shrink-0 py-2">
                       <div className="flex size-[90px] sm:size-[94px] lg:size-[98px] items-center justify-center rounded-2xl bg-gradient-to-br from-[#1D7CC7] to-[#0F5C9E] text-[#FFFFFF] shadow-lg shadow-[#1D7CC7]/20">
-                        {c.customIcon === "company" && <HeartHandshakeIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Supportive company culture" />}
-                        {c.customIcon === "inclusivity" && <UsersRoundIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Inclusivity and diversity" />}
-                        {c.customIcon === "innovation" && <LightbulbIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Innovation and creativity" />}
+                        {c.customIcon === "company" && <Building2Icon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Supportive company culture" />}
+                        {c.customIcon === "inclusivity" && <UsersIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Inclusivity and diversity" />}
+                        {c.customIcon === "innovation" && <WandSparklesIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Innovation and creativity" />}
                         {c.customIcon === "worklife" && <ScaleIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Work-life balance" />}
-                        {c.customIcon === "collab" && <NetworkIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Collaboration and teamwork" />}
+                        {c.customIcon === "collab" && <HandshakeIcon className="size-[46px]" strokeWidth={1.7} role="img" aria-label="Collaboration and teamwork" />}
                       </div>
                     </div>
 
