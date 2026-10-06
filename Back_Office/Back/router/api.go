@@ -6,8 +6,8 @@ import (
 	"astro-backend/internal/candidature"
 	"astro-backend/internal/degree"
 	"astro-backend/internal/duration"
-	"astro-backend/internal/email_log"
 	"astro-backend/internal/email_footer"
+	"astro-backend/internal/email_log"
 	"astro-backend/internal/email_template"
 	"astro-backend/internal/front_office"
 	"astro-backend/internal/mail_config"
@@ -27,7 +27,7 @@ import (
 )
 
 func InitBackofficeRouter(r *gin.Engine, database *bun.DB) {
-	protected := r.Group("/api")
+	protected := r.Group("/backoffice/api")
 	protected.Use(middleware.AuthMiddleware())
 
 	auth.AuthRoutes(protected, r, database)
@@ -52,7 +52,7 @@ func InitBackofficeRouter(r *gin.Engine, database *bun.DB) {
 	waitlist.AdminWaitlistRoutes(protected, database)
 
 	// Public routes (no auth required)
-	public := r.Group("/api/public")
+	public := r.Group("/backoffice/api/public")
 	front_office.PublicFrontOfficeRoutes(public, database)
 	waitlist.PublicWaitlistRoutes(public, database)
 	subject.PublicSubjectRoutes(public, database)
