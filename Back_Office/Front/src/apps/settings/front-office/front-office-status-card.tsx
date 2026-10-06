@@ -101,6 +101,7 @@ export function FrontOfficeStatusCard() {
     if (checked) {
       toggleMutation.mutate({
         is_enabled: true,
+        reopening_date: statusData?.reopening_date ?? "",
         year: statusData?.year ?? "",
         internship_title: statusData?.internship_title ?? "",
       })

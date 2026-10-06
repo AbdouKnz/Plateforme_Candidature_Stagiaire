@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "motion/react";
+import { CalendarClockIcon } from "lucide-react";
 import { useTranslation } from "@/context/language-context";
 import { useTheme } from "@/context/theme-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import { AuroraBackground } from "@/components/ui/animated-background";
+import { Footer } from "@/components/layout/footer";
 import { subscribeWaitlist } from "@/service/front-office";
 import { z } from "zod";
 
@@ -12,6 +14,7 @@ interface ClosedPageProps {
   reopeningDate?: string;
   closedMessage?: string;
   internshipTitle?: string;
+  year?: string;
 }
 
 const emailSchema = z.string().email();
@@ -98,7 +101,7 @@ function CountdownCircle({
   );
 }
 
-export function ClosedPage({ reopeningDate, internshipTitle }: ClosedPageProps) {
+export function ClosedPage({ reopeningDate, internshipTitle, year }: ClosedPageProps) {
   const t = useTranslation();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -146,11 +149,12 @@ export function ClosedPage({ reopeningDate, internshipTitle }: ClosedPageProps) 
     { value: timeLeft.seconds, label: t("closed.seconds"), max: TOTAL.seconds },
   ];
 
-  // Configurable in Back Office (Settings → Front Office → internship title).
-  // Empty value keeps the default closed UI untouched. When set, the title
-  // becomes the hero heading and the generic closed message is demoted.
+  // Configurable in Back Office (Settings → Front Office → internship title + year).
+  // Empty values hide the hero heading entirely (no generic closed message).
   const trimmedTitle = internshipTitle?.trim() ?? "";
   const showTitle = trimmedTitle.length > 0;
+  const trimmedYear = year?.trim() ?? "";
+  const showYear = trimmedYear.length > 0;
 
   const handleSubscribe = async () => {
     const parsed = emailSchema.safeParse(email);
@@ -190,47 +194,51 @@ export function ClosedPage({ reopeningDate, internshipTitle }: ClosedPageProps) 
         </defs>
       </svg>
 
-      <div className="relative flex flex-col items-center justify-center w-full min-h-svh px-6 py-16 sm:px-8">
+      <div className="relative flex flex-col items-center justify-center w-full flex-1 px-6 py-16 sm:px-8">
+        <div className="absolute top-6 left-6">
+          <img
+            src="/PC_Logo.png"
+            alt="Park & Charge"
+            width={200}
+            height={200}
+            className="h-24 w-28 object-contain -my-4 sm:h-[180px] sm:w-[200px] sm:-my-14"
+          />
+        </div>
         <div className="absolute top-6 right-6 flex items-center gap-2">
           <LanguageToggle />
           <ThemeToggle />
         </div>
 
+        {reopeningDate && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className={`mb-4 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-medium tracking-wider ${isDark ? "border-white/10 bg-white/5 text-white/60" : "border-primary/20 bg-primary/10 text-primary"}`}
+          className={`mb-5 inline-flex items-center gap-2.5 rounded-full border px-5 py-2 text-sm font-semibold tracking-wide ${isDark ? "border-white/15 bg-white/5 text-white" : "border-primary/25 bg-primary/5 text-primary"}`}
         >
-          {reopeningDate
-            ? `${t("closed.reopeningDate")} ${formatDate(reopeningDate)}`
-            : t("closed.title")}
+          <CalendarClockIcon className="size-4 shrink-0" />
+          <span>{t("closed.reopeningPrefix")} <span className="tabular-nums">{formatDate(reopeningDate)}</span></span>
         </motion.div>
+        )}
 
+        {(showTitle || showYear) && (
         <motion.h1
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className={`mx-auto max-w-3xl text-center text-4xl font-bold leading-[1.08] tracking-tight break-words sm:text-5xl lg:text-6xl ${showTitle ? "" : isDark ? "text-white" : "text-foreground"}`}
+          className="mx-auto max-w-3xl text-center text-4xl font-bold leading-[1.08] tracking-tight break-words sm:text-5xl lg:text-6xl"
         >
-          {showTitle ? (
+          {showTitle && (
             <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
               {trimmedTitle}
             </span>
-          ) : (
-            t("closed.title")
+          )}
+          {showYear && (
+            <span className={`mt-3 block text-2xl font-light tracking-[0.35em] sm:text-3xl ${isDark ? "text-white/80" : "text-secondary"}`}>
+              {trimmedYear}
+            </span>
           )}
         </motion.h1>
-
-        {showTitle && (
-          <motion.p
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className={`mt-4 text-center text-base sm:text-lg ${isDark ? "text-white/60" : "text-muted-foreground"}`}
-          >
-            {t("closed.title")}
-          </motion.p>
         )}
 
         {hasReopeningDate && (
@@ -340,6 +348,10 @@ export function ClosedPage({ reopeningDate, internshipTitle }: ClosedPageProps) 
           transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="mt-6"
         ></motion.div>
+      </div>
+
+      <div className="shrink-0">
+        <Footer />
       </div>
     </AuroraBackground>
   );

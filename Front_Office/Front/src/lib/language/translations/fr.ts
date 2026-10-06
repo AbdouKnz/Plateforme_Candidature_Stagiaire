@@ -307,6 +307,7 @@ export const fr = {
   "dropzone.remove": "Supprimer le fichier",
   "closed.title": "Les candidatures sont actuellement fermées",
   "closed.reopeningDate": "Réouverture",
+  "closed.reopeningPrefix": "Les candidatures ouvriront le",
   "closed.days": "Jours",
   "closed.hours": "Heures",
   "closed.minutes": "Minutes",

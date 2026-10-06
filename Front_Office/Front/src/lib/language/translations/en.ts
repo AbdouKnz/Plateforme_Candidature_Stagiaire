@@ -224,6 +224,7 @@ export const en = {
   "about.contactTitle": "Get in Touch",
   "closed.title": "Applications Are Currently Closed",
   "closed.reopeningDate": "Reopening",
+  "closed.reopeningPrefix": "Application will be open on",
   "closed.days": "Days",
   "closed.hours": "Hours",
   "closed.minutes": "Minutes",

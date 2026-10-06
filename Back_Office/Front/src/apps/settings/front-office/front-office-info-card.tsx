@@ -27,6 +27,7 @@ export function FrontOfficeInfoCard() {
   const handleSaveInfo = () => {
     toggleMutation.mutate({
       is_enabled: isEnabled,
+      reopening_date: statusData?.reopening_date ?? "",
       year,
       internship_title: internshipTitle,
     }, {

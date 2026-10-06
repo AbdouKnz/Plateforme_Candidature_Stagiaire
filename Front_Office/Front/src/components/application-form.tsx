@@ -552,22 +552,29 @@ export function ApplicationForm() {
 
                           <div className={cn("grid grid-cols-1 gap-x-8 gap-y-5", isPair && "lg:grid-cols-2", "lg:[&_[data-slot=field-label]]:min-h-10")}>
                             <div className="flex min-w-0 flex-col gap-y-5">
-                            <Field orientation="responsive" className="@md/field-group:items-start">
-                              <Field data-invalid={!!errors.firstName}>
+                            <Field orientation="responsive" className="@md/field-group:items-start gap-4">
+                              <Field data-invalid={!!errors.firstName} className="min-w-0 flex-1">
                                 <FieldLabel htmlFor="firstName">{t("label.firstName")}<RequiredStar /></FieldLabel>
                                 <Input id="firstName" placeholder={t("placeholder.firstName")} autoComplete="given-name" maxLength={80} aria-invalid={!!errors.firstName} {...register("firstName")} />
                                 <FieldError errors={[errors.firstName]} />
                               </Field>
-                              <Field data-invalid={!!errors.lastName}>
+                              <Field data-invalid={!!errors.lastName} className="min-w-0 flex-1">
                                 <FieldLabel htmlFor="lastName">{t("label.lastName")}<RequiredStar /></FieldLabel>
                                 <Input id="lastName" placeholder={t("placeholder.lastName")} autoComplete="family-name" maxLength={80} aria-invalid={!!errors.lastName} {...register("lastName")} />
                                 <FieldError errors={[errors.lastName]} />
                               </Field>
+                            </Field>
+                            <Field orientation="responsive" className="@md/field-group:items-start gap-4">
+                              <Field data-invalid={!!errors.phone} className="min-w-0 flex-1">
+                                <FieldLabel htmlFor="phone">{t("label.phone")}<RequiredStar /></FieldLabel>
+                                <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone} {...register("phone")} />
+                                <FieldError errors={[errors.phone]} />
+                              </Field>
                               <Controller control={control} name="gender" render={({ field }) => (
-                                <Field data-invalid={!!errors.gender}>
+                                <Field data-invalid={!!errors.gender} className="min-w-0 flex-1">
                                   <FieldLabel htmlFor="gender">{t("label.gender")}<RequiredStar /></FieldLabel>
                                   <Select value={field.value || undefined} onValueChange={field.onChange}>
-                                    <SelectTrigger id="gender" aria-invalid={!!errors.gender}>
+                                    <SelectTrigger id="gender" aria-invalid={!!errors.gender} className="w-full">
                                       <SelectValue placeholder={t("placeholder.gender")} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -586,30 +593,32 @@ export function ApplicationForm() {
                               <Input id="email" type="email" inputMode="email" placeholder={t("placeholder.email")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email} {...register("email", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
                               <FieldError errors={[errors.email]} />
                             </Field>
-                            <Field data-invalid={!!errors.phone}>
-                              <FieldLabel htmlFor="phone">{t("label.phone")}<RequiredStar /></FieldLabel>
-                              <Input id="phone" type="tel" inputMode="tel" placeholder={t("placeholder.phone")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone} {...register("phone")} />
-                              <FieldError errors={[errors.phone]} />
-                            </Field>
                             </div>
                             {isPair && (
                             <div className="flex min-w-0 flex-col gap-y-5">
-                            <Field orientation="responsive" className="@md/field-group:items-start">
-                              <Field data-invalid={!!errors.firstName2}>
+                            <Field orientation="responsive" className="@md/field-group:items-start gap-4">
+                              <Field data-invalid={!!errors.firstName2} className="min-w-0 flex-1">
                                 <FieldLabel htmlFor="firstName2">{t("label.firstName2")}<RequiredStar /></FieldLabel>
                                 <Input id="firstName2" placeholder={t("placeholder.firstName2")} autoComplete="given-name" maxLength={80} aria-invalid={!!errors.firstName2} {...register("firstName2")} />
                                 <FieldError errors={[errors.firstName2]} />
                               </Field>
-                              <Field data-invalid={!!errors.lastName2}>
+                              <Field data-invalid={!!errors.lastName2} className="min-w-0 flex-1">
                                 <FieldLabel htmlFor="lastName2">{t("label.lastName2")}<RequiredStar /></FieldLabel>
                                 <Input id="lastName2" placeholder={t("placeholder.lastName2")} autoComplete="family-name" maxLength={80} aria-invalid={!!errors.lastName2} {...register("lastName2")} />
                                 <FieldError errors={[errors.lastName2]} />
                               </Field>
+                            </Field>
+                            <Field orientation="responsive" className="@md/field-group:items-start gap-4">
+                              <Field data-invalid={!!errors.phone2} className="min-w-0 flex-1">
+                                <FieldLabel htmlFor="phone2">{t("label.phone2")}<RequiredStar /></FieldLabel>
+                                <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone2} {...register("phone2")} />
+                                <FieldError errors={[errors.phone2]} />
+                              </Field>
                               <Controller control={control} name="gender2" render={({ field }) => (
-                                <Field data-invalid={!!errors.gender2}>
+                                <Field data-invalid={!!errors.gender2} className="min-w-0 flex-1">
                                   <FieldLabel htmlFor="gender2">{t("label.gender2")}<RequiredStar /></FieldLabel>
                                   <Select value={field.value || undefined} onValueChange={field.onChange}>
-                                    <SelectTrigger id="gender2" aria-invalid={!!errors.gender2}>
+                                      <SelectTrigger id="gender2" aria-invalid={!!errors.gender2} className="w-full">
                                       <SelectValue placeholder={t("placeholder.gender")} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -627,11 +636,6 @@ export function ApplicationForm() {
                               <FieldLabel htmlFor="email2">{t("label.email2")}<RequiredStar /></FieldLabel>
                               <Input id="email2" type="email" inputMode="email" placeholder={t("placeholder.email2")} autoComplete="email" maxLength={254} aria-invalid={!!errors.email2} {...register("email2", { onChange: (e) => { e.target.value = e.target.value.replace(/:/g, ""); } })} />
                               <FieldError errors={[errors.email2]} />
-                            </Field>
-                            <Field data-invalid={!!errors.phone2}>
-                              <FieldLabel htmlFor="phone2">{t("label.phone2")}<RequiredStar /></FieldLabel>
-                              <Input id="phone2" type="tel" inputMode="tel" placeholder={t("placeholder.phone2")} autoComplete="tel" maxLength={16} aria-invalid={!!errors.phone2} {...register("phone2")} />
-                              <FieldError errors={[errors.phone2]} />
                             </Field>
                             </div>
                             )}
