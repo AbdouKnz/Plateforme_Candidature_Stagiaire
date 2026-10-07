@@ -12,14 +12,14 @@ import (
 )
 
 func ExportToPDF(c *gin.Context, options ExportOptions) {
-	// Set font path (adjust if needed)
-	options.FontPath = "./pkg/export/font/DejaVuSans.ttf"
-
 	// Initialize gofpdf
 	pdf := gofpdf.New(options.TableOrientation, "mm", "A4", "")
 	pdf.SetAutoPageBreak(true, 20)
-	pdf.AddUTF8Font("DejaVu", "R", options.FontPath)
-	pdf.AddUTF8Font("DejaVu", "B", options.FontPath)
+	if _, err := addPDFFonts(pdf, options.FontPath); err != nil {
+		log.Error().Err(err).Msg("Failed to register PDF fonts")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate PDF: font unavailable"})
+		return
+	}
 
 	if len(options.Widths) != len(options.Headers) {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -104,8 +104,11 @@ func ExportToPDF(c *gin.Context, options ExportOptions) {
 	// Second pass for accurate footer
 	pdf = gofpdf.New(options.TableOrientation, "mm", "A4", "")
 	pdf.SetAutoPageBreak(true, 20)
-	pdf.AddUTF8Font("DejaVu", "R", options.FontPath)
-	pdf.AddUTF8Font("DejaVu", "B", options.FontPath)
+	if _, err := addPDFFonts(pdf, options.FontPath); err != nil {
+		log.Error().Err(err).Msg("Failed to register PDF fonts")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate PDF: font unavailable"})
+		return
+	}
 	pdf.SetFooterFunc(func() {
 		pdf.SetY(-15)
 		pdf.SetFont("DejaVu", "R", 9)

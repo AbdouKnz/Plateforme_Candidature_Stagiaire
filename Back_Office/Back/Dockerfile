@@ -45,4 +45,8 @@ RUN test -f /app/pkg/export/font/DejaVuSans.ttf || \
 
 RUN chmod +x /app/app
 
-ENTRYPOINT ["./app"]
+# Absolute default so file fallback never depends on the working directory.
+# (Primary source is the font embedded in the binary.)
+ENV FONT_PATH=/app/pkg/export/font/DejaVuSans.ttf
+
+ENTRYPOINT ["/app/app"]

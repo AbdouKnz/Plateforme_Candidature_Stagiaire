@@ -75,7 +75,7 @@ type ConfigMode struct {
 
 	// ───────────── EXPORT ─────────────
 	Export struct {
-		FontPath string `env:"FONT_PATH,./pkg/export/font/DejaVuSans.ttf"`
+		FontPath string `env:"FONT_PATH,/app/pkg/export/font/DejaVuSans.ttf"`
 	}
 
 	// ───────────── RESET ─────────────
