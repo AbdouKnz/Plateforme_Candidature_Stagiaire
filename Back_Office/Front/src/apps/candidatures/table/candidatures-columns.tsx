@@ -1,11 +1,24 @@
 "use client";
 
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, Column } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DataTableColumnHeader,
 } from "@/components/shared/data-table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ArrowDownIcon,
+  ArrowUpIcon,
+  CaretSortIcon,
+  EyeNoneIcon,
+} from "@radix-ui/react-icons";
 import { useTranslation } from "react-i18next";
 import type { Candidature } from "@/models/candidature-model";
 import { DialogEnum, AlertEnum } from "@/models/alert-model";
@@ -16,6 +29,7 @@ import { useAlertStore } from "@/stores/alert-store";
 import { useUpdateCandidature } from "@/hooks/use-candidatures";
 import { useQueryClient } from "@tanstack/react-query";
 import { nextPipelineStep } from "../pipeline";
+import type { PipelineStep } from "../pipeline";
 import { PipelineStepCell } from "../pipeline-step-cell";
 import { hasCurrentStepScore, currentStepScore, stepScoreField } from "../scoring";
 import { IconEye, IconCheck, IconX } from "@tabler/icons-react";
@@ -31,6 +45,76 @@ const typeVariants: Record<string, string> = {
   solo: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
   pair: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400",
 };
+
+// Score header: same Asc/Desc/Hide dropdown look as DataTableColumnHeader,
+// but wired to the per-step `score_sort` toolbar filter (the single source of
+// truth for score ordering) instead of TanStack sorting — rows carry no raw
+// "score" field, the cell computes the active step's score.
+function ScoreColumnHeader({
+  column,
+  activeStep,
+  className,
+}: {
+  column: Column<Candidature, unknown>;
+  activeStep?: string;
+  className?: string;
+}) {
+  const { t } = useTranslation();
+  const stepKey = (activeStep ?? "all") as PipelineStep | "all";
+  const { stepFilters, setStepFilterParams } = useCandidaturesStore();
+  const rawSort = stepFilters[stepKey]?.score_sort ?? "";
+  const direction =
+    rawSort === "desc" || rawSort.endsWith(":desc")
+      ? "desc"
+      : rawSort === "asc" || rawSort.endsWith(":asc")
+        ? "asc"
+        : null;
+
+  return (
+    <div className={cn("flex items-center space-x-2", className)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="data-[state=open]:bg-accent -ml-3 h-8"
+          >
+            <span>{t("Score")}</span>
+            {direction === "desc" ? (
+              <ArrowDownIcon className="ml-2 h-4 w-4" />
+            ) : direction === "asc" ? (
+              <ArrowUpIcon className="ml-2 h-4 w-4" />
+            ) : (
+              <CaretSortIcon className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => setStepFilterParams(stepKey, { score_sort: "asc" })}>
+            <ArrowUpIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+            {t("sort_asc")}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => setStepFilterParams(stepKey, { score_sort: "desc" })}>
+            <ArrowDownIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+            {t("sort_desc")}
+          </DropdownMenuItem>
+
+          {column.getCanHide() && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>
+                <EyeNoneIcon className="text-muted-foreground/70 mr-2 h-3.5 w-3.5" />
+                {t("hide")}
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 
 export function useCandidatureColumns(
   onView?: (candidature: Candidature) => void,
@@ -203,7 +287,7 @@ export function useCandidatureColumns(
     {
       accessorKey: "score",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title={t("Score")} />
+        <ScoreColumnHeader column={column} activeStep={activeStep} />
       ),
       cell: ({ row }) => {
         const c = row.original;
@@ -212,9 +296,10 @@ export function useCandidatureColumns(
         const score = typeof value === "number" ? value : Number(value) || 0;
         return <Badge variant="secondary">{score > 0 ? `${score}/20` : "-"}</Badge>;
       },
-      // No header sorting: rows carry no "score" field (the cell computes the
-      // active step's score), so the generic sort would order undefineds.
-      // Sorting lives solely in the toolbar "Sort by score" dropdown.
+      // No TanStack sorting: rows carry no "score" field (the cell computes
+      // the active step's score), so the generic sort would order undefineds.
+      // Header sorting is provided by ScoreColumnHeader above, wired to the
+      // per-step `score_sort` toolbar filter instead.
       enableSorting: false,
       meta: {
         label: t("Score"),
