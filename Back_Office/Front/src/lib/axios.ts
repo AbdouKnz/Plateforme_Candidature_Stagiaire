@@ -5,21 +5,31 @@ import { AlertEnum } from "@/models/alert-model";
 import { router } from "@/main";
 
 const getApiUrl = (): string => {
+  // Build-time env wins (Vite bakes VITE_* into the bundle).
+  // Traefik routes /backoffice/api/* -> backend (stripping /backoffice),
+  // so production must call the nested prefix, not root /api.
+  const envUrl = import.meta.env.VITE_API_URL?.replace(/\/+$/, '');
+  if (envUrl) {
+    return envUrl;
+  }
+
   // Server-side fallback (SSR / Node, if needed)
   if (typeof window === "undefined") {
-    return import.meta.env.VITE_API_URL || "http://localhost:8300/api";
+    return "http://localhost:8300/api";
   }
 
   // Client-side logic
   const host = window.location.hostname;
   const protocol = window.location.protocol;
 
-  if (host === "localhost") {
+  if (host === "localhost" || host === "127.0.0.1") {
     return `${protocol}//${host}:8300/api`;
   }
 
-  return `${protocol}//${host}/api`;
+  return `${protocol}//${host}/backoffice/api`;
 };
+
+export { getApiUrl };
 
 // Axios Instance
 const axiosApi: AxiosInstance = axios.create({

@@ -8,6 +8,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/**
+ * Prefix a `public/` asset path with the Vite base URL so it works both in
+ * dev (`/`) and in production under the `/backoffice/` sub-path.
+ * Accepts with or without a leading slash: `appAsset('flags/x.svg')`.
+ */
+export function appAsset(path: string) {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
+}
+
 export function sleep(ms: number = 1000) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

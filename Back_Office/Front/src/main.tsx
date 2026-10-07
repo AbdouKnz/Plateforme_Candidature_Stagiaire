@@ -18,6 +18,7 @@ import './styles/index.css'
 // Create a new router instance
 export const router = createRouter({
   routeTree,
+  basepath: '/backoffice',
   context: { queryClient },
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,

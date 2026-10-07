@@ -42,6 +42,7 @@ import { DialogEnum, ModalMode } from "@/models/alert-model";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
+import { getApiUrl } from "@/lib/axios";
 
 const createSubjectFormSchema = (t: (key: string) => string) => z.object({
   code: z
@@ -123,8 +124,12 @@ export function SubjectsActionModal({
 
   const imageUrl = (path?: string | null) => {
     if (!path) return null;
-    if (path.startsWith("http") || path.startsWith("/")) return path;
-    return `/api/${path}`;
+    if (path.startsWith("http")) return path;
+    // Backend returns root-absolute paths (e.g. /api/uploads/x) which 404
+    // under the /backoffice prefix — remap them onto the API base URL.
+    if (path.startsWith("/api/")) return `${getApiUrl()}${path.slice(4)}`;
+    if (path.startsWith("/")) return path;
+    return `${getApiUrl()}/${path}`;
   };
 
   const formSchema = useMemo(() => createSubjectFormSchema(t), [t]);

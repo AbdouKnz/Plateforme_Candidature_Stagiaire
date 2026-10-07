@@ -27,7 +27,7 @@ import (
 )
 
 func InitBackofficeRouter(r *gin.Engine, database *bun.DB) {
-	protected := r.Group("/backoffice/api")
+	protected := r.Group("/api")
 	protected.Use(middleware.AuthMiddleware())
 
 	auth.AuthRoutes(protected, r, database)
@@ -52,7 +52,7 @@ func InitBackofficeRouter(r *gin.Engine, database *bun.DB) {
 	waitlist.AdminWaitlistRoutes(protected, database)
 
 	// Public routes (no auth required)
-	public := r.Group("/backoffice/api/public")
+	public := r.Group("/api/public")
 	front_office.PublicFrontOfficeRoutes(public, database)
 	waitlist.PublicWaitlistRoutes(public, database)
 	subject.PublicSubjectRoutes(public, database)

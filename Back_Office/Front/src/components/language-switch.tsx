@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { cn, appAsset } from "@/lib/utils";
 import { useDirection, type Direction } from "@/context/direction-provider";
 import { useState } from "react";
 import { getCookie, setCookie } from "@/lib/cookies";
@@ -16,8 +16,8 @@ const LANGUAGE_COOKIE_NAME = "lang";
 const LANGUAGE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 const languages = [
-  { code: "en", label: "English", flag: "/flags/united-states.svg", dir: "ltr" as Direction },
-  { code: "fr", label: "Français", flag: "/flags/france.svg", dir: "ltr" as Direction },
+  { code: "en", label: "English", flag: appAsset("flags/united-states.svg"), dir: "ltr" as Direction },
+  { code: "fr", label: "Français", flag: appAsset("flags/france.svg"), dir: "ltr" as Direction },
 ];
 
 export function LanguageSwitch() {

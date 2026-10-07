@@ -1,5 +1,6 @@
 import { ModuleEnum } from '@/models/module-model'
 import { SidebarData } from '@/models/sidebar-model'
+import { appAsset } from '@/lib/utils'
 import {
   LayoutDashboard,
   Users,
@@ -20,7 +21,7 @@ export const sidebarData: SidebarData = {
   user: {
     name: 'admin',
     email: 'admin@gmail.com',
-    avatar: '/avatars/shadcn.jpg',
+    avatar: appAsset('avatars/shadcn.jpg'),
   },
   teams: [
     {
