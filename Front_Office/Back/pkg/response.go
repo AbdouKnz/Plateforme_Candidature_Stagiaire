@@ -49,6 +49,10 @@ func BadRequest(c *gin.Context, err string) {
 	HttpError(c, http.StatusBadRequest, err)
 }
 
+func Unauthorized(c *gin.Context, err string) {
+	HttpError(c, http.StatusUnauthorized, err)
+}
+
 func NotFound(c *gin.Context, err string) {
 	HttpError(c, http.StatusNotFound, err)
 }

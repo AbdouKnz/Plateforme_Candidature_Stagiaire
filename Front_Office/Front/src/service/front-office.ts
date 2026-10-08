@@ -75,6 +75,21 @@ export async function subscribeWaitlist(email: string): Promise<void> {
   }
 }
 
+export async function verifyAdminAccess(password: string): Promise<{ authorized: boolean }> {
+  const res = await fetch(`${API_BASE}/access/admin`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  })
+  const body = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const err = new Error(body.error ?? "Invalid password") as Error & { status?: number }
+    err.status = res.status
+    throw err
+  }
+  return { authorized: body.data?.authorized ?? false }
+}
+
 export async function fetchFrontOfficeStatus(): Promise<{
   is_enabled: boolean
   year?: string

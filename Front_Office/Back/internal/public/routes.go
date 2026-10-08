@@ -10,6 +10,7 @@ func PublicRoutes(r *gin.RouterGroup, db *bun.DB) {
 	handler := NewPublicHandler(service)
 
 	r.GET("/front-office/status", handler.GetFrontOfficeStatusHandler)
+	r.POST("/access/admin", handler.VerifyAdminAccessHandler)
 	r.GET("/degrees", handler.GetActiveDegreesHandler)
 	r.GET("/types", handler.GetActiveTypesHandler)
 	r.GET("/durations", handler.GetActiveDurationsHandler)

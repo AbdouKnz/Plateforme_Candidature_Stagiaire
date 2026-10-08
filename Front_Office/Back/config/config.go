@@ -17,13 +17,20 @@ type ConfigMode struct {
 		TZ          string `env:"TZ,UTC"`
 		UploadsPath string `env:"UPLOADS_PATH,uploads"`
 	}
-	Database struct {
-		Host     string `env:"DB_HOST,localhost"`
-		Port     string `env:"DB_PORT,5432"`
-		User     string `env:"DB_USER,postgres"`
-		Password string `env:"DB_PASSWORD,postgres"`
-		Name     string `env:"DB_NAME,postgres"`
-		SSLMode  string `env:"DB_SSL_MODE,disable"`
+ 	Database struct {
+ 		Host     string `env:"DB_HOST,localhost"`
+ 		Port     string `env:"DB_PORT,5432"`
+ 		User     string `env:"DB_USER,postgres"`
+ 		Password string `env:"DB_PASSWORD,postgres"`
+ 		Name     string `env:"DB_NAME,postgres"`
+ 		SSLMode  string `env:"DB_SSL_MODE,disable"`
+ 	}
+
+	// ───────────── ADMIN PREVIEW ACCESS ─────────────
+	// Password gate for the /api/public/access/admin endpoint. Empty means
+	// the endpoint stays disabled (fail-closed).
+	Security struct {
+		AdminViewPassword string `env:"Admin_View,"`
 	}
 
 	// ───────────── LOGGING ─────────────
@@ -66,7 +73,9 @@ func LoadConfig() {
 	Configvar.Database.User = getEnv("DB_USER", "postgres")
 	Configvar.Database.Password = getEnv("DB_PASSWORD", "postgres")
 	Configvar.Database.Name = getEnv("DB_NAME", "postgres")
-	Configvar.Database.SSLMode = getEnv("DB_SSL_MODE", "disable")
+ 	Configvar.Database.SSLMode = getEnv("DB_SSL_MODE", "disable")
+
+	Configvar.Security.AdminViewPassword = getEnv("Admin_View", "")
 
 	Configvar.Log.LogToFile = getEnv("LOG_TO_FILE", "false") == "true"
 	Configvar.Log.MaxFileSize = getEnvInt("MAX_FILE_SIZE", 5)
@@ -75,5 +84,8 @@ func LoadConfig() {
 	Configvar.Log.LogFileName = getEnv("LOG_FILENAME", "cpo_log")
 	Configvar.Log.Formatted = getEnv("FORMATTED", "false") == "true"
 
-	log.Info().Msg("Configuration loaded successfully")
+ 	log.Info().Msg("Configuration loaded successfully")
+ 	if Configvar.Security.AdminViewPassword == "" {
+ 		log.Warn().Msg("Admin_View is not set: POST /api/public/access/admin stays disabled (fail-closed)")
+ 	}
 }

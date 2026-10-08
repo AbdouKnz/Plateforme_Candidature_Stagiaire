@@ -30,6 +30,24 @@ func (h *PublicHandler) GetFrontOfficeStatusHandler(c *gin.Context) {
 	pkg.OK(c, status, nil)
 }
 
+// VerifyAdminAccessHandler checks the admin preview password against the
+// Admin_View environment value. Success unlocks the /access/admin front-end
+// preview (which bypasses the public open/closed check); failure returns a
+// generic 401 so the endpoint is not an oracle.
+func (h *PublicHandler) VerifyAdminAccessHandler(c *gin.Context) {
+	var req AdminAccessRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		pkg.BadRequest(c, "A password is required")
+		return
+	}
+
+	if !h.Service.VerifyAdminAccess(req.Password) {
+		pkg.Unauthorized(c, "Invalid password")
+		return
+	}
+	pkg.OK(c, gin.H{"authorized": true}, nil)
+}
+
 func (h *PublicHandler) GetActiveDegreesHandler(c *gin.Context) {
 	degrees, err := h.Service.GetActiveDegrees(c.Request.Context())
 	if err != nil {

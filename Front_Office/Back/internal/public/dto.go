@@ -6,6 +6,12 @@ type SubscribeWaitlistRequest struct {
 	Email string `json:"email" binding:"required,email"`
 }
 
+// AdminAccessRequest carries the admin preview password. It is compared
+// server-side against the Admin_View environment value and never logged.
+type AdminAccessRequest struct {
+	Password string `json:"password" binding:"required"`
+}
+
 type FrontOfficeStatusResponse struct {
 	IsEnabled       bool   `json:"is_enabled"`
 	ReopeningDate   string `json:"reopening_date,omitempty"`

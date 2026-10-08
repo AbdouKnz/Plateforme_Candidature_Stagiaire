@@ -323,4 +323,17 @@ export const fr = {
   "about.missionBadge": "Notre Mission",
   "about.missionTitle": "Améliorer l'Expérience Utilisateur",
   "about.missionDesc": "Notre mission est de permettre à nos clients d'offrir la meilleure expérience utilisateur possible à leurs clients. Nous y parvenons en proposant des conseils sur mesure et des solutions innovantes qui répondent aux besoins uniques de chaque projet. Chez Asteroidea, nous croyons que chaque défi de stationnement est une opportunité de créer une expérience fluide et efficace pour les utilisateurs.",
+
+  "admin_access.title": "Accès admin",
+  "admin_access.description": "Entrez le mot de passe admin pour prévisualiser le front office pendant sa fermeture au public.",
+  "admin_access.passwordLabel": "Mot de passe admin",
+  "admin_access.passwordPlaceholder": "Entrez le mot de passe admin",
+  "admin_access.submit": "Déverrouiller l'aperçu",
+  "admin_access.verifying": "Vérification...",
+  "admin_access.invalid": "Mot de passe invalide. Veuillez réessayer.",
+  "admin_access.error": "Échec de la vérification. Veuillez réessayer.",
+  "admin_access.showPassword": "Afficher le mot de passe",
+  "admin_access.hidePassword": "Masquer le mot de passe",
+  "admin_access.banner": "Aperçu admin — le site public est fermé",
+  "admin_access.exit": "Quitter l'aperçu",
 }

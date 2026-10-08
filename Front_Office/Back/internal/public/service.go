@@ -2,6 +2,7 @@ package public
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"front-office-backend/config"
 	"front-office-backend/domain"
 	"front-office-backend/pkg/mail"
 
@@ -536,4 +538,23 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 	}
 
 	log.Info().Str("full_name", c.FullName).Str("email", to).Msg("Confirmation email sent successfully")
+}
+
+// VerifyAdminAccess compares the provided password against the Admin_View
+// environment value in constant time. An unset env value (or empty input)
+// never verifies: the endpoint stays disabled (fail-closed). The password
+// itself is never logged.
+func (s *PublicService) VerifyAdminAccess(password string) bool {
+	expected := config.Configvar.Security.AdminViewPassword
+	if expected == "" || password == "" {
+		log.Warn().Msg("Admin preview access denied: Admin_View is not configured or password empty")
+		return false
+	}
+	ok := subtle.ConstantTimeCompare([]byte(password), []byte(expected)) == 1
+	if !ok {
+		log.Warn().Msg("Admin preview access denied: invalid password")
+		return false
+	}
+	log.Info().Msg("Admin preview access granted")
+	return true
 }
