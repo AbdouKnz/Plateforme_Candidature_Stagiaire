@@ -275,7 +275,7 @@ export function ClosedPage({ reopeningDate, internshipTitle, year }: ClosedPageP
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-8 text-center"
+          className="mt-8 flex w-full max-w-md flex-col items-center text-center"
         >
           {subscribeState === "success" ? (
             <p
@@ -290,8 +290,8 @@ export function ClosedPage({ reopeningDate, internshipTitle, year }: ClosedPageP
               {t("closed.subscribeSuccess")}
             </p>
           ) : (
-            <div className="flex flex-col items-center gap-3">
-              <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+            <div className="flex w-full flex-col items-center gap-3">
+              <div className="flex w-full max-w-md flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <input
                   type="email"
                   value={email}
@@ -300,7 +300,7 @@ export function ClosedPage({ reopeningDate, internshipTitle, year }: ClosedPageP
                     setErrorMsg("");
                   }}
                   placeholder={t("closed.emailPlaceholder")}
-                  className={`h-11 w-full max-w-64 rounded-xl border px-4 text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-secondary"} ${errorMsg ? "border-destructive" : ""}`}
+                  className={`h-11 w-full min-w-0 flex-1 rounded-xl border px-4 text-left text-sm outline-none transition-colors ${isDark ? "border-white/15 bg-white/5 text-white placeholder:text-white/40 focus:border-secondary" : "border-border bg-card text-foreground placeholder:text-muted-foreground focus:border-secondary"} ${errorMsg ? "border-destructive" : ""}`}
                 />
                 <button
                   onClick={handleSubscribe}

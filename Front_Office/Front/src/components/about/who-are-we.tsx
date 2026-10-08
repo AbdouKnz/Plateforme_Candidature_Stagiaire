@@ -119,7 +119,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
     <div
       className={
         compact
-          ? "flex min-h-full w-full flex-col px-4 pt-4 pb-2 sm:px-8 lg:h-full lg:px-12"
+          ? "flex min-h-full w-full flex-col px-4 pt-4 pb-2 sm:px-8 lg:h-full lg:justify-between lg:gap-3 lg:px-12 lg:pt-1 lg:pb-1"
           : "flex w-full flex-col px-6 pt-4 pb-2 sm:px-10 lg:h-full lg:px-12"
       }
     >
@@ -128,19 +128,19 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         aria-labelledby="who-are-we-heading"
         className={
           compact
-            ? "grid flex-none grid-cols-1 items-center gap-4 sm:gap-6 lg:grid-cols-[38%_1fr] lg:gap-5"
+            ? "grid flex-none grid-cols-1 items-center gap-4 sm:gap-6 lg:grid-cols-[38%_1fr] lg:gap-3"
             : "grid flex-none grid-cols-1 items-center gap-4 sm:gap-6 lg:grid-cols-[38%_1fr] lg:gap-4"
         }
       >
         <div className="min-w-0 lg:self-center">
-          <span className="inline-flex items-center rounded-full bg-[#10A9E8] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white">
+          <span className={compact ? "inline-flex items-center rounded-full bg-[#10A9E8] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white" : "inline-flex items-center rounded-full bg-[#10A9E8] px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white"}>
             Park & Charge
           </span>
           <h1
             id="who-are-we-heading"
             className={
               compact
-                ? "mt-3 text-3xl font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-5xl lg:text-[68px]"
+                ? "mt-3 text-3xl font-bold leading-[1.0] tracking-tight text-[#10204A] sm:text-5xl lg:mt-2 lg:text-[70px]"
                 : "mt-4 text-[34px] font-bold leading-[1.0] tracking-tight text-[#10204A] min-[420px]:text-[42px] sm:text-[56px] lg:text-[76px]"
             }
           >
@@ -149,7 +149,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           <p
             className={
               compact
-                ? "mt-2.5 max-w-lg text-[15.5px] leading-[1.4] text-[#64748B] lg:text-lg"
+                ? "mt-2.5 max-w-lg text-[15.5px] leading-[1.4] text-[#64748B] lg:mt-1.5 lg:text-[15px]"
                 : "mt-3 max-w-lg text-[15px] leading-[1.4] text-[#64748B] lg:text-[18px]"
             }
           >
@@ -163,7 +163,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             loading="eager"
             className={
               compact
-                ? "h-48 w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-72 lg:h-[320px] " + CARD_SHADOW
+                ? "h-48 w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-60 lg:h-[clamp(200px,30dvh,330px)] " + CARD_SHADOW
                 : "h-[240px] w-full rounded-[20px] border border-[#D7E6F2] object-cover object-[50%_70%] sm:h-[260px] lg:h-[395px] " + CARD_SHADOW
             }
           />
@@ -175,7 +175,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         aria-label="About Park and Charge"
         className={
         compact
-          ? "mt-3 grid flex-none grid-cols-1 gap-3 sm:mt-4 sm:gap-4 lg:grid-cols-[38%_1fr] lg:gap-5"
+          ? "mt-2 grid flex-none grid-cols-1 gap-3 sm:mt-3 sm:gap-4 lg:grid-cols-[38%_1fr] lg:gap-4"
           : "mt-4 grid flex-none grid-cols-1 gap-5 lg:mt-3 lg:grid-cols-[38%_1fr] lg:gap-4"
         }
       >
@@ -183,7 +183,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         <article
           className={
             compact
-              ? `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 sm:p-5 ${CARD_SHADOW}`
+              ? `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-3 sm:p-4 lg:p-4 ${CARD_SHADOW}`
               : `min-w-0 rounded-[18px] border border-[#D7E6F2] bg-[#F1F8FC] p-4 lg:p-4 ${CARD_SHADOW}`
           }
         >
@@ -199,7 +199,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           <div
             className={
               compact
-                ? "mt-3 space-y-2.5 text-[15.5px] sm:text-[17.5px] leading-[1.4] text-[#64748B]"
+                ? "mt-3 space-y-2.5 text-[15.5px] sm:text-[17.5px] leading-[1.4] text-[#64748B] lg:text-[15.5px]"
                 : "mt-3 space-y-3 text-[15px] leading-[1.4] text-[#64748B]"
             }
           >
@@ -243,16 +243,16 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
         </article>
 
         {/* Right column */}
-        <div className="flex min-w-0 min-h-0 flex-col gap-4">
+        <div className={compact ? "flex min-w-0 min-h-0 flex-col gap-4 lg:gap-2" : "flex min-w-0 min-h-0 flex-col gap-4"}>
           {/* Our Mission */}
           <article
             className={
               compact
-                ? `min-w-0 flex-none rounded-[18px] border border-[#D7E6F2] bg-white p-3.5 sm:p-4 ${CARD_SHADOW}`
+                ? `min-w-0 flex-none rounded-[18px] border border-[#D7E6F2] bg-white p-3 lg:p-4 ${CARD_SHADOW}`
                 : `min-w-0 flex-none rounded-[18px] border border-[#D7E6F2] bg-white p-3.5 ${CARD_SHADOW}`
             }
           >
-            <div className="flex items-center gap-3.5">
+            <div className={compact ? "flex items-center gap-3.5 lg:gap-2.5" : "flex items-center gap-3.5"}>
               <IconBadge className="size-[38px]" iconClassName="size-4">
                 <RocketIcon strokeWidth={1.8} className="size-full" />
               </IconBadge>
@@ -261,7 +261,7 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
                   Our Mission
                 </h2>
                 <Underline className="mt-1.5 w-12" />
-                <p className="mt-1.5 text-[15.5px] leading-snug text-[#64748B] lg:text-base">
+                <p className={compact ? "mt-1 text-sm leading-snug text-[#64748B] lg:text-[15px]" : "mt-1.5 text-[15.5px] leading-snug text-[#64748B] lg:text-base"}>
                   To{" "}
                   <strong className="font-semibold text-[#10204A]">
                     build intelligent digital solutions
@@ -280,11 +280,11 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
           <article
             className={
               compact
-                ? `flex min-h-0 min-w-0 flex-col rounded-[18px] border border-[#D7E6F2] bg-white p-3.5 sm:p-4 ${CARD_SHADOW}`
+                ? `flex min-h-0 min-w-0 flex-col rounded-[18px] border border-[#D7E6F2] bg-white p-3 lg:p-4 ${CARD_SHADOW}`
                 : `flex min-h-0 min-w-0 flex-col rounded-[18px] border border-[#D7E6F2] bg-white p-4 ${CARD_SHADOW}`
             }
           >
-            <div className="flex items-center gap-3">
+            <div className={compact ? "flex items-center gap-3 lg:gap-2.5" : "flex items-center gap-3"}>
               <IconBadge className={compact ? "size-9" : "size-[38px]"} iconClassName={compact ? "size-4" : "size-4"}>
                 <HeartHandshakeIcon strokeWidth={1.8} className="size-full" />
               </IconBadge>
@@ -293,13 +293,13 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
               </h2>
             </div>
             <Underline />
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className={compact ? "mt-3 grid grid-cols-1 gap-3 md:grid-cols-3 lg:mt-2 lg:gap-2" : "mt-3 grid grid-cols-1 gap-3 md:grid-cols-3"}>
               {VALUES.map((v) => (
                 <div
                   key={v.title}
                   className={
                     compact
-                      ? "flex h-full min-h-0 flex-col rounded-[14px] border border-[#D7E6F2] bg-[#F1F8FC] p-3"
+                      ? "flex h-full min-h-0 flex-col rounded-[14px] border border-[#D7E6F2] bg-[#F1F8FC] p-3 lg:p-3.5"
                       : "flex h-full flex-col rounded-[14px] border border-[#D7E6F2] bg-[#F1F8FC] p-3"
                   }
                 >
@@ -322,13 +322,13 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
       {/* ── TRUST STRIP ── */}
       <section
         aria-label="Trusted partners"
-        className={compact ? "mt-8 flex-none lg:mt-auto lg:pt-4" : "mt-7 flex-none lg:mt-auto lg:pt-4"}
+        className={compact ? "mt-2 flex-none lg:mt-2 lg:pt-1 lg:pb-1" : "mt-7 flex-none lg:mt-auto lg:pt-4"}
       >
         <div
-          className={`flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-4 py-2 sm:px-5 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-8 lg:px-6`}
+          className={compact ? `flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-4 py-1 sm:px-5 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-3 lg:px-6` : `flex flex-col gap-2 rounded-[20px] border border-[#D7E6F2] bg-[#F1F8FC] px-4 py-2 sm:px-5 ${CARD_SHADOW} lg:flex-row lg:items-center lg:gap-8 lg:px-6`}
         >
           <div className="min-w-0 shrink-0">
-            <h2 className="whitespace-nowrap text-xl font-bold tracking-tight text-[#0B1B45] lg:text-2xl">
+            <h2 className={compact ? "whitespace-nowrap text-xl font-bold tracking-tight text-[#0B1B45] lg:text-lg" : "whitespace-nowrap text-xl font-bold tracking-tight text-[#0B1B45] lg:text-2xl"}>
               Strategic Partners
             </h2>
             <Underline className="mt-1.5 w-10" />
@@ -337,13 +337,13 @@ export function WhoAreWeContent({ compact = false }: { compact?: boolean }) {
             {PARTNERS.map((p) => (
               <li
                 key={p.name}
-                className="flex h-10 min-w-[128px] flex-1 basis-0 snap-start items-center justify-center px-1 sm:h-11 lg:h-[58px] lg:min-w-0"
+                className={compact ? "flex h-10 min-w-[128px] flex-1 basis-0 snap-start items-center justify-center px-1 sm:h-11 lg:h-[56px] lg:min-w-0" : "flex h-10 min-w-[128px] flex-1 basis-0 snap-start items-center justify-center px-1 sm:h-11 lg:h-[58px] lg:min-w-0"}
               >
                 <img
                   src={p.icon}
                   alt={p.name}
                   loading="lazy"
-                  className={`max-w-full object-contain ${p.imgClass}`}
+                  className={compact ? `max-w-full object-contain lg:max-h-[53px] ${p.imgClass}` : `max-w-full object-contain ${p.imgClass}`}
                 />
               </li>
             ))}

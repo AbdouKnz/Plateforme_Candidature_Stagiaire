@@ -458,7 +458,7 @@ export function PfeBookPage() {
           <PageHeader number={1} total={displayTotal} />
           <div className="relative z-10 flex flex-1 min-h-0 flex-col overflow-hidden bg-[#FCFDFE]">
             {/* Who are we? — single scroll on small screens, fitted no-scroll on desktop */}
-            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y scrollbar-thin pb-6 lg:overflow-hidden lg:pb-0">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y scrollbar-thin pb-6 lg:overflow-hidden lg:pb-0 [@media(max-height:860px)]:overflow-y-auto">
               <WhoAreWeContent compact />
             </div>
           </div>

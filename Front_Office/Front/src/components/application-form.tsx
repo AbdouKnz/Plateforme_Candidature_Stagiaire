@@ -5,6 +5,7 @@ import {
   BriefcaseIcon,
   CheckIcon,
   ChevronLeftIcon,
+  InfoIcon,
   SendIcon,
   UserRoundIcon,
 } from "lucide-react"
@@ -651,6 +652,10 @@ export function ApplicationForm() {
                                   options={[...TUNISIAN_UNIVERSITIES]}
                                   ariaInvalid={!!errors.university}
                                 />
+                                <FieldDescription className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] px-3 py-2 text-xs">
+                                  <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
+                                  <span>{t("description.university")}</span>
+                                </FieldDescription>
                                 <FieldError errors={[errors.university]} />
                               </Field>
                             )} />
@@ -666,6 +671,10 @@ export function ApplicationForm() {
                                   options={[...TUNISIAN_UNIVERSITIES]}
                                   ariaInvalid={!!errors.university2}
                                 />
+                                <FieldDescription className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/[0.06] px-3 py-2 text-xs">
+                                  <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-primary" aria-hidden />
+                                  <span>{t("description.university")}</span>
+                                </FieldDescription>
                                 <FieldError errors={[errors.university2]} />
                               </Field>
                             )} />
