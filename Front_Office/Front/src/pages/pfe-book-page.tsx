@@ -5,6 +5,7 @@ import { fetchSubjects, fetchFrontOfficeStatus } from "@/service/front-office"
 import type { Subject } from "@/models/api"
 import { Button } from "@/components/ui/button"
 import { WhoAreWeContent } from "@/components/about/who-are-we"
+import { SubjectTechBadges } from "@/components/subject-tech-badges"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTheme } from "@/context/theme-context"
@@ -648,18 +649,11 @@ export function PfeBookPage() {
                             <p className="mt-1 text-sm font-semibold text-[#24243C]/70 break-words [overflow-wrap:anywhere]">{profile}</p>
                             <div className="mt-2.5 flex flex-wrap gap-1.5">
                               {s.technologies?.length ? (
-                                <>
-                                  {s.technologies.slice(0, 5).map((t) => (
-                                    <span key={t.id} className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/30 px-3 py-1 text-[12px] font-semibold text-[#24243C] break-words [overflow-wrap:anywhere]">
-                                      {t.name}
-                                    </span>
-                                  ))}
-                                  {(s.technologies.length > 5) && (
-                                    <span className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-2.5 py-1 text-[11px] font-bold text-[#24243C]/60">
-                                      +{s.technologies.length - 5}
-                                    </span>
-                                  )}
-                                </>
+                                <SubjectTechBadges
+                                  technologies={s.technologies}
+                                  chipClassName="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/30 px-3 py-1 text-[12px] font-semibold text-[#24243C] break-words [overflow-wrap:anywhere]"
+                                  moreClassName="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-2.5 py-1 text-[11px] font-bold text-[#24243C]/60"
+                                />
                               ) : <span className="text-[#24243C]/40 text-sm">—</span>}
                             </div>
                           </article>
@@ -698,18 +692,11 @@ export function PfeBookPage() {
                             <td className="px-4 py-3 h-[100px] align-middle text-center">
                               <div className="flex h-full flex-wrap items-center content-center justify-center gap-2">
                                 {s.technologies?.length ? (
-                                  <>
-                                    {s.technologies.slice(0, 5).map((t) => (
-                                        <span key={t.id} className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/30 px-4 py-2 text-sm font-semibold text-[#24243C] whitespace-nowrap shadow-sm">
-                                        {t.name}
-                                      </span>
-                                    ))}
-                                    {(s.technologies.length > 5) && (
-                                      <span className="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-3 py-1.5 text-[12px] font-bold text-[#24243C]/60">
-                                        +{s.technologies.length - 5}
-                                      </span>
-                                    )}
-                                  </>
+                                  <SubjectTechBadges
+                                    technologies={s.technologies}
+                                    chipClassName="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#1D7CC7]/30 px-4 py-2 text-sm font-semibold text-[#24243C] whitespace-nowrap shadow-sm"
+                                    moreClassName="inline-flex items-center rounded-full bg-[#F1F4F8] border border-[#DCE3EA] px-3 py-1.5 text-[12px] font-bold text-[#24243C]/60"
+                                  />
                                 ) : <span className="text-[#24243C]/40 text-sm">—</span>}
                               </div>
                             </td>
