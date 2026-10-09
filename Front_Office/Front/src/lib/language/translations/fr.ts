@@ -312,7 +312,7 @@ export const fr = {
   "closed.days": "Jours",
   "closed.hours": "Heures",
   "closed.minutes": "Minutes",
-  "closed.mins": "MIN",
+  "closed.mins": "Minutes",
   "closed.seconds": "Secondes",
   "closed.aboutUs": "À propos",
   "closed.noDate": "La date de réouverture n'a pas encore été annoncée. Veuillez revenir plus tard.",

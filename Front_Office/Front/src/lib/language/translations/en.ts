@@ -229,7 +229,7 @@ export const en = {
   "closed.days": "Days",
   "closed.hours": "Hours",
   "closed.minutes": "Minutes",
-  "closed.mins": "MINS",
+  "closed.mins": "Minutes",
   "closed.seconds": "Seconds",
   "closed.aboutUs": "About Us",
   "closed.noDate": "The reopening date has not been announced yet. Please check back later.",
