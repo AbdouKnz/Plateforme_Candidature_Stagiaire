@@ -23,6 +23,10 @@ type Email struct {
 	To      []string
 	Subject string
 	Body    string
+	// Bcc receives a blind copy: envelope recipients include these
+	// addresses but no Bcc header is written, so To recipients never
+	// see them.
+	Bcc []string
 }
 
 func NewMailer(host string, port int, username, password, from, fromName string) *Mailer {
@@ -37,18 +41,85 @@ func NewMailer(host string, port int, username, password, from, fromName string)
 }
 
 func (m *Mailer) Send(e Email) error {
+	if err := m.validate(e); err != nil {
+		return err
+	}
+
 	raw, err := m.buildMessage(e)
 	if err != nil {
 		return err
 	}
 
-	dialer := gomail.NewDialer(m.Host, m.Port, m.Username, m.Password)
-	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	host := strings.TrimSpace(m.Host)
+	dialer := gomail.NewDialer(host, m.Port, strings.TrimSpace(m.Username), m.Password)
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true, ServerName: host}
 	sender, err := dialer.Dial()
 	if err != nil {
 		return err
 	}
-	return sender.Send(m.From, e.To, raw)
+	defer sender.Close()
+	// BCC rides the envelope only: no Bcc header is written, so To
+	// recipients never see the blind-copied addresses.
+	recipients := envelopeRecipients(e.To, e.Bcc)
+	return sender.Send(strings.TrimSpace(m.From), recipients, raw)
+}
+
+// ParseBcc splits a comma-separated BCC string into trimmed addresses,
+// dropping empties. "a@x.com, b@y.com" -> ["a@x.com" "b@y.com"].
+func ParseBcc(raw string) []string {
+	parts := strings.Split(raw, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if addr := strings.TrimSpace(p); addr != "" {
+			out = append(out, addr)
+		}
+	}
+	return out
+}
+
+// envelopeRecipients merges To + Bcc, deduplicated case-insensitively so an
+// address present in both is mailed exactly once.
+func envelopeRecipients(to, bcc []string) []string {
+	seen := map[string]struct{}{}
+	out := make([]string, 0, len(to)+len(bcc))
+	for _, addr := range append(to, bcc...) {
+		addr = strings.TrimSpace(addr)
+		if addr == "" {
+			continue
+		}
+		if _, ok := seen[strings.ToLower(addr)]; ok {
+			continue
+		}
+		seen[strings.ToLower(addr)] = struct{}{}
+		out = append(out, addr)
+	}
+	return out
+}
+
+func (m *Mailer) validate(e Email) error {
+	if strings.TrimSpace(m.Host) == "" {
+		return fmt.Errorf("smtp host is empty")
+	}
+	if m.Port <= 0 || m.Port > 65535 {
+		return fmt.Errorf("smtp port %d is invalid", m.Port)
+	}
+	if strings.TrimSpace(m.From) == "" {
+		return fmt.Errorf("smtp from address is empty")
+	}
+	if len(e.To) == 0 || strings.TrimSpace(e.To[0]) == "" {
+		return fmt.Errorf("recipient address is empty")
+	}
+	for _, to := range e.To {
+		if strings.TrimSpace(to) == "" || !strings.Contains(to, "@") {
+			return fmt.Errorf("recipient address %q is invalid", to)
+		}
+	}
+	for _, bcc := range e.Bcc {
+		if strings.TrimSpace(bcc) == "" || !strings.Contains(bcc, "@") {
+			return fmt.Errorf("bcc address %q is invalid", bcc)
+		}
+	}
+	return nil
 }
 
 type rawMessage struct {

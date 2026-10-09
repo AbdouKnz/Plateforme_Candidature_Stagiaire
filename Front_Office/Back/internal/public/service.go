@@ -35,16 +35,17 @@ func (e *ErrDuplicateCandidature) Code() string {
 }
 
 type smtpConfig struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
-	From     string
-	FromName string
+	Host       string
+	Port       int
+	Username   string
+	Password   string
+	From       string
+	FromName   string
+	DefaultBcc string
 }
 
 func (s *PublicService) getSMTPConfig(ctx context.Context) (*smtpConfig, error) {
-	keys := []string{"host", "port", "username", "password", "from", "from_name"}
+	keys := []string{"host", "port", "username", "password", "from", "from_name", "default_bcc"}
 	var settings []*domain.Setting
 	err := s.db.NewSelect().Model(&settings).Where(`"group" = ? AND "key" IN (?)`, "mail_config", bun.In(keys)).Scan(ctx)
 	if err != nil {
@@ -65,6 +66,8 @@ func (s *PublicService) getSMTPConfig(ctx context.Context) (*smtpConfig, error) 
 			cfg.From = st.Value
 		case "from_name":
 			cfg.FromName = st.Value
+		case "default_bcc":
+			cfg.DefaultBcc = strings.TrimSpace(st.Value)
 		}
 	}
 	if cfg.Port == 0 {
@@ -502,6 +505,11 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 	}
 	to := strings.Join(recipients, ", ")
 
+	// Automated acknowledgment mail: blind-copy the mail config default_bcc.
+	// Empty means no BCC; never fails the send.
+	bccList := mail.ParseBcc(m.DefaultBcc)
+	bccJoined := strings.Join(bccList, ", ")
+
 	emailLog := &domain.EmailLog{
 		CandidatureID: c.ID,
 		Recipient:     to,
@@ -512,6 +520,7 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 		SubjectName:   c.SubjectName,
 		Status:        "pending",
 		SentAt:        now,
+		Bcc:           bccJoined,
 	}
 	if _, logErr := s.db.NewInsert().Model(emailLog).Exec(ctx); logErr != nil {
 		log.Warn().Err(logErr).Str("full_name", c.FullName).Msg("Failed to log confirmation email")
@@ -523,17 +532,18 @@ func (s *PublicService) sendConfirmationEmail(ctx context.Context, c *domain.Can
 		To:      recipients,
 		Subject: subject,
 		Body:    body,
+		Bcc:     bccList,
 	}
 
 	if sendErr := mailer.Send(email); sendErr != nil {
 		log.Warn().Err(sendErr).Str("full_name", c.FullName).Str("email", to).Msg("Failed to send confirmation email")
 		emailLog.Status = "failed"
-		s.db.NewUpdate().Model(emailLog).Column("status").Where("id = ?", emailLog.ID).Exec(ctx)
+		s.db.NewUpdate().Model(emailLog).Column("status", "bcc").Where("id = ?", emailLog.ID).Exec(ctx)
 		return
 	}
 
 	emailLog.Status = "sent"
-	if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
+	if _, uErr := s.db.NewUpdate().Model(emailLog).Column("status", "bcc").Where("id = ?", emailLog.ID).Exec(ctx); uErr != nil {
 		log.Warn().Err(uErr).Str("full_name", c.FullName).Msg("Failed to update email log status")
 	}
 

@@ -17,8 +17,8 @@ export function TeamSwitcher({ teams }: TeamSwitcherProps) {
       <SidebarMenuItem>
         <div className='flex items-center gap-3 px-3 py-4'>
           <img
-            src={appAsset('website.png')}
-            alt="Asteroidea"
+            src={appAsset('WhiteBlue.png')}
+            alt="Internship Admin"
             width={36}
             height={36}
             className="object-contain shrink-0"

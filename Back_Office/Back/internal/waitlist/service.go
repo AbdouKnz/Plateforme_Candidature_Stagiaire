@@ -119,6 +119,10 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 	mailer := mailPkg.NewMailer(smtpCfg.Host, smtpCfg.Port, smtpCfg.Username, smtpCfg.Password, smtpCfg.From, smtpCfg.FromName)
 	footerCfg := email_footer.GetEmailFooter(ctx, s.db)
 	footer := &mailPkg.EmailFooter{Phone: footerCfg.Phone, Email: footerCfg.Email, Linkedin: footerCfg.Linkedin, Website: footerCfg.Website, AddressURL: footerCfg.AddressURL}
+	// Automated reopening mail: blind-copy the mail config default_bcc.
+	// Empty means no BCC; never fails the send.
+	bccList := mailPkg.ParseBcc(smtpCfg.DefaultBcc)
+	bccJoined := strings.Join(bccList, ", ")
 	notified := 0
 
 	for {
@@ -155,6 +159,7 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 				Subject: template.Subject,
 				Body:    body,
 				Footer:  footer,
+				Bcc:     bccList,
 			}
 
 			var sendErr error
@@ -203,6 +208,7 @@ func (s *WaitlistService) ProcessPending(ctx context.Context) (int, error) {
 			Status:        emailStatus,
 			SentAt:        now,
 			ErrorMessage:  errMsg,
+			Bcc:           bccJoined,
 		}
 			if _, logErr := s.db.NewInsert().Model(emailLog).Exec(ctx); logErr != nil {
 				log.Error().Err(logErr).Str("email", sub.Email).Msg("failed to log waitlist email")

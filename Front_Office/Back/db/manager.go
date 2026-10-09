@@ -48,6 +48,10 @@ func DatabaseManager(dsn string) (*bun.DB, error) {
 		return nil, fmt.Errorf("candidature uniqueness migration failed: %w", err)
 	}
 
+	if err := ensureEmailLogsBccColumn(context.Background(), db); err != nil {
+		log.Warn().Err(err).Msg("Could not ensure email_logs bcc column (BCC logging disabled until migration succeeds)")
+	}
+
 	log.Info().Msg("Database connected and tables synced")
 	return db, nil
 }
@@ -130,4 +134,15 @@ func ensureCandidatureNameColumns(ctx context.Context, db *bun.DB) error {
 	}
 
 	return nil
+}
+
+// ensureEmailLogsBccColumn adds the bcc trace column used by the
+// acknowledgment mail BCC logic. Idempotent: safe when the Back_Office
+// migration already created it on a shared database.
+func ensureEmailLogsBccColumn(ctx context.Context, db *bun.DB) error {
+	_, err := db.ExecContext(ctx, `
+		ALTER TABLE email_logs
+			ADD COLUMN IF NOT EXISTS bcc TEXT NOT NULL DEFAULT ''
+	`)
+	return err
 }

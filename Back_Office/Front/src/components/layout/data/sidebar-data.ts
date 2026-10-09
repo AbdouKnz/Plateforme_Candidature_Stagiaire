@@ -25,7 +25,7 @@ export const sidebarData: SidebarData = {
   },
   teams: [
     {
-      name: 'AstroIntern',
+      name: 'Internship Admin',
       logo: Command,
     },
   ],
